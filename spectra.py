@@ -93,9 +93,9 @@ for i in range(len(plttime)):
         k1d,spec_thl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx)
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
         
-        k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:]*qt[iz,:,:], dx)
-        k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx)
-        k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx)        
+        k1d,spec_wqt[i,iz,:] = compute_spectrum(qt[iz,:,:], dx, wf[iz,:,:])
+        k1d,spec_wthl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx, wf[iz,:,:])
+        k1d,spec_wthlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx, wf[iz,:,:])
     
     gc.collect()
 
@@ -119,6 +119,8 @@ plot_spectrum(k1d, spec_qt_mn, r"$\hat{q}_t'^2$", plttime_mn)
 plot_spectrum(k1d, spec_thl_mn, r"$\hat{\theta}_l'^2$", plttime_mn)
 plot_spectrum(k1d, spec_thlv_mn, r"$\hat{\theta}_{lv}'^2$", plttime_mn)
 
-plot_spectrum(k1d, spec_wqt_mn, r"$\hat{wq}_t'^2$", plttime_mn)
-plot_spectrum(k1d, spec_wthl_mn, r"$\hat{w\theta}_l'^2$", plttime_mn)
-plot_spectrum(k1d, spec_wthlv_mn, r"$\hat{w\theta}_{lv}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_wqt_mn, r"$\hat{wq}_t'$", plttime_mn)
+plot_spectrum(k1d, spec_wthl_mn, r"$\hat{w\theta}_l'$", plttime_mn)
+plot_spectrum(k1d, spec_wthlv_mn, r"$\hat{w\theta}_{lv}'$", plttime_mn)
+
+#%% Plot in same spectrum

@@ -231,11 +231,18 @@ def get_psd_1d_radial(psd_2d, dx):
 
     return psd_1d
 
-def compute_spectrum(cloud_scalar,dx):
+def compute_spectrum(cloud_scalar,dx,cloud_scalar_2=None):
     # FFT
     F = fftpack.fft2(cloud_scalar)  # 2D FFT (no prefactor)
     F = fftpack.fftshift(F)  # Shift so k0 is centred
-    psd_2d = np.abs(F) ** 2 / np.prod(cloud_scalar.shape)  # Energy-preserving 2D PSD
+    if type(cloud_scalar_2) == type(None):
+        psd_2d = np.abs(F) ** 2 
+    else:
+       F2 = fftpack.fft2(cloud_scalar_2)
+       F2 = fftpack.fftshift(F)
+       psd_2d = np.abs(F) * np.abs(F2)
+     
+    psd_2d /= np.prod(cloud_scalar.shape)  # Energy-preserving 2D PSD
     psd_1d_rad = get_psd_1d_radial(psd_2d, dx)  # Azimuthal integral-> 1D radial PSD
 
     # Wavenumbers
