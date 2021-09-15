@@ -126,7 +126,7 @@ for i in range(len(plttime_var)):
     axs[4].set_xlabel(r"$\widetilde{\theta_v'}$")
     axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
-    axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime[plttime_var[i]]],color=col,linestyle='-')
+    axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime_var[i]],color=col,linestyle='-')
     axs[5].axvline(0,color='gray',linestyle='dotted')
     axs[5].set_xlabel(r"$\widetilde{q_l'}$")
     axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
@@ -136,8 +136,8 @@ axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 8.
-tpltmax = 10.
+tpltmin = 6.
+tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -464,8 +464,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes (no sgs yet)
 
 # Time to average over
-tpltmin = 20.
-tpltmax = 24.
+tpltmin = 14.
+tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -525,11 +525,11 @@ plt.plot(wthlvpfmn_dry-wthlvpmn_av,zflim,label=r"$\widetilde{w'''\theta_{lv}'''}
 # plt.plot(wthl_r_dry_tot-wthl_av[izmin+2:izmax+2],zflim,label=r"$\widetilde{w'''\theta_{l}'''} - \overline{w'\theta_{l}'}$")
 # plt.plot(0.608*thl_av[izmin+2:izmax+2]*(wqt_r_dry_tot-wqt_av[izmin+2:izmax+2]),zflim,label=r"$\widetilde{w'''q_t'''} - \overline{w'q_t'}$")
 plt.ylabel('z [m]')
-plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''} - \overline{w'\theta_{lv}'}$, moist region [Km/s]")
+plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''} - \overline{w'\theta_{lv}'}$, dry region [Km/s]")
 plt.legend()
 plt.show()
 
-#%% Flux anomaly in time
+#%% Flux in time
 
 tpltmin = 6.
 tpltmax = 18.
@@ -540,37 +540,47 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 
+# Average flux
+fig,axs = plt.subplots(ncols=1,figsize=(5,5))
+for i in range(len(plttime_var)):
+    col = plt.cm.cubehelix(i/len(plttime_var))
+    
+    wthlvpmn_av = np.mean(wthlvp_av_time[plttime_var[i:i+2],:],axis=0)
+
+    axs.plot(wthlvpmn_av, zflim, color=col,linestyle='-', label='t=%.2f'%time[plttime_var[i]])
+    axs.axvline(0,color='gray',linestyle='dotted')
+    axs.set_xlabel(r"$\overline{w'\theta_{lv}'}$ [Km/s]")
+    axs.set_xlim((-2.5e-2,1e-2))
+    axs.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+
+axs.set_ylabel('z [m]')
+axs.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+
+# Flux anomaly
 wthlvpf_moist_anom = wthlvpf_moist_time - wthlvp_av_time
-wthlvpf_moist_anom = wthlvpf_moist_time - wthlvp_av_time
+wthlvpf_dry_anom = wthlvpf_dry_time - wthlvp_av_time
 
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 for i in range(len(plttime_var)):
     col = plt.cm.cubehelix(i/len(plttime_var))
+    
+    wthlvpfmn_moist_anom = np.mean(wthlvpf_moist_anom[plttime_var[i:i+2],:],axis=0)
+    wthlvpfmn_dry_anom = np.mean(wthlvpf_dry_anom[plttime_var[i:i+2],:],axis=0)
      
-    axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
+    axs[0].plot(wthlvpfmn_moist_anom, zflim, color=col,linestyle='-')
     axs[0].axvline(0,color='gray',linestyle='dotted')
-    axs[0].set_xlabel(r"$q_t'$")
+    axs[0].set_xlabel(r"$\widetilde{w'''\theta_{lv}'''} - \overline{w'\theta_{lv}'}$, moist region [Km/s]")
+    axs[0].set_xlim((-5e-2,0.5e-3))
     axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
+    axs[1].plot(wthlvpfmn_dry_anom, zflim, color=col,linestyle='-', label='t=%.2f'%time[plttime_var[i]])
     axs[1].axvline(0,color='gray',linestyle='dotted')
-    axs[1].set_xlabel(r"$\theta_{lv}'$")
+    axs[1].set_xlabel(r"$\widetilde{w'\theta_{lv}'} - \overline{w'\theta_{lv}'}$, dry region [Km/s]")
+    axs[1].set_xlim((-0.5e-3,2.5e-2))
     axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-    
-    axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
-    axs[2].axvline(0,color='gray',linestyle='dotted')
-    axs[2].set_xlabel(r"$w'$")
-    axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-
-    axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
-    axs[3].axvline(0,color='gray',linestyle='dotted')
-    axs[3].set_xlabel(r"$\theta_l'$")
-    axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-    
-    axs[4].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime[plttime_var[i]]],color=col,linestyle='-')
-    axs[4].axvline(0,color='gray',linestyle='dotted')
-    axs[4].set_xlabel(r"$q_l'$")
-    axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
 axs[0].set_ylabel('z [m]')
-axs[4].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+axs[1].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+
+#%% Relation qtpf - wthlvpf_anom
+
