@@ -44,7 +44,7 @@ wfls = ilp[:,3]
 #%% Dry/moist regions
 
 itmin = 0#23
-itmax = 1
+itmax = 47
 di    = 1
 izmin = 0
 izmax = 80
@@ -406,6 +406,9 @@ for i in range(len(plttime)):
     # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
     # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
 if store:
+    np.save(lp+'/plttime.npy',plttime)
+    np.save(lp+'/zf.npy',zflim)
+    
     np.save(lp+'/qtpf_moist_time.npy',qtpf_moist_time)
     np.save(lp+'/qtpf_dry_time.npy',qtpf_dry_time)
     np.save(lp+'/qtpf_prod_moist_time.npy',qtpf_prod_moist_time)
