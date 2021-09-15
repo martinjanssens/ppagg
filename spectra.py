@@ -16,8 +16,8 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
 # Run specifics
-itmin = 59#23
-itmax = 63
+itmin = 23#23
+itmax = 96
 di    = 1
 izmin = 39
 izmax = 40
@@ -68,6 +68,7 @@ N = xf.size; N2 = N//2
 spec_qt = np.zeros((len(plttime),len(zflim),N2))
 spec_thl = np.zeros((len(plttime),len(zflim),N2))
 spec_thlv = np.zeros((len(plttime),len(zflim),N2))
+spec_w = np.zeros((len(plttime),len(zflim),N2))
 spec_wqt = np.zeros((len(plttime),len(zflim),N2))
 spec_wthl = np.zeros((len(plttime),len(zflim),N2))
 spec_wthlv = np.zeros((len(plttime),len(zflim),N2))
@@ -92,6 +93,7 @@ for i in range(len(plttime)):
         k1d,spec_qt[i,iz,:] = compute_spectrum(qt[iz,:,:], dx)
         k1d,spec_thl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx)
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
+        k1d,spec_w[i,iz,:] = compute_spectrum(wf[iz,:,:], dx)
         
         k1d,spec_wqt[i,iz,:] = compute_spectrum(qt[iz,:,:], dx, wf[iz,:,:])
         k1d,spec_wthl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx, wf[iz,:,:])
@@ -105,6 +107,7 @@ itav = 4 # number of time steps to average over -> MUST BE MULTIPLE OF len(pltti
 spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
 spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
 spec_thlv_mn = block_reduce(spec_thlv,(itav,1,1),func=np.mean)
+spec_w_mn = block_reduce(spec_w,(itav,1,1),func=np.mean)
 
 spec_wqt_mn = block_reduce(spec_wqt,(itav,1,1),func=np.mean)
 spec_wthl_mn = block_reduce(spec_wthl,(itav,1,1),func=np.mean)
@@ -115,12 +118,13 @@ plttime_mn = plttime[::itav]
 #%% Plot
 izpl = 0
 
-plot_spectrum(k1d, spec_qt_mn, r"$\hat{q}_t'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thl_mn, r"$\hat{\theta}_l'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thlv_mn, r"$\hat{\theta}_{lv}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_qt_mn, r"$k\hat{q}_t'^2$", plttime_mn)
+plot_spectrum(k1d, spec_thl_mn, r"$k\hat{\theta}_l'^2$", plttime_mn)
+plot_spectrum(k1d, spec_thlv_mn, r"$k\hat{\theta}_{lv}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_w_mn, r"$k\hat{w}'^2$", plttime_mn)
 
-plot_spectrum(k1d, spec_wqt_mn, r"$\hat{wq}_t'$", plttime_mn)
-plot_spectrum(k1d, spec_wthl_mn, r"$\hat{w\theta}_l'$", plttime_mn)
-plot_spectrum(k1d, spec_wthlv_mn, r"$\hat{w\theta}_{lv}'$", plttime_mn)
+plot_spectrum(k1d, spec_wqt_mn, r"$k\hat{wq}_t'$", plttime_mn)
+plot_spectrum(k1d, spec_wthl_mn, r"$k\hat{w\theta}_l'$", plttime_mn)
+plot_spectrum(k1d, spec_wthlv_mn, r"$k\hat{w\theta}_{lv}'$", plttime_mn)
 
 #%% Plot in same spectrum
