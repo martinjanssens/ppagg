@@ -17,7 +17,7 @@ from functions import *
 
 # Run specifics
 itmin = 23#23
-itmax = 96
+itmax = 95
 di    = 1
 izmin = 39
 izmax = 40

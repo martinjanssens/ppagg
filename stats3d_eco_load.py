@@ -584,3 +584,36 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%% Relation qtpf - wthlvpf_anom
 
+tpltmin = 6.
+tpltmax = 18.
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+# FIXME just copied from namoptions now
+wthl0 = 8e-3
+wqt0 = 5.2e-5
+thl0 = 299.1
+grav = 9.81
+
+wstar = (grav/thl0*(wthl0+0.608*thl0*wqt0)*600)**(1/3)
+
+# Flux anomaly
+wthlvpf_moist_anom = wthlvpf_moist_time - wthlvp_av_time
+wthlvpf_dry_anom = wthlvpf_dry_time - wthlvp_av_time
+
+# qtpf
+qtpf_moist_mod = 0.608*thl_av_time*qtpf_moist_time
+qtpf_dry_mod = 0.608*thl_av_time*qtpf_dry_time
+
+# Time filter
+wthlvpf_moist_anom = wthlvpf_moist_anom[itpltmin:itpltmax,:]
+wthlvpf_dry_anom = wthlvpf_dry_anom[itpltmin:itpltmax,:]
+qtpf_moist_mod = qtpf_moist_mod[itpltmin:itpltmax,:]
+qtpf_dry_mod = qtpf_dry_mod[itpltmin:itpltmax,:]
+
+plt.scatter(qtpf_moist_mod.flatten(),wthlvpf_moist_anom.flatten(),c='C1',s=0.1)
+plt.scatter(qtpf_dry_mod.flatten(),wthlvpf_dry_anom.flatten(),c='C1',s=0.1)
+plt.ylabel(r"Average $\widetilde{w'\theta_{lv}'} - \overline{w'\theta_{lv}'}$ in moist and dry regions")
+plt.xlabel(r"$0.608\overline{\theta_l}\widetilde{q_t'}$")
+plt.legend()

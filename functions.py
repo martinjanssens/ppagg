@@ -16,18 +16,6 @@ Rv = 461.5
 Lv = 2.5e6
 grav = 9.81
 
-def vint(field,rhob,z,tmin=0,tmax=-1):
-    
-    if len(field.shape) == 3:
-        var = np.trapz(rhob[:,np.newaxis,np.newaxis]*field[:,:,:],z,axis=0)
-    elif len(field.shape) == 4:
-        var = np.trapz(rhob[np.newaxis,:,np.newaxis,np.newaxis]*
-                       field[tmin:tmax,:,:,:],z,axis=1)
-    elif len(field.shape) == 2:
-        var = np.trapz(rhob[np.newaxis,:]*field[tmin:tmax,:],z,axis=1)
-    elif len(field.shape) == 1:
-        var = np.trapz(rhob*field,z)
-    return var
 
 def getRad(data):
     h  = data.shape[-2];  hc = h//2
