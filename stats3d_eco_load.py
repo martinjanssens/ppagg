@@ -13,7 +13,6 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-
 lp = '/scratch-shared/janssens/bomex200_e12'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -136,7 +135,7 @@ axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 6.
+tpltmin = 12.
 tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -464,13 +463,13 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes (no sgs yet)
 
 # Time to average over
-tpltmin = 14.
+tpltmin = 12.
 tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 
-# thlmn_av = np.mean(thl_av_time[itpltmin:itpltmax,:],axis=0)
+thlmn_av = np.mean(thl_av_time[itpltmin:itpltmax,:],axis=0)
 
 wthlpfmn_moist = np.mean(wthlpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlpfmn_dry = np.mean(wthlpf_dry_time[itpltmin:itpltmax,:],axis=0)
@@ -495,21 +494,21 @@ plt.legend()
 plt.show()
 
 # Plot with moist for wthl, wqt contribution to wthlv (full fluxes)
-# plt.plot(wthlvpfmn_moist,zflim,label=r"$\widetilde{w'''\theta_{lv}'''}$")
-# plt.plot(wthlpfmn_moist,zflim,label=r"$\widetilde{w'''\theta_{l}'''}$")
-# plt.plot(0.608*thlmn_av*wqtpfmn_moist,zflim,label=r"$0.608\overline{\theta_l}\widetilde{w'''q_t'''}$")
-# plt.ylabel('z [m]')
-# plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''}$, moist region [Km/s]")
-# plt.legend()
-# plt.show()
+plt.plot(wthlvpfmn_moist,zflim,label=r"$\widetilde{w'''\theta_{lv}'''}$")
+plt.plot(wthlpfmn_moist,zflim,label=r"$\widetilde{w'''\theta_{l}'''}$")
+plt.plot(0.608*thlmn_av*wqtpfmn_moist,zflim,label=r"$0.608\overline{\theta_l}\widetilde{w'''q_t'''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''}$, moist region [Km/s]")
+plt.legend()
+plt.show()
 
-# plt.plot(wthlvpfmn_dry,zflim,label=r"$\widetilde{w'''\theta_{lv}'''}$")
-# plt.plot(wthlpfmn_dry,zflim,label=r"$\widetilde{w'''\theta_{l}'''}$")
-# plt.plot(0.608*thlmn_av*wqtpfmn_dry,zflim,label=r"$0.608\overline{\theta_l}\widetilde{w'''q_t'''}$")
-# plt.ylabel('z [m]')
-# plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''}$, dry region [Km/s]")
-# plt.legend()
-# plt.show()
+plt.plot(wthlvpfmn_dry,zflim,label=r"$\widetilde{w'''\theta_{lv}'''}$")
+plt.plot(wthlpfmn_dry,zflim,label=r"$\widetilde{w'''\theta_{l}'''}$")
+plt.plot(0.608*thlmn_av*wqtpfmn_dry,zflim,label=r"$0.608\overline{\theta_l}\widetilde{w'''q_t'''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''}$, dry region [Km/s]")
+plt.legend()
+plt.show()
 
 # Plot with moist anomalous wthlv # as a function of anomalous wthl and wqt
 plt.plot(wthlvpfmn_moist-wthlvpmn_av,zflim,label=r"$\widetilde{w'''\theta_{lv}'''} - \overline{w'\theta_{lv}'}$")
