@@ -227,7 +227,7 @@ for i in range(len(plttime)):
     # FIXME no sgs here yet!!
     wthlpf = lowPass((wff+wfp)*(thlpf+thlpp), circ_mask)
     wqtpf = lowPass((wff+wfp)*(qtpf+qtpp), circ_mask)
-    wqlpf = lowPass((wff+wfp)*(qlpf+qtpp), circ_mask)
+    wqlpf = lowPass((wff+wfp)*(qlpf+qlpp), circ_mask)
 
     wthlpf_moist = mean_mask(wthlpf, mask_moist)
     wthlpf_dry = mean_mask(wthlpf, mask_dry)
