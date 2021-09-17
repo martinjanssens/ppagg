@@ -264,12 +264,12 @@ qtpfmn_prod_dry_wtg = np.mean(qtpf_prod_dry_wtg_time[itpltmin:itpltmax,:],axis=0
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 axs[0].plot(wffmn_moist, zflim, c='midnightblue')
 axs[0].plot(wffmn_moist_wtg, zflim[1:-1], c='darkseagreen')
-axs[0].plot(wffmn_moist_mod, zflim[1:-1], c='maroon')
+# axs[0].plot(wffmn_moist_mod, zflim[1:-1], c='maroon')
 axs[0].set_xlabel(r"$\widetilde{w'}$ [m/s], moist region")
 
 axs[1].plot(wffmn_dry, zflim, c='midnightblue', label=r"Ground truth $\widetilde{w'}'$")
 axs[1].plot(wffmn_dry_wtg, zflim[1:-1], c='darkseagreen', label=r"WTG model")
-axs[1].plot(wffmn_dry_mod, zflim[1:-1], c='maroon', label=r"Full loop model")
+# axs[1].plot(wffmn_dry_mod, zflim[1:-1], c='maroon', label=r"Full loop model")
 axs[1].set_xlabel(r"$\widetilde{w'}$ [m/s], dry region")
 
 axs[0].set_ylabel(r'Height [m]')
@@ -279,12 +279,12 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 axs[0].plot(qtpfmn_prod_moist_wex, zflim[1:-1], c='darkseagreen',linestyle='-')
 axs[0].plot(qtpfmn_prod_moist_wtg, zflim[1:-1], c='darkseagreen',linestyle='--')
-axs[0].plot(qtpfmn_prod_moist, zflim[1:-1], c='darkseagreen',linestyle='dotted')
+# axs[0].plot(qtpfmn_prod_moist, zflim[1:-1], c='darkseagreen',linestyle='dotted')
 axs[0].set_xlabel(r"$\widetilde{w'}\frac{\partial\overline{q_t}}{\partial z}$ [kg/kg/s], moist region")
 
 axs[1].plot(qtpfmn_prod_dry_wex, zflim[1:-1], c='darkseagreen',linestyle='-', label=r"Ground truth")
 axs[1].plot(qtpfmn_prod_dry_wtg, zflim[1:-1], c='darkseagreen',linestyle='--', label=r"WTG model")
-axs[1].plot(qtpfmn_prod_dry, zflim[1:-1], c='darkseagreen',linestyle='dotted', label=r"Full loop model")
+# axs[1].plot(qtpfmn_prod_dry, zflim[1:-1], c='darkseagreen',linestyle='dotted', label=r"Full loop model")
 axs[1].set_xlabel(r"$\widetilde{w'}\frac{\partial\overline{q_t}}{\partial z}$ [kg/kg/s], dry region")
 
 axs[0].set_ylabel(r'Height [m]')
@@ -367,7 +367,6 @@ qtpfi_resid_dry = qtpfi_tend_dry + qtpfi_prod_wex_dry + qtpfi_vdiv_dry + qtpfi_h
 # Temporal plot
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
 axs[0].plot(time[plttime_var],qtpfi_tend_moist,c='midnightblue')
-# axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen')
 axs[0].plot(time[plttime_var],-qtpfi_prod_wex_moist,c='darkseagreen')
 axs[0].plot(time[plttime_var],-qtpfi_vdiv_moist,c='maroon')
 axs[0].plot(time[plttime_var],-qtpfi_hdiv_moist,c='peachpuff')
@@ -378,13 +377,29 @@ axs[0].set_xlabel('Time [hr]')
 axs[0].set_title('Moist region')
 
 axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=terms[0])
-# axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',label=r"$F_{\langle\tilde{q_t'}\rangle}$")
 axs[1].plot(time[plttime_var],-qtpfi_prod_wex_dry,c='darkseagreen',label=terms[1])
 axs[1].plot(time[plttime_var],-qtpfi_vdiv_dry,c='maroon',label=terms[2])
 axs[1].plot(time[plttime_var],-qtpfi_hdiv_dry,c='peachpuff',label=terms[3])
 axs[1].plot(time[plttime_var],-qtpfi_subs_dry,c='olive',label=terms[4])
 # axs[1].plot(time[plttime_var],qtpfi_diff_dry,c='skyblue',label=terms[5])
 axs[1].plot(time[plttime_var],qtpfi_resid_dry,c='slategray',label=r"Residual")
+axs[1].set_xlabel('Time [hr]')
+axs[1].set_title('Dry region')
+
+axs[0].set_ylabel('Large-scale moistening rate [kg/kg/s]')
+axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+
+# Model evaluation
+fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
+axs[0].plot(time[plttime_var],qtpfi_tend_moist,c='midnightblue')
+axs[0].plot(time[plttime_var],-qtpfi_prod_wex_moist,c='darkseagreen')
+axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen',linestyle='dotted')
+axs[0].set_xlabel('Time [hr]')
+axs[0].set_title('Moist region')
+
+axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=terms[0])
+axs[1].plot(time[plttime_var],-qtpfi_prod_wex_dry,c='darkseagreen',label=terms[1])
+axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',linestyle='dotted',label='Modelled '+terms[1])
 axs[1].set_xlabel('Time [hr]')
 axs[1].set_title('Dry region')
 
@@ -412,7 +427,7 @@ thlvpfi_hdiv_dry = vint(thlvpf_hdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_va
 thlvpfi_subs_moist = vint(thlvpf_subs_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 thlvpfi_subs_dry = vint(thlvpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 
-# Moistening through SFS diffusion
+# Heating through SFS diffusion
 # thlvpfi_diff_moist = vint(thlvpf_diff_moist_time,rhobfi,zflim,plttime_var)
 # thlvpfi_diff_dry = vint(thlvpf_diff_dry_time,rhobfi,zflim,plttime_var)
 
