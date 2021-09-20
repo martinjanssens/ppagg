@@ -42,3 +42,13 @@ plt.plot(np.mean(wthlpf_moist_time[35:39,:],axis=0),zflim,c='C1')
 plt.plot(np.mean(wthlpf_moist_time100[23:25,:],axis=0),zflim,c='C1',linestyle='--')
 plt.plot(np.mean(0.608*thl_av_time[35:39,:]*wqtpf_moist_time[35:39,:],axis=0),zflim,c='C1')
 plt.plot(np.mean(0.608*thl_av_time100[23:25,:]*wqtpf_moist_time100[23:25,:],axis=0),zflim,c='C1',linestyle='--')
+
+#%% Spectra
+
+spec_qt_mn100 = spec_qt_mn
+spec_thl_mn100 = spec_thl_mn
+spec_thlv_mn100 = spec_thlv_mn
+spec_w_mn100 = spec_w_mn
+spec_wqt_mn100 = spec_wqt_mn
+spec_wthl_mn100 = spec_wthl_mn
+spec_wthlv_mn100 = spec_wthlv_mn

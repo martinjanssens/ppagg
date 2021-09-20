@@ -238,4 +238,4 @@ def compute_spectrum(cloud_scalar,dx,cloud_scalar_2=None):
     L = dx * N
     k1d = 2 * np.pi / L * np.arange(1, N // 2 + 1)
     
-    return k1d, psd_1d_rad
+    return k1d, psd_1d_rad  
