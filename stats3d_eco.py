@@ -43,12 +43,12 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 0#23
-itmax = len(time)
+itmin = 23#0#23
+itmax = 24#len(time)
 di    = 1
 izmin = 0
 izmax = 80
-store = True
+store = False
 
 klp = 4
 
@@ -83,15 +83,39 @@ thlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 thlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
+thlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+thlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
+thlvpp_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpp_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
+thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
+qt_av_time = np.zeros((plttime.size,izmax-izmin))
+thlv_av_time = np.zeros((plttime.size,izmax-izmin))
+
 thlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 thlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 wff_moist_time = np.zeros((plttime.size,izmax-izmin))
 wff_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 qlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 qlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+
+qtpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+qtpp_dry_time = np.zeros((plttime.size,izmax-izmin))
+thlpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+thlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
+wfp_moist_time = np.zeros((plttime.size,izmax-izmin))
+wfp_dry_time = np.zeros((plttime.size,izmax-izmin))
+qlpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
+
 
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -105,6 +129,9 @@ wqlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+
+wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 # Mask for low-[ass filtering
 circ_mask = np.zeros((xf.size,xf.size))
@@ -134,6 +161,8 @@ for i in range(len(plttime)):
     thlv_av = thl_av*(1+0.608*qt_av)
     
     thl_av_time[i,:] = thl_av
+    qt_av_time[i,:] = qt_av
+    thlv_av_time[i,:] = thlv_av
     
     # -> need presf for thv_av, taken from nearest 1d data time and half-level
     presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
@@ -151,7 +180,7 @@ for i in range(len(plttime)):
     
     # Perturbations
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
-    twp = vint(qt,rhobfi,zflim,tmin=i, tmax=i+1)
+    twp = np.trapz(rhobfi[:,np.newaxis,np.newaxis]*qt[:,:,:],zflim,axis=0)
     del qt
     
     gc.collect()
@@ -191,38 +220,64 @@ for i in range(len(plttime)):
     gc.collect()
     
 
-    # Moist/dry averaging, over the filtered scales
+    # Moist/dry averaging, over the large/small scales
     twp = lowPass(twp, circ_mask)
     mask_moist = np.zeros(twp.shape)
     mask_moist[twp - np.mean(twp) > 0] = 1
     mask_dry = 1 - mask_moist
     
-    thlp_moist = mean_mask(thlpf,mask_moist)
-    qtp_moist = mean_mask(qtpf,mask_moist)
-    w_moist = mean_mask(wff,mask_moist)
+    # Moist, large
+    thlpf_moist = mean_mask(thlpf,mask_moist)
+    qtpf_moist = mean_mask(qtpf,mask_moist)
+    wf_moist = mean_mask(wff,mask_moist)
     # w_moist_h = mean_mask(whf,mask_moist)
-    qlp_moist = mean_mask(qlpf,mask_moist)
+    qlpf_moist = mean_mask(qlpf,mask_moist)
     
-    thlp_dry = mean_mask(thlpf,mask_dry)
-    qtp_dry = mean_mask(qtpf,mask_dry)
-    w_dry = mean_mask(wff,mask_dry)
-    qlp_dry = mean_mask(qlpf,mask_dry)
-
-    thlpf_moist_time[i,:] = thlp_moist
-    thlpf_dry_time[i,:] = thlp_dry
-
-    qtpf_moist_time[i,:] = qtp_moist
-    qtpf_dry_time[i,:] = qtp_dry
-
-    thlvpf_moist_time[i,:] = thlp_moist + 0.608*thl_av*qtp_moist
-    thlvpf_dry_time[i,:] = thlp_dry + 0.608*thl_av*qtp_dry
-
-    wff_moist_time[i,:] = w_moist
-    wff_dry_time[i,:] = w_dry
+    # Dry, large
+    thlpf_dry = mean_mask(thlpf,mask_dry)
+    qtpf_dry = mean_mask(qtpf,mask_dry)
+    wf_dry = mean_mask(wff,mask_dry)
+    qlpf_dry = mean_mask(qlpf,mask_dry)
     
-    qlpf_moist_time[i,:] = qlp_moist
-    qlpf_dry_time[i,:] = qlp_dry
+    # Moist, small
+    thlpp_moist = mean_mask(thlpp,mask_moist)
+    qtpp_moist = mean_mask(qtpp,mask_moist)
+    wp_moist = mean_mask(wfp,mask_moist)
+    # w_moist_h = mean_mask(whf,mask_moist)
+    qlpp_moist = mean_mask(qlpp,mask_moist)
+    
+    # Dry, small
+    thlpp_dry = mean_mask(thlpp,mask_dry)
+    qtpp_dry = mean_mask(qtpp,mask_dry)
+    wp_dry = mean_mask(wfp,mask_dry)
+    qlpp_dry = mean_mask(qlpp,mask_dry)
 
+    # Store per variable
+    thlpf_moist_time[i,:] = thlpf_moist
+    thlpf_dry_time[i,:] = thlpf_dry
+    thlpp_moist_time[i,:] = thlpp_moist
+    thlpp_dry_time[i,:] = thlpp_dry
+
+    qtpf_moist_time[i,:] = qtpf_moist
+    qtpf_dry_time[i,:] = qtpf_dry
+    qtpp_moist_time[i,:] = qtpp_moist
+    qtpp_dry_time[i,:] = qtpp_dry
+
+    thlvpf_moist_time[i,:] = thlpf_moist + 0.608*thl_av*qtpf_moist
+    thlvpf_dry_time[i,:] = thlpf_dry + 0.608*thl_av*qtpf_dry
+    thlvpp_moist_time[i,:] = thlpp_moist + 0.608*thl_av*qtpp_moist
+    thlvpp_dry_time[i,:] = thlpp_dry + 0.608*thl_av*qtpp_dry
+
+    wff_moist_time[i,:] = wf_moist
+    wff_dry_time[i,:] = wf_dry
+    wfp_moist_time[i,:] = wp_moist
+    wfp_dry_time[i,:] = wp_dry
+    
+    qlpf_moist_time[i,:] = qlpf_moist
+    qlpf_dry_time[i,:] = qlpf_dry
+    qlpp_moist_time[i,:] = qlpp_moist
+    qlpp_dry_time[i,:] = qlpp_dry
+    
     ## Fluxes 
     # FIXME no sgs here yet!!
     wthlpf = lowPass((wff+wfp)*(thlpf+thlpp), circ_mask)
@@ -238,12 +293,15 @@ for i in range(len(plttime)):
     wqlpf_moist = mean_mask(wqlpf, mask_moist)
     wqlpf_dry = mean_mask(wqlpf, mask_dry)
 
-    wthlvp_av = np.mean((wff+wfp)*(thlpf+thlpp) + 
-                       0.608*thl_av[:,np.newaxis,np.newaxis]*(wff+wfp)*(qtpf+qtpp),
-                       axis=(1,2))
+    wthlvp = (wff+wfp)*((thlpf+thlpp) + 0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp))
+    wthlvp_av = np.mean(wthlvp,axis=(1,2))
+    wthlvpp = wthlvp - (wthlpf + 0.608*thl_av[:,np.newaxis,np.newaxis]*wqtpf)
+
     wthlvpf_moist = wthlpf_moist + 0.608*thl_av*wqtpf_moist
     wthlvpf_dry = wthlpf_dry + 0.608*thl_av*wqtpf_dry
-    
+
+    wthlvpp_moist = mean_mask(wthlvpp, mask_moist)
+    wthlvpp_dry = mean_mask(wthlvpp, mask_dry)
     
     wthlpf_moist_time[i,:] = wthlpf_moist
     wthlpf_dry_time[i,:] = wthlpf_dry
@@ -257,10 +315,14 @@ for i in range(len(plttime)):
     wthlvp_av_time[i,:] = wthlvp_av
     wthlvpf_moist_time[i,:] = wthlvpf_moist
     wthlvpf_dry_time[i,:] = wthlvpf_dry
+    wthlvpp_moist_time[i,:] = wthlvpp_moist
+    wthlvpp_dry_time[i,:] = wthlvpp_dry
     
     del wthlpf
     del wqtpf
     del wqlpf
+    del wthlvp
+    del wthlvpp
     gc.collect()
         
     ## BUDGET TERMS
@@ -278,48 +340,65 @@ for i in range(len(plttime)):
     # Gamma_ql_f = (Gamma_ql[1:] + Gamma_ql[:-1])*0.5
     Gamma_thlv_f = (Gamma_thlv[1:] + Gamma_thlv[:-1])*0.5
     
-    # thlv production
-    thlvpf_prod_moist = w_moist[1:-1]*Gamma_thlv_f
-    thlvpf_prod_dry = w_dry[1:-1]*Gamma_thlv_f
+    # Large-scale thlv production
+    thlvpf_prod_moist = wf_moist[1:-1]*Gamma_thlv_f
+    thlvpf_prod_dry = wf_dry[1:-1]*Gamma_thlv_f
     
     thlvpf_prod_moist_time[i,:] = thlvpf_prod_moist
     thlvpf_prod_dry_time[i,:] = thlvpf_prod_dry
     
+    # Small-scale
+    thlvpp_prod_moist = wp_moist[1:-1]*Gamma_thlv_f
+    thlvpp_prod_dry = wp_dry[1:-1]*Gamma_thlv_f
+    
+    thlvpp_prod_moist_time[i,:] = thlvpp_prod_moist
+    thlvpp_prod_dry_time[i,:] = thlvpp_prod_dry
+    
     # Moisture production term with actual w'
-    qtpf_prod_wex_moist = w_moist[1:-1]*Gamma_qt_f
-    qtpf_prod_wex_dry = w_dry[1:-1]*Gamma_qt_f
+    qtpf_prod_wex_moist = wf_moist[1:-1]*Gamma_qt_f
+    qtpf_prod_wex_dry = wf_dry[1:-1]*Gamma_qt_f
 
     qtpf_prod_moist_wex_time[i,:] = qtpf_prod_wex_moist
     qtpf_prod_dry_wex_time[i,:] = qtpf_prod_wex_dry
 
     
-    # Small-scale vertical flux divergence anomaly (with second order scheme)
+    # Reynolds vertical flux divergence anomaly (with second order scheme)
     
-    # Slab-averaged vertical flux divergence
-    div_wthl_av = np.mean(ddzwx_2nd(whp, thlpf+thlpp, dzh, rhobf=rhobfi),axis=(1,2))
-    div_wqt_av = np.mean(ddzwx_2nd(whp, qtpf+qtpp, dzh, rhobf=rhobfi),axis=(1,2))
-    div_wthlv_av = div_wthl_av + 0.608*thl_av[1:-1]*div_wqt_av
+    # thlv
+    div_wthlv_r = ddzwx_2nd(whp, thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*qtpp,
+                            dzh, rhobf=rhobfi)
+    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, 
+                                     thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
+                                     dzh, rhobf=rhobfi),axis=(1,2))
+    div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
+    div_wthlv_rp = div_wthlv_r - div_wthlv_rf
 
-    # Reynolds vertical flux divergence
-    div_wthl_r = lowPass(ddzwx_2nd(whp, thlpp, dzh, rhobf=rhobfi), circ_mask)
+    # Moist/dry and large/small scale
+    div_wthlv_rf_moist = mean_mask(div_wthlv_rf, mask_moist)
+    div_wthlv_rf_dry = mean_mask(div_wthlv_rf, mask_dry)
+    div_wthlv_rp_moist = mean_mask(div_wthlv_rp, mask_moist)
+    div_wthlv_rp_dry = mean_mask(div_wthlv_rp, mask_dry)
+    
+    thlvpf_vdiv_moist_time[i,:] = div_wthlv_rf_moist - div_wthlv_av
+    thlvpf_vdiv_dry_time[i,:] = div_wthlv_rf_dry - div_wthlv_av
+    thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist - div_wthlv_av
+    thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry - div_wthlv_av
+        
+    # qt
+    div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)
+    div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzh, rhobf=rhobfi),axis=(1,2))
+    div_wqt_rf = lowPass(div_wqt_r, circ_mask)
+    
+    div_wqt_rf_moist = mean_mask(div_wqt_rf,mask_moist)
+    div_wqt_rf_dry = mean_mask(div_wqt_rf,mask_dry)
+    
+    qtpf_vdiv_moist_time[i,:] = div_wqt_rf_moist - div_wqt_av
+    qtpf_vdiv_dry_time[i,:] = div_wqt_rf_dry - div_wqt_av
 
-    div_wqt_r = lowPass(ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi), circ_mask)
-    div_wqt_r_moist = mean_mask(div_wqt_r,mask_moist)
-    div_wqt_r_dry = mean_mask(div_wqt_r,mask_dry)
-    
-    qtpf_vdiv_moist_time[i,:] = div_wqt_r_moist - div_wqt_av
-    qtpf_vdiv_dry_time[i,:] = div_wqt_r_dry - div_wqt_av
-
-    div_wthlv_r = div_wthl_r + 0.608*thl_av[1:-1,np.newaxis,np.newaxis]*div_wqt_r
-    div_wthlv_r_moist = mean_mask(div_wthlv_r, mask_moist)
-    div_wthlv_r_dry = mean_mask(div_wthlv_r, mask_dry)
-    
-    thlvpf_vdiv_moist_time[i,:] = div_wthlv_r_moist - div_wthlv_av
-    thlvpf_vdiv_dry_time[i,:] = div_wthlv_r_dry - div_wthlv_av
-    
-    del div_wthl_r
+    del div_wthlv_rf
+    del div_wthlv_rp    
     del div_wqt_r
-    del div_wthlv_r
+    del div_wqt_rf
     gc.collect()
 
     # Moisture instability term model (WTG for thlv and qtpf model for flux anomaly div)
@@ -341,14 +420,22 @@ for i in range(len(plttime)):
     qtpf_prod_moist_time[i,:] = qtpf_prod_moist
     qtpf_prod_dry_time[i,:] = qtpf_prod_dry
 
-    # Horizontal thlv advection
-    # Can be verified to be small compared to div_wthlv-div_wthlv_av
-    div_uhthlvp = lowPass(ddxhuha_2nd(u, v, thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dx, dy), circ_mask)
-    div_uhthlvp_moist = mean_mask(div_uhthlvp,mask_moist)
-    div_uhthlvp_dry = mean_mask(div_uhthlvp,mask_dry)
+    # Horizontal advection
 
-    thlvpf_hdiv_moist_time[i,:] = div_uhthlvp_moist[1:-1]
-    thlvpf_hdiv_dry_time[i,:] = div_uhthlvp_dry[1:-1]
+    # Horizontal thlv advection
+    div_uhthlvp = ddxhuha_2nd(u, v, thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dx, dy)
+    div_uhthlvpf = lowPass(div_uhthlvp, circ_mask)
+    
+    # moist/dry and large/small scale
+    div_uhthlvpf_moist = mean_mask(div_uhthlvpf, mask_moist)
+    div_uhthlvpf_dry = mean_mask(div_uhthlvpf, mask_dry)
+    div_uhthlvpp_moist = mean_mask(div_uhthlvp - div_uhthlvpf, mask_moist)
+    div_uhthlvpp_dry = mean_mask(div_uhthlvp - div_uhthlvpf, mask_dry)
+
+    thlvpf_hdiv_moist_time[i,:] = div_uhthlvpf_moist[1:-1]
+    thlvpf_hdiv_dry_time[i,:] = div_uhthlvpf_dry[1:-1]
+    thlvpp_hdiv_moist_time[i,:] = div_uhthlvpp_moist[1:-1]
+    thlvpp_hdiv_dry_time[i,:] = div_uhthlvpp_dry[1:-1]
     
     # Horizontal moisture advection
     # intra-scale contribution largest, but entire term kept for now
@@ -360,18 +447,26 @@ for i in range(len(plttime)):
     qtpf_hdiv_dry_time[i,:] = div_uhqtp_dry[1:-1]
     
     del div_uhthlvp
+    del div_uhthlvpf
     del div_uhqtp
     del u
     del v
     gc.collect()
 
     # Subsidence warming
-    wsubdthlvpdzf = lowPass(wsubdxdz(wfls[izmin:izmax],thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dzh),circ_mask)
-    wsubdthlvpdzf_moist = mean_mask(wsubdthlvpdzf,mask_moist)
-    wsubdthlvpdzf_dry = mean_mask(wsubdthlvpdzf,mask_dry)
+    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dzh)
+    wsubdthlvpdzf = lowPass(wsubdthlvpdz, circ_mask)
+    
+    # moist/dry and large/small
+    wsubdthlvpdzf_moist = mean_mask(wsubdthlvpdzf, mask_moist)
+    wsubdthlvpdzf_dry = mean_mask(wsubdthlvpdzf, mask_dry)
+    wsubdthlvpdzp_moist = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_moist)
+    wsubdthlvpdzp_dry = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_dry)
     
     thlvpf_subs_moist_time[i,:] = wsubdthlvpdzf_moist[1:]
     thlvpf_subs_dry_time[i,:] = wsubdthlvpdzf_dry[1:]
+    thlvpp_subs_moist_time[i,:] = wsubdthlvpdzp_moist[1:]
+    thlvpp_subs_dry_time[i,:] = wsubdthlvpdzp_dry[1:]
     
     # Subsidence drying
     wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzh),circ_mask)
@@ -381,23 +476,30 @@ for i in range(len(plttime)):
     qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:]
     qtpf_subs_dry_time[i,:] = wsubdqtpdzf_dry[1:]
     
+    del wsubdthlvpdz
     del wsubdthlvpdzf
     del wsubdqtpdzf
     gc.collect()
 
     # SFS diffusion
     # Heat
-    # diff_thlvpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], 
-    #                               thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
-    #                               dx, dy, zf, rhobfi, rhobhi)+
-    #                     diffzeka(ekhp, thl_av[:,np.newaxis,np.newaxis]*(1+0.608*qt_av[:,np.newaxis,np.newaxis]),
-    #                              dzh, rhobfi, rhobhi),
-    #                     circ_mask)
-    # diff_thlvpf_moist = mean_mask(diff_thlvpf,mask_moist)
-    # diff_thlvpf_dry = mean_mask(diff_thlvpf,mask_dry)
+    # diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], 
+    #                       thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
+    #                       dx, dy, zf, rhobfi, rhobhi) +
+    #               diffzeka(ekhp, thl_av[:,np.newaxis,np.newaxis]*(1+0.608*qt_av[:,np.newaxis,np.newaxis]),
+    #                        dzh, rhobfi, rhobhi))
+    # diff_thlvpf = lowPass(diff_thlvp, circ_mask)
+    
+    # # moist/dry and large/small
+    # diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
+    # diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
+    # diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
+    # diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
 
     # thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist
     # thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry
+    # thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
+    # thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
     
     # # Moisture
     # diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
@@ -440,15 +542,36 @@ if store:
     np.save(lp+'/thlvpf_diff_moist_time.npy',thlvpf_diff_moist_time)
     np.save(lp+'/thlvpf_diff_dry_time.npy',thlvpf_diff_dry_time)
     
+    np.save(lp+'/thlvpp_moist_time.npy',thlvpp_moist_time)
+    np.save(lp+'/thlvpp_dry_time.npy',thlvpp_dry_time)
+    np.save(lp+'/thlvpp_prod_moist_time.npy',thlvpp_prod_moist_time)
+    np.save(lp+'/thlvpp_prod_dry_time.npy',thlvpp_prod_dry_time)
+    np.save(lp+'/thlvpp_vdiv_moist_time.npy',thlvpp_vdiv_moist_time)
+    np.save(lp+'/thlvpp_vdiv_dry_time.npy',thlvpp_vdiv_dry_time)
+    np.save(lp+'/thlvpp_hdiv_moist_time.npy',thlvpp_hdiv_moist_time)
+    np.save(lp+'/thlvpp_hdiv_dry_time.npy',thlvpp_hdiv_dry_time)
+    np.save(lp+'/thlvpp_subs_moist_time.npy',thlvpp_subs_moist_time)
+    np.save(lp+'/thlvpp_subs_dry_time.npy',thlvpp_subs_dry_time)
+    np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
+    np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
+    
     np.save(lp+'/thl_av_time.npy',thl_av_time)
+    np.save(lp+'/thlv_av_time.npy',thlv_av_time)
+    np.save(lp+'/qt_av_time.npy',qt_av_time)
+    
     np.save(lp+'/thlpf_moist_time.npy',thlpf_moist_time)
     np.save(lp+'/thlpf_dry_time.npy',thlpf_dry_time)
-    
     np.save(lp+'/wff_moist_time.npy',wff_moist_time)
     np.save(lp+'/wff_dry_time.npy',wff_dry_time)
-    
     np.save(lp+'/qlpf_moist_time.npy',qlpf_moist_time) 
     np.save(lp+'/qlpf_dry_time.npy',qlpf_dry_time)
+    
+    np.save(lp+'/thlpp_moist_time.npy',thlpp_moist_time)
+    np.save(lp+'/thlpp_dry_time.npy',thlpp_dry_time)
+    np.save(lp+'/wfp_moist_time.npy',wfp_moist_time)
+    np.save(lp+'/wfp_dry_time.npy',wfp_dry_time)
+    np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
+    np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
     
     np.save(lp+'/wthlpf_moist_time',wthlpf_moist_time)
     np.save(lp+'/wthlpf_dry_time',wthlpf_dry_time)
@@ -462,5 +585,7 @@ if store:
     np.save(lp+'/wthlvp_av_time',wthlvp_av_time)
     np.save(lp+'/wthlvpf_moist_time',wthlvpf_moist_time)
     np.save(lp+'/wthlvpf_dry_time',wthlvpf_dry_time)
+    np.save(lp+'/wthlvpp_moist_time',wthlvpp_moist_time)
+    np.save(lp+'/wthlvpp_dry_time',wthlvpp_dry_time)
     
 
