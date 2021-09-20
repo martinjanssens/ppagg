@@ -14,7 +14,7 @@ import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex100'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ds0= nc.Dataset(lp+'/tmser.001.nc')
@@ -43,12 +43,12 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 23#0#23
-itmax = 24#len(time)
+itmin = 0#23
+itmax = 47#len(time)
 di    = 1
 izmin = 0
 izmax = 80
-store = False
+store = True
 
 klp = 4
 
@@ -573,19 +573,19 @@ if store:
     np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
     np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
     
-    np.save(lp+'/wthlpf_moist_time',wthlpf_moist_time)
-    np.save(lp+'/wthlpf_dry_time',wthlpf_dry_time)
+    np.save(lp+'/wthlpf_moist_time.npy',wthlpf_moist_time)
+    np.save(lp+'/wthlpf_dry_time.npy',wthlpf_dry_time)
     
-    np.save(lp+'/wqtpf_moist_time',wqtpf_moist_time)
-    np.save(lp+'/wqtpf_dry_time',wqtpf_dry_time)
+    np.save(lp+'/wqtpf_moist_time.npy',wqtpf_moist_time)
+    np.save(lp+'/wqtpf_dry_time.npy',wqtpf_dry_time)
     
-    np.save(lp+'/wqlpf_moist_time',wqlpf_moist_time)
-    np.save(lp+'/wqlpf_dry_time',wqlpf_dry_time)
+    np.save(lp+'/wqlpf_moist_time.npy',wqlpf_moist_time)
+    np.save(lp+'/wqlpf_dry_time.npy',wqlpf_dry_time)
     
-    np.save(lp+'/wthlvp_av_time',wthlvp_av_time)
-    np.save(lp+'/wthlvpf_moist_time',wthlvpf_moist_time)
-    np.save(lp+'/wthlvpf_dry_time',wthlvpf_dry_time)
-    np.save(lp+'/wthlvpp_moist_time',wthlvpp_moist_time)
-    np.save(lp+'/wthlvpp_dry_time',wthlvpp_dry_time)
+    np.save(lp+'/wthlvp_av_time.npy',wthlvp_av_time)
+    np.save(lp+'/wthlvpf_moist_time.npy',wthlvpf_moist_time)
+    np.save(lp+'/wthlvpf_dry_time.npy',wthlvpf_dry_time)
+    np.save(lp+'/wthlvpp_moist_time.npy',wthlvpp_moist_time)
+    np.save(lp+'/wthlvpp_dry_time.npy',wthlvpp_dry_time)
     
 

@@ -60,15 +60,34 @@ thlvpf_hdiv_dry_time = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
 thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
 thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_dry_time.npy')
 
+thlvpp_moist_time = np.load(lp+'/thlvpp_moist_time.npy')
+thlvpp_dry_time = np.load(lp+'/thlvpp_dry_time.npy')
+thlvpp_prod_moist_time = np.load(lp+'/thlvpp_prod_moist_time.npy')
+thlvpp_prod_dry_time = np.load(lp+'/thlvpp_prod_dry_time.npy')
+thlvpp_vdiv_moist_time = np.load(lp+'/thlvpp_vdiv_moist_time.npy')
+thlvpp_vdiv_dry_time = np.load(lp+'/thlvpp_vdiv_dry_time.npy')
+thlvpp_hdiv_moist_time = np.load(lp+'/thlvpp_hdiv_moist_time.npy')
+thlvpp_hdiv_dry_time = np.load(lp+'/thlvpp_hdiv_dry_time.npy')
+thlvpp_subs_moist_time = np.load(lp+'/thlvpp_subs_moist_time.npy')
+thlvpp_subs_dry_time = np.load(lp+'/thlvpp_subs_dry_time.npy')
+
 thl_av_time = np.load(lp+'/thl_av_time.npy')
+thlv_av_time = np.load(lp+'/thlv_av_time.npy')
+qt_av_time = np.load(lp+'/qt_av_time.npy')
+
 thlpf_moist_time = np.load(lp+'/thlpf_moist_time.npy')
 thlpf_dry_time = np.load(lp+'/thlpf_dry_time.npy')
-
 wff_moist_time = np.load(lp+'/wff_moist_time.npy')
 wff_dry_time = np.load(lp+'/wff_dry_time.npy')
-
 qlpf_moist_time = np.load(lp+'/qlpf_moist_time.npy') 
 qlpf_dry_time = np.load(lp+'/qlpf_dry_time.npy')
+
+thlpp_moist_time = np.load(lp+'/thlpp_moist_time.npy')
+thlpp_dry_time = np.load(lp+'/thlpp_dry_time.npy')
+wfp_moist_time = np.load(lp+'/wfp_moist_time.npy')
+wfp_dry_time = np.load(lp+'/wfp_dry_time.npy')
+qlpp_moist_time = np.load(lp+'/qlpp_moist_time.npy') 
+qlpp_dry_time = np.load(lp+'/qlpp_dry_time.npy')
 
 wthlpf_moist_time = np.load(lp+'/wthlpf_moist_time.npy')
 wthlpf_dry_time = np.load(lp+'/wthlpf_dry_time.npy')
@@ -82,6 +101,8 @@ wqlpf_dry_time = np.load(lp+'/wqlpf_dry_time.npy')
 wthlvp_av_time = np.load(lp+'/wthlvp_av_time.npy')
 wthlvpf_moist_time = np.load(lp+'/wthlvpf_moist_time.npy')
 wthlvpf_dry_time = np.load(lp+'/wthlvpf_dry_time.npy')
+wthlvpp_moist_time = np.load(lp+'/wthlvpp_moist_time.npy')
+wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
 
 thvpf_moist_time = thlvpf_moist_time + 7*thl_av_time*qlpf_moist_time
 thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
@@ -132,6 +153,43 @@ for i in range(len(plttime_var)):
 
 axs[0].set_ylabel('z [m]')
 axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+
+#%% Plotprofiles of  small-scale-filtered variables in time
+tpltmin = 6.
+tpltmax = 18.
+dit = 1.0 # Rounds to closest multiple of dt in time
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+
+fig,axs = plt.subplots(ncols=4,sharey=True,figsize=(8,5))
+for i in range(len(plttime_var)):
+    col = plt.cm.cubehelix(i/len(plttime_var))
+
+    axs[0].plot(thlvpp_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
+    axs[0].axvline(0,color='gray',linestyle='dotted')
+    axs[0].set_xlabel(r"$\theta_{lv}'''$")
+    axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+    
+    axs[1].plot(wfp_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
+    axs[1].axvline(0,color='gray',linestyle='dotted')
+    axs[1].set_xlabel(r"$w'''$")
+    axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+
+    axs[2].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
+    axs[2].axvline(0,color='gray',linestyle='dotted')
+    axs[2].set_xlabel(r"$\theta_l'''$")
+    axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+    
+    axs[3].plot(qlpp_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime_var[i]],color=col,linestyle='-')
+    axs[3].axvline(0,color='gray',linestyle='dotted')
+    axs[3].set_xlabel(r"$q_l'''$")
+    axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+
+axs[0].set_ylabel('z [m]')
+axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
