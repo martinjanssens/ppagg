@@ -1,0 +1,7 @@
+#!/bin/bash
+#SBATCH -t 6:00:00
+#SBATCH -n 1  #total number of tasks, number of nodes calculated automatically
+
+source ~/.bashrc
+conda activate cloudmetenv
+python ~/scripts/pp3d/stats3d_eco.py
