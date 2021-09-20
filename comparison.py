@@ -44,7 +44,7 @@ plt.plot(np.mean(0.608*thl_av_time[35:39,:]*wqtpf_moist_time[35:39,:],axis=0),zf
 plt.plot(np.mean(0.608*thl_av_time100[23:25,:]*wqtpf_moist_time100[23:25,:],axis=0),zflim,c='C1',linestyle='--')
 
 #%% Spectra
-
+k1d100 = k1d
 spec_qt_mn100 = spec_qt_mn
 spec_thl_mn100 = spec_thl_mn
 spec_thlv_mn100 = spec_thlv_mn
@@ -52,3 +52,71 @@ spec_w_mn100 = spec_w_mn
 spec_wqt_mn100 = spec_wqt_mn
 spec_wthl_mn100 = spec_wthl_mn
 spec_wthlv_mn100 = spec_wthlv_mn
+
+fig = plt.figure(); ax = plt.gca()
+ax.loglog(k1d,spec_qt_mn[-1,izpl,:],label=r"200m, t=9-10 hr")
+ax.loglog(k1d100,spec_qt_mn100[-1,izpl,:],label=r"100m, t=11-12 hr")
+ax.set_ylabel(r"$k\widehat{q_t}'^2$")
+ax.set_xlabel(r"Wavenumber [1/m]")
+ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
+
+ax2 = ax.twiny()
+fig.subplots_adjust(bottom=0.22)
+ax2.xaxis.set_ticks_position('bottom')
+ax2.xaxis.set_label_position('bottom')
+ax2.spines['bottom'].set_position(('axes',-0.22))
+ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
+ax2.set_xscale('log')
+ax2.set_xlabel('Wavelength [m]')
+plt.show()
+
+fig = plt.figure(); ax = plt.gca()
+ax.loglog(k1d,spec_thlv_mn[-1,izpl,:],label=r"200m, t=9-10 hr")
+ax.loglog(k1d100,spec_thlv_mn100[-1,izpl,:],label=r"100m, t=11-12 hr")
+ax.set_ylabel(r"$k\widehat{\theta_{lv}}'^2$")
+ax.set_xlabel(r"Wavenumber [1/m]")
+ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
+
+ax2 = ax.twiny()
+fig.subplots_adjust(bottom=0.22)
+ax2.xaxis.set_ticks_position('bottom')
+ax2.xaxis.set_label_position('bottom')
+ax2.spines['bottom'].set_position(('axes',-0.22))
+ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
+ax2.set_xscale('log')
+ax2.set_xlabel('Wavelength [m]')
+plt.show()
+
+fig = plt.figure(); ax = plt.gca()
+ax.loglog(k1d,spec_w_mn[-1,izpl,:],label=r"200m, t=9-10 hr")
+ax.loglog(k1d100,spec_w_mn100[-1,izpl,:],label=r"100m, t=11-12 hr")
+ax.set_ylabel(r"$k\widehat{w}'^2$")
+ax.set_xlabel(r"Wavenumber [1/m]")
+ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
+
+ax2 = ax.twiny()
+fig.subplots_adjust(bottom=0.22)
+ax2.xaxis.set_ticks_position('bottom')
+ax2.xaxis.set_label_position('bottom')
+ax2.spines['bottom'].set_position(('axes',-0.22))
+ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
+ax2.set_xscale('log')
+ax2.set_xlabel('Wavelength [m]')
+plt.show()
+
+fig = plt.figure(); ax = plt.gca()
+ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"200m, t=9-10 hr")
+ax.loglog(k1d100,spec_wthlv_mn100[-1,izpl,:],label=r"100m, t=11-12 hr")
+ax.set_ylabel(r"$k\widehat{w'\theta_{lv}'}^2$")
+ax.set_xlabel(r"Wavenumber [1/m]")
+ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
+
+ax2 = ax.twiny()
+fig.subplots_adjust(bottom=0.22)
+ax2.xaxis.set_ticks_position('bottom')
+ax2.xaxis.set_label_position('bottom')
+ax2.spines['bottom'].set_position(('axes',-0.22))
+ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
+ax2.set_xscale('log')
+ax2.set_xlabel('Wavelength [m]')
+plt.show()

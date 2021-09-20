@@ -19,8 +19,8 @@ from functions import *
 itmin = 35#23
 itmax = 39
 di    = 1
-izmin = 39
-izmax = 40
+izmin = 10
+izmax = 11
 
 klp = 4
 
@@ -106,7 +106,7 @@ for i in range(len(plttime)):
     gc.collect()
 
 #%% Average over time
-itav = 4 # number of time steps to average over -> MUST BE MULTIPLE OF len(plttime)
+itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
 
 spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
 spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
