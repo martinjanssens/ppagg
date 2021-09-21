@@ -19,8 +19,8 @@ from functions import *
 itmin = 35#23
 itmax = 39
 di    = 1
-izmin = 10
-izmax = 11
+izmin = 39
+izmax = 40
 
 klp = 4
 
@@ -99,9 +99,9 @@ for i in range(len(plttime)):
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
         k1d,spec_w[i,iz,:] = compute_spectrum(wf[iz,:,:], dx)
         
-        k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:]*qt[iz,:,:], dx)
-        k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx)
-        k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx)
+        k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, qt[iz,:,:])
+        k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thl[iz,:,:])
+        k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thlv[iz,:,:])
     
     gc.collect()
 
@@ -133,7 +133,7 @@ plot_spectrum(k1d, spec_wqt_mn, r"$k\hat{wq}_t'$", plttime_mn)
 plot_spectrum(k1d, spec_wthl_mn, r"$k\hat{w\theta}_l'$", plttime_mn)
 plot_spectrum(k1d, spec_wthlv_mn, r"$k\hat{w\theta}_{lv}'$", plttime_mn)
 
-#%% Plot in same spectrum
+#%% Plot in same spectrum FIXME is not yet implemented
 
 fig = plt.figure(); ax = plt.gca()
 ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"$w\theta_{lv}$")

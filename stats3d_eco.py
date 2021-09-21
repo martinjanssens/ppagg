@@ -14,7 +14,7 @@ import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
-lp = '/scratch-shared/janssens/bomex100'
+lp = '/scratch-shared/janssens/bomex200_e12'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ds0= nc.Dataset(lp+'/tmser.001.nc')
@@ -43,12 +43,12 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 0#23
-itmax = 47#len(time)
+itmin = 35#23
+itmax = 36#len(time)
 di    = 1
 izmin = 0
 izmax = 80
-store = True
+store = False
 
 klp = 4
 
@@ -119,17 +119,13 @@ qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 wqtpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqtpf_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 wqlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 wthlvp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
@@ -295,7 +291,7 @@ for i in range(len(plttime)):
 
     wthlvp = (wff+wfp)*((thlpf+thlpp) + 0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp))
     wthlvp_av = np.mean(wthlvp,axis=(1,2))
-    wthlvpp = wthlvp - (wthlpf + 0.608*thl_av[:,np.newaxis,np.newaxis]*wqtpf)
+    wthlvpp = wthlvp - (wthlpf + 0.608*thl_av[:,np.newaxis,np.newaxis]*wqtpf) + wthlvp_av[:,np.newaxis,np.newaxis]
 
     wthlvpf_moist = wthlpf_moist + 0.608*thl_av*wqtpf_moist
     wthlvpf_dry = wthlpf_dry + 0.608*thl_av*wqtpf_dry
@@ -371,7 +367,7 @@ for i in range(len(plttime)):
                                      thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
                                      dzh, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
-    div_wthlv_rp = div_wthlv_r - div_wthlv_rf
+    div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous flux
 
     # Moist/dry and large/small scale
     div_wthlv_rf_moist = mean_mask(div_wthlv_rf, mask_moist)
@@ -381,8 +377,8 @@ for i in range(len(plttime)):
     
     thlvpf_vdiv_moist_time[i,:] = div_wthlv_rf_moist - div_wthlv_av
     thlvpf_vdiv_dry_time[i,:] = div_wthlv_rf_dry - div_wthlv_av
-    thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist - div_wthlv_av
-    thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry - div_wthlv_av
+    thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist
+    thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry
         
     # qt
     div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)

@@ -575,8 +575,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes (no sgs yet)
 
 # Time to average over
-tpltmin = 12.
-tpltmax = 16.
+tpltmin = 9.
+tpltmax = 10.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -642,12 +642,22 @@ plt.xlabel(r"$\widetilde{w'''\theta_{lv}'''} - \overline{w'\theta_{lv}'}$, dry r
 plt.legend()
 plt.show()
 
-# Plot wthlv in small scales in moist/dry
+# Plot wthlv in moist/dry
 plt.plot(wthlvppmn_moist,zflim,label=r"Moist")
 plt.plot(wthlvppmn_dry,zflim,label=r"Dry")
 plt.plot(wthlvpmn_av,zflim,label=r"Average")
 plt.ylabel('z [m]')
 plt.xlabel(r"$(w'''\theta_{lv}''')''$ [Km/s]")
+plt.legend()
+plt.show()
+
+# Plot wthlv anomaly in large/small and moist/dry
+plt.plot(wthlvpfmn_moist-wthlvpmn_av,zflim,label=r"Moist, large")
+plt.plot(wthlvpfmn_dry-wthlvpmn_av,zflim,label=r"Dry, large")
+plt.plot(wthlvppmn_moist,zflim,linestyle='--',c='C0',label=r"Moist, small")
+plt.plot(wthlvppmn_dry,zflim,linestyle='--',c='C1',label=r"Dry, small")
+plt.ylabel('z [m]')
+plt.xlabel(r"$w'''\theta_{lv}''' - \overline{w'''\theta_{lv}'''}$ [Km/s]")
 plt.legend()
 plt.show()
 
