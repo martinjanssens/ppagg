@@ -43,12 +43,12 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 0#23
-itmax = len(time)
+itmin = 63#23
+itmax = 64#len(time)
 di    = 1
 izmin = 0
 izmax = 80
-store = True
+store = False
 
 klp = 4
 
@@ -96,6 +96,19 @@ thlvpp_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpp_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
+wthlvpf_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_buoy_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_buoy_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
+wthlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
 qt_av_time = np.zeros((plttime.size,izmax-izmin))
 thlv_av_time = np.zeros((plttime.size,izmax-izmin))
@@ -115,7 +128,6 @@ wfp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wfp_dry_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
-
 
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -356,7 +368,15 @@ for i in range(len(plttime)):
 
     qtpf_prod_moist_wex_time[i,:] = qtpf_prod_wex_moist
     qtpf_prod_dry_wex_time[i,:] = qtpf_prod_wex_dry
-
+    
+    # wthlv
+    wthlvpf_prod = lowPass(wfp**2,circ_mask)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis]
+    wthlvp_prod_av = np.mean(wthlvpf_prod,axis=(1,2))
+    wthlvpf_prod_moist_time[i,:] = mean_mask(wthlvpf_prod, mask_moist) - wthlvp_prod_av
+    wthlvpf_prod_dry_time[i,:] = mean_mask(wthlvpf_prod, mask_dry) - wthlvp_prod_av
+    
+    del wthlvpf_prod
+    gc.collect()
     
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
@@ -379,7 +399,14 @@ for i in range(len(plttime)):
     thlvpf_vdiv_dry_time[i,:] = div_wthlv_rf_dry - div_wthlv_av
     thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist
     thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry
-        
+    
+    # wthlv
+    wdiv_wthlvf_r = lowPass(wfp[1:-1,:,:]*div_wthlv_r,circ_mask)
+    # wdiv_wthlvf_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
+    wdivwthlvf_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
+
+    # thlvpdiv_wwf_r = FIXME START HERE
+    
     # qt
     div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)
     div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzh, rhobf=rhobfi),axis=(1,2))
