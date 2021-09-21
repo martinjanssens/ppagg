@@ -16,15 +16,15 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
 # Run specifics
-itmin = 35#23
-itmax = 39
+itmin = 11#23
+itmax = 47
 di    = 1
 izmin = 39
 izmax = 40
 
 klp = 4
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex100'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
@@ -69,6 +69,7 @@ spec_qt = np.zeros((len(plttime),len(zflim),N2))
 spec_thl = np.zeros((len(plttime),len(zflim),N2))
 spec_thlv = np.zeros((len(plttime),len(zflim),N2))
 spec_w = np.zeros((len(plttime),len(zflim),N2))
+spec_ql = np.zeros((len(plttime),len(zflim),N2))
 spec_wqt = np.zeros((len(plttime),len(zflim),N2))
 spec_wthl = np.zeros((len(plttime),len(zflim),N2))
 spec_wthlv = np.zeros((len(plttime),len(zflim),N2))
@@ -79,7 +80,7 @@ for i in range(len(plttime)):
     qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
     wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
     thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
-    # qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
+    ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
     # u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     # v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
     
@@ -89,6 +90,7 @@ for i in range(len(plttime)):
     thl = thl - thl_av
     thlv = thlv - np.mean(thlv,axis=(1,2))
     qt = qt - np.mean(qt,axis=(1,2))
+    ql = ql - np.mean(qt,axis=(1,2))
     
     wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
     del wh
@@ -98,6 +100,7 @@ for i in range(len(plttime)):
         k1d,spec_thl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx)
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
         k1d,spec_w[i,iz,:] = compute_spectrum(wf[iz,:,:], dx)
+        k1d,spec_ql[i,iz,:] = compute_spectrum(ql[iz,:,:], dx)
         
         k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, qt[iz,:,:])
         k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thl[iz,:,:])
@@ -106,12 +109,13 @@ for i in range(len(plttime)):
     gc.collect()
 
 #%% Average over time
-itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
+itav = 2 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
 
 spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
 spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
 spec_thlv_mn = block_reduce(spec_thlv,(itav,1,1),func=np.mean)
 spec_w_mn = block_reduce(spec_w,(itav,1,1),func=np.mean)
+spec_ql_mn = block_reduce(spec_ql,(itav,1,1),func=np.mean)
 
 spec_wqt_mn = block_reduce(spec_wqt,(itav,1,1),func=np.mean)
 spec_wthl_mn = block_reduce(spec_wthl,(itav,1,1),func=np.mean)
@@ -123,15 +127,16 @@ plttime_mn = plttime[::itav]
 izpl = 0
 
 # Variances
-plot_spectrum(k1d, spec_qt_mn, r"$k\hat{q}_t'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thl_mn, r"$k\hat{\theta}_l'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thlv_mn, r"$k\hat{\theta}_{lv}'^2$", plttime_mn)
-plot_spectrum(k1d, spec_w_mn, r"$k\hat{w}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_qt_mn, r"$k\widehat{q}_t'^2$", plttime_mn)
+plot_spectrum(k1d, spec_thl_mn, r"$k\widehat{\theta}_l'^2$", plttime_mn)
+plot_spectrum(k1d, spec_thlv_mn, r"$k\widehat{\theta}_{lv}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_w_mn, r"$k\widehat{w}'^2$", plttime_mn)
+plot_spectrum(k1d, spec_ql_mn, r"$k\widehat{q_l}'^2$", plttime_mn)
 
 # Fluxes
-plot_spectrum(k1d, spec_wqt_mn, r"$k\hat{wq}_t'$", plttime_mn)
-plot_spectrum(k1d, spec_wthl_mn, r"$k\hat{w\theta}_l'$", plttime_mn)
-plot_spectrum(k1d, spec_wthlv_mn, r"$k\hat{w\theta}_{lv}'$", plttime_mn)
+plot_spectrum(k1d, spec_wqt_mn, r"$k\widehat{wq}_t'$", plttime_mn)
+plot_spectrum(k1d, spec_wthl_mn, r"$k\widehat{w\theta}_l'$", plttime_mn)
+plot_spectrum(k1d, spec_wthlv_mn, r"$k\widehat{w\theta}_{lv}'$", plttime_mn)
 
 #%% Plot in same spectrum FIXME is not yet implemented
 
@@ -140,7 +145,7 @@ ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"$w\theta_{lv}$")
 ax.loglog(k1d,spec_wthlv_t_mn[-1,izpl,:],label=r"$w\theta_{lv}'$")
 ax.loglog(k1d,spec_wthlv_r_mn[-1,izpl,:],label=r"$w'''\theta_{lv}'''$")
 # ax.set_ylim((1e-4,1e2))
-ax.set_ylabel(r"$k\hat{w\theta}_{lv}'$")
+ax.set_ylabel(r"$k\widehat{w\theta}_{lv}'$")
 ax.set_xlabel(r"Wavenumber [1/m]")
 ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
 

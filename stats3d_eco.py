@@ -43,12 +43,12 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 35#23
-itmax = 36#len(time)
+itmin = 0#23
+itmax = len(time)
 di    = 1
 izmin = 0
 izmax = 80
-store = False
+store = True
 
 klp = 4
 

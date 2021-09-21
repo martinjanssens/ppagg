@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex100'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ds0= nc.Dataset(lp+'/tmser.001.nc')
@@ -109,7 +109,7 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 18.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -154,7 +154,7 @@ for i in range(len(plttime_var)):
 axs[0].set_ylabel('z [m]')
 axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
-#%% Plotprofiles of  small-scale-filtered variables in time
+#%% Plot profiles of small-scale-filtered variables in time
 tpltmin = 6.
 tpltmax = 18.
 dit = 1.0 # Rounds to closest multiple of dt in time
@@ -193,8 +193,8 @@ axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 12.
-tpltmax = 16.
+tpltmin = 18.
+tpltmax = 22.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -749,3 +749,26 @@ plt.scatter(qtpf_dry_mod.flatten(),wthlvpf_dry_anom.flatten(),c='C1',s=0.1)
 plt.ylabel(r"Average $\widetilde{w'\theta_{lv}'} - \overline{w'\theta_{lv}'}$ in moist and dry regions")
 plt.xlabel(r"$0.608\overline{\theta_l}\widetilde{q_t'}$")
 plt.legend()
+
+#%% Gradients in time
+
+tpltmin = 6.
+tpltmax = 16.
+dit = 1.0 # Rounds to closest multiple of dt in time
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+
+fig = plt.figure(figsize=(5,5))
+ax = plt.gca()
+for i in range(len(plttime_var)):
+    col = plt.cm.cubehelix(i/len(plttime_var))
+        
+    ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
+            label='t=%.2f'%time[plttime_var[i]],color=col)
+    ax.set_xlabel(r"$\overline{\theta_{lv}}$")
+    ax.set_ylabel(r"$\overline{q_t}$")
+
+ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
