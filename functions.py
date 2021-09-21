@@ -59,6 +59,16 @@ def ddzwx_2nd(wh,x,dzh,rhobf=None):
                            rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
              (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
 
+def ddzw2x_2nd(wh,x,dzh,rhobf=None):
+    # Assumes constant dz
+    if type(rhobf) == type(None):
+        rhobf = np.ones(x.shape[0])
+    return ((wh[2:,:,:]**2*(rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:] + 
+                            rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]) - 
+             wh[1:-1,:,:]**2*(rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:]+
+                              rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
+             (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
+
 def kddza_2nd(k,x,zf,rhobf=None):
     # Assumes constant dz
     if type(rhobf) == type(None):
@@ -76,9 +86,33 @@ def kddza_2nd(k,x,zf,rhobf=None):
 def ddxhuha_2nd(u,v,a,dx,dy):
     # Assumes constant dx, dy, shape (z,y,x)
     return ((np.roll(u,-1,axis=2)*(np.roll(a,-1,axis=2) + a) -
-             u                  *(np.roll(a,1,axis=2) + a))/(2*dx) +
+             u                   *(np.roll(a,1,axis=2) + a))/(2*dx) +
             (np.roll(v,-1,axis=1)*(np.roll(a,-1,axis=1) + a) -
-             v                  *(np.roll(a,1,axis=1) + a))/(2*dy))
+             v                   *(np.roll(a,1,axis=1) + a))/(2*dy))
+
+def ddxhuhwa_2nd(u,v,w,a,dx,dy):
+    # Assumes constant dx, dy, shape (z,y,x)
+    return (( np.roll(u[1:-1,:,:],-1,axis=2)*
+             (np.roll(a[1:-1,:,:],-1,axis=2) + a[1:-1,:,:])*
+             (w[2:,:,:] + w[1:-1,:,:] +
+              np.roll(w[2:,:,:],-1,axis=2) + np.roll(w[1:-1,:,:],-1,axis=2))
+             -
+              u[1:-1,:,:]*
+             (np.roll(a[1:-1,:,:],1,axis=2) + a[1:-1,:,:])*
+             (np.roll(w[2:,:,:],1,axis=2) + np.roll(w[1:-1,:,:],1,axis=2) +
+              w[2:,:,:] + w[1:-1,:,:]))
+            / (8*dx) +
+            
+            ( np.roll(v[1:-1,:,:],-1,axis=1)*
+             (np.roll(a[1:-1,:,:],-1,axis=1) + a[1:-1,:,:])*
+             (w[2:,:,:] + w[1:-1,:,:] +
+              np.roll(w[2:,:,:],-1,axis=1) + np.roll(w[1:-1,:,:],-1,axis=1))
+             -
+             v[1:-1,:,:]*
+             (np.roll(a[1:-1,:,:],1,axis=1) + a[1:-1,:,:])*
+             (np.roll(w[2:,:,:],1,axis=1) + np.roll(w[1:-1,:,:],1,axis=1)+
+              w[2:,:,:] + w[1:-1,:,:]))
+            / (8*dy))
 
 def wsubdxdz(wfls,x,dzh):
     # Assumes constant dz, wfls < 0, returns values starting at full level 0
