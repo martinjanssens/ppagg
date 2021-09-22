@@ -17,14 +17,14 @@ from functions import *
 
 # Run specifics
 itmin = 11#23
-itmax = 47
+itmax = 35
 di    = 1
 izmin = 39
 izmax = 40
 
 klp = 4
 
-lp = '/scratch-shared/janssens/bomex100'
+lp = '/scratch-shared/janssens/bomex200'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
@@ -105,7 +105,11 @@ for i in range(len(plttime)):
         k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, qt[iz,:,:])
         k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thl[iz,:,:])
         k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thlv[iz,:,:])
-    
+        
+        # k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:]*qt[iz,:,:], dx,sqrt=True)
+        # k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx,sqrt=True)
+        # k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx,sqrt=True)
+        
     gc.collect()
 
 #%% Average over time

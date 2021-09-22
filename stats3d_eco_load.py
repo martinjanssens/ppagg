@@ -109,7 +109,7 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 24.
+tpltmax = 16.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -124,31 +124,37 @@ for i in range(len(plttime_var)):
     axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
     axs[0].axvline(0,color='gray',linestyle='dotted')
     axs[0].set_xlabel(r"$\widetilde{q_t'}$")
+    axs[0].set_xlim((0,6e-4))
     axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
     axs[1].axvline(0,color='gray',linestyle='dotted')
     axs[1].set_xlabel(r"$\widetilde{\theta_{lv}'}$")
+    axs[1].set_xlim((-4e-2,1e-2))
     axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
     axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[2].axvline(0,color='gray',linestyle='dotted')
     axs[2].set_xlabel(r"$\widetilde{w'}$")
+    axs[2].set_xlim((-1e-2,1.7e-2))
     axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[3].axvline(0,color='gray',linestyle='dotted')
     axs[3].set_xlabel(r"$\widetilde{\theta_l'}$")
+    axs[3].set_xlim((-1.2e-1,0))
     axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[4].plot(thvpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[4].axvline(0,color='gray',linestyle='dotted')
     axs[4].set_xlabel(r"$\widetilde{\theta_v'}$")
+    axs[4].set_xlim((-2.5e-2,2.5e-2))
     axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
     axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime_var[i]],color=col,linestyle='-')
     axs[5].axvline(0,color='gray',linestyle='dotted')
     axs[5].set_xlabel(r"$\widetilde{q_l'}$")
+    axs[5].set_xlim((0,9e-6))
     axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
 axs[0].set_ylabel('z [m]')
