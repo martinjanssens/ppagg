@@ -101,6 +101,12 @@ wqlpf_dry_time = np.load(lp+'/wqlpf_dry_time.npy')
 wthlvp_av_time = np.load(lp+'/wthlvp_av_time.npy')
 wthlvpf_moist_time = np.load(lp+'/wthlvpf_moist_time.npy')
 wthlvpf_dry_time = np.load(lp+'/wthlvpf_dry_time.npy')
+wthlvpf_l_moist_time = np.load(lp+'/wthlvpf_l_moist_time.npy')
+wthlvpf_l_dry_time = np.load(lp+'/wthlvpf_l_dry_time.npy')
+wthlvpf_c_moist_time = np.load(lp+'/wthlvpf_c_moist_time.npy')
+wthlvpf_c_dry_time = np.load(lp+'/wthlvpf_c_dry_time.npy')
+wthlvpf_r_moist_time = np.load(lp+'/wthlvpf_r_moist_time.npy')
+wthlvpf_r_dry_time = np.load(lp+'/wthlvpf_r_dry_time.npy')
 wthlvpp_moist_time = np.load(lp+'/wthlvpp_moist_time.npy')
 wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
 
@@ -581,8 +587,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes (no sgs yet)
 
 # Time to average over
-tpltmin = 9.
-tpltmax = 10.
+tpltmin = 11.
+tpltmax = 12.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -601,6 +607,12 @@ wqlpfmn_dry = np.mean(wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpmn_av = np.mean(wthlvp_av_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_moist = np.mean(wthlvpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_dry = np.mean(wthlvpf_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_moist = np.mean(wthlvpf_l_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_dry = np.mean(wthlvpf_l_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_moist = np.mean(wthlvpf_c_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_dry = np.mean(wthlvpf_c_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_moist = np.mean(wthlvpf_r_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_dry = np.mean(wthlvpf_r_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvppmn_moist = np.mean(wthlvpp_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvppmn_dry = np.mean(wthlvpp_dry_time[itpltmin:itpltmax,:],axis=0)
 
@@ -664,6 +676,27 @@ plt.plot(wthlvppmn_moist,zflim,linestyle='--',c='C0',label=r"Moist, small")
 plt.plot(wthlvppmn_dry,zflim,linestyle='--',c='C1',label=r"Dry, small")
 plt.ylabel('z [m]')
 plt.xlabel(r"$w'''\theta_{lv}''' - \overline{w'''\theta_{lv}'''}$ [Km/s]")
+plt.legend()
+plt.show()
+
+# Plot scale decomposition of wthlvf
+plt.plot(wthlvpfmn_moist,zflim,label=r"$\widetilde{w'\theta_{lv}'}$")
+plt.plot(wthlvpfmn_l_moist,zflim,label=r"$\widetilde{\widetilde{w'}\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_c_moist,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}'''} + \widetilde{w'''\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_r_moist,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
+plt.xlim((-0.025,0.015))
+plt.legend()
+plt.show()
+
+plt.plot(wthlvpfmn_dry,zflim,label=r"$\widetilde{w'\theta_{lv}'}$")
+plt.plot(wthlvpfmn_l_dry,zflim,label=r"$\widetilde{\widetilde{w'}\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_c_dry,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}'''} + \widetilde{w'''\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_r_dry,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
+plt.xlim((-0.025,0.015))
 plt.legend()
 plt.show()
 
