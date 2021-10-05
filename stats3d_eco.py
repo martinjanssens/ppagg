@@ -13,8 +13,35 @@ import gc
 import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
+import argparse
 
-lp = '/scratch-shared/janssens/bomex100'
+parseFlag = True
+
+if parseFlag:
+    parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
+    parser.add_argument("--dir", metavar="DIR", type=str, default=".", help="Directory to load/store data from/to")
+    parser.add_argument("--itmin", metavar="N", type=int, default=0, help="First time index")
+    parser.add_argument("--itmax", metavar="N", type=int, default=-1, help="Last time index")
+    parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
+    parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
+    parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
+    parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
+    parser.add_argument("--store", action="store_true", default=False, help="Process only fielddump")
+
+    args = parser.parse_args()
+
+    lp = args.dir
+    itmin = args.itmin
+    itmax = args.itmax
+    di = args.dt
+    izmin = args.izmin
+    izmax = args.izmax
+    klp = args.klp
+    store = args.store
+
+else:
+    lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ds0= nc.Dataset(lp+'/tmser.001.nc')
@@ -43,14 +70,14 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-itmin = 0#23
-itmax = 47#len(time)
-di    = 1
-izmin = 0
-izmax = 80
-store = True
-
-klp = 4
+if not parseFlag:
+    itmin = 0#23
+    itmax = 1
+    di    = 1
+    izmin = 0
+    izmax = 80
+    store = False
+    klp = 4
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
@@ -532,6 +559,7 @@ for i in range(len(plttime)):
     # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
     # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
 if store:
+    np.save(lp+'/time.npy',time)
     np.save(lp+'/plttime.npy',plttime)
     np.save(lp+'/zf.npy',zflim)
     
