@@ -559,7 +559,7 @@ for i in range(len(plttime)):
     # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
     # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
 if store:
-    np.save(lp+'/time.npy',time)
+    np.save(lp+'/time.npy',time[plttime])
     np.save(lp+'/plttime.npy',plttime)
     np.save(lp+'/zf.npy',zflim)
     
