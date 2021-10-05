@@ -8,12 +8,12 @@ Created on Tue Oct  5 16:54:04 2021
 
 import numpy as np
 
-lps = ['/scratch-shared/janssens/bomex200aswitch/a2',
-       '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr']
-savePath = '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg'
+lps = ['/scratch-shared/janssens/bomex200aswitch/a5',
+       '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr']
+savePath = '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg'
 
 fnames = ['time',
-          'zf',
+          'plttime',
           'qtpf_moist_time',
           'qtpf_dry_time',
           'qtpf_prod_moist_time',

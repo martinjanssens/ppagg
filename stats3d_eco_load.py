@@ -13,13 +13,14 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex100'
-ds = nc.Dataset(lp+'/fielddump.001.nc')
-ds1= nc.Dataset(lp+'/profiles.001.nc')
-ds0= nc.Dataset(lp+'/tmser.001.nc')
-ilp = np.loadtxt(lp+'/lscale.inp.001')
+lp = '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg'
+ds = nc.Dataset(lp+'/../fielddump.001.nc')
+ds1= nc.Dataset(lp+'/../profiles.001.nc')
+ds0= nc.Dataset(lp+'/../tmser.001.nc')
+ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
-time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+# time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+time = np.load(lp+'/time.npy')
 zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
 
 time1d = np.ma.getdata(ds1.variables['time'][:])
@@ -115,7 +116,7 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -168,7 +169,7 @@ axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%% Plot profiles of small-scale-filtered variables in time
 tpltmin = 6.
-tpltmax = 18.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -205,7 +206,7 @@ axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 18.
+tpltmin = 12.
 tpltmax = 22.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -686,7 +687,7 @@ plt.plot(wthlvpfmn_c_moist,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}''
 plt.plot(wthlvpfmn_r_moist,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
 plt.ylabel('z [m]')
 plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
-plt.xlim((-0.025,0.015))
+plt.xlim((-0.045,0.015))
 plt.legend()
 plt.show()
 
@@ -696,7 +697,7 @@ plt.plot(wthlvpfmn_c_dry,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}'''}
 plt.plot(wthlvpfmn_r_dry,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
 plt.ylabel('z [m]')
 plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
-plt.xlim((-0.025,0.015))
+plt.xlim((-0.045,0.015))
 plt.legend()
 plt.show()
 
