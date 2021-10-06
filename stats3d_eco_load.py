@@ -13,11 +13,11 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg'
-ds = nc.Dataset(lp+'/../fielddump.001.nc')
-ds1= nc.Dataset(lp+'/../profiles.001.nc')
-ds0= nc.Dataset(lp+'/../tmser.001.nc')
-ilp = np.loadtxt(lp+'/../lscale.inp.001')
+lp = '/scratch-shared/janssens/bomex200_from100_12hr'
+ds = nc.Dataset(lp+'/fielddump.001.nc')
+ds1= nc.Dataset(lp+'/profiles.001.nc')
+ds0= nc.Dataset(lp+'/tmser.001.nc')
+ilp = np.loadtxt(lp+'/lscale.inp.001')
 
 # time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 time = np.load(lp+'/time.npy')
@@ -116,7 +116,7 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 24.
+tpltmax = 18.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -168,8 +168,8 @@ axs[0].set_ylabel('z [m]')
 axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%% Plot profiles of small-scale-filtered variables in time
-tpltmin = 6.
-tpltmax = 24.
+tpltmin = 12.
+tpltmax = 13.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -207,7 +207,7 @@ axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 #%%
 # Average budget contributions over time dimension
 tpltmin = 12.
-tpltmax = 22.
+tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1

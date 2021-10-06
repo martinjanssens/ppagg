@@ -16,15 +16,15 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
 # Run specifics
-itmin = 59#23
-itmax = 63
+itmin = 63#23
+itmax = 67
 di    = 1
 izmin = 39
 izmax = 40
 
 klp = 4
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex200aswitch/a5'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
