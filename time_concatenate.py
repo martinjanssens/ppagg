@@ -8,12 +8,13 @@ Created on Tue Oct  5 16:54:04 2021
 
 import numpy as np
 
-lps = ['/scratch-shared/janssens/bomex200aswitch/a5',
-       '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr']
-savePath = '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg'
+lps = ['/scratch-shared/janssens/bomex100_e12',
+       '/scratch-shared/janssens/bomex200_from100_12hr']
+savePath = '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged'
 
 fnames = ['time',
           'plttime',
+	  'zf',
           'qtpf_moist_time',
           'qtpf_dry_time',
           'qtpf_prod_moist_time',
@@ -93,6 +94,8 @@ def process(fname, lps, savePath):
         if fname == 'plttime' and i>0:
             arrs_in[i] += arrs_in[i-1][-1]+1
     arr_out = np.concatenate(arrs_in,axis=0) # along time dimension
+    if fname == 'zf':
+        arr_out = arrs_in[0] # Assumes vertical grid stays the same over restart
     np.save(savePath+'/'+fname+'.npy', arr_out)
 
 for f in fnames:
