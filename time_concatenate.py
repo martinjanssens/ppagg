@@ -8,13 +8,13 @@ Created on Tue Oct  5 16:54:04 2021
 
 import numpy as np
 
-lps = ['/scratch-shared/janssens/bomex100_e12',
-       '/scratch-shared/janssens/bomex200_from100_12hr']
-savePath = '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged'
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_to12hr',
+       '/scratch-shared/janssens/bomex100_e12/ppagg_from12hr']
+savePath = '/scratch-shared/janssens/bomex100_e12/ppagg_merged'
 
 fnames = ['time',
           'plttime',
-	  'zf',
+	      'zf',
           'qtpf_moist_time',
           'qtpf_dry_time',
           'qtpf_prod_moist_time',

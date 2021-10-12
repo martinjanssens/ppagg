@@ -24,7 +24,7 @@ izmax = 40
 
 klp = 4
 
-lp = '/scratch-shared/janssens/bomex200aswitch/a5'
+lp = '/scratch-shared/janssens/bomex100_e12'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
