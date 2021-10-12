@@ -12,8 +12,20 @@ import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
-       '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
+# lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
+#        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
+# labs = [r'$\Delta x = 100m$',
+#         r'$\Delta x = 200m$']
+
+# lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
+#        '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg']
+# labs = [r'2nd order advection',
+#         r'5th order advection']
+
+lps = ['/scratch-shared/janssens/bomex200aswitch/a5/ppagg',
+       '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg']
+labs = [r'5th order advection',
+        r'2nd order advection']
 
 # Loading loop
 ld = []
@@ -34,7 +46,7 @@ for i in range(len(lps)):
     ld[i]['time1d'] = np.ma.getdata(ds1.variables['time'][:])
     ld[i]['rhobf'] = np.ma.getdata(ds1.variables['rhobf'][:])
     
-    dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+    dzh = np.diff(ld[i]['zf'])[0] # FIXME only valid in lower part of domain
     
     # Larger-scale subsidence
     ld[i]['wfls'] = ilp[:,3]
@@ -49,8 +61,8 @@ for i in range(len(lps)):
     ld[i]['qtpf_dry_time'] = np.load(lp+'/qtpf_dry_time.npy')
     ld[i]['qtpf_prod_moist_time'] = np.load(lp+'/qtpf_prod_moist_time.npy')
     ld[i]['qtpf_prod_dry_time'] = np.load(lp+'/qtpf_prod_dry_time.npy')
-    ld[i]['qtpf_prod_moist_wex_time'] = np.load(lp+'/qtpf_prod_moist_wex_time.npy')
-    ld[i]['qtpf_prod_dry_wex_time'] = np.load(lp+'/qtpf_prod_dry_wex_time.npy')
+    ld[i]['qtpf_prod_wex_moist_time'] = np.load(lp+'/qtpf_prod_moist_wex_time.npy')
+    ld[i]['qtpf_prod_wex_dry_time'] = np.load(lp+'/qtpf_prod_dry_wex_time.npy')
     ld[i]['qtpf_vdiv_moist_time'] = np.load(lp+'/qtpf_vdiv_moist_time.npy')
     ld[i]['qtpf_vdiv_dry_time'] = np.load(lp+'/qtpf_vdiv_dry_time.npy')
     ld[i]['qtpf_hdiv_moist_time'] = np.load(lp+'/qtpf_hdiv_moist_time.npy')
@@ -58,93 +70,138 @@ for i in range(len(lps)):
     ld[i]['qtpf_subs_moist_time'] = np.load(lp+'/qtpf_subs_moist_time.npy')
     ld[i]['qtpf_subs_dry_time'] = np.load(lp+'/qtpf_subs_dry_time.npy')
     
-    thlvpf_moist_time = np.load(lp+'/thlvpf_moist_time.npy')
-    thlvpf_dry_time = np.load(lp+'/thlvpf_dry_time.npy')
-    thlvpf_prod_moist_time = np.load(lp+'/thlvpf_prod_moist_time.npy')
-    thlvpf_prod_dry_time = np.load(lp+'/thlvpf_prod_dry_time.npy')
-    thlvpf_vdiv_moist_time = np.load(lp+'/thlvpf_vdiv_moist_time.npy')
-    thlvpf_vdiv_dry_time = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
-    thlvpf_hdiv_moist_time = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
-    thlvpf_hdiv_dry_time = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
-    thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-    thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_dry_time.npy')
+    ld[i]['thlvpf_moist_time'] = np.load(lp+'/thlvpf_moist_time.npy')
+    ld[i]['thlvpf_dry_time'] = np.load(lp+'/thlvpf_dry_time.npy')
+    ld[i]['thlvpf_prod_moist_time'] = np.load(lp+'/thlvpf_prod_moist_time.npy')
+    ld[i]['thlvpf_prod_dry_time'] = np.load(lp+'/thlvpf_prod_dry_time.npy')
+    ld[i]['thlvpf_vdiv_moist_time'] = np.load(lp+'/thlvpf_vdiv_moist_time.npy')
+    ld[i]['thlvpf_vdiv_dry_time'] = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
+    ld[i]['thlvpf_hdiv_moist_time'] = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
+    ld[i]['thlvpf_hdiv_dry_time'] = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
+    ld[i]['thlvpf_subs_moist_time'] = np.load(lp+'/thlvpf_subs_moist_time.npy')
+    ld[i]['thlvpf_subs_dry_time'] = np.load(lp+'/thlvpf_subs_dry_time.npy')
     
-    thlvpp_moist_time = np.load(lp+'/thlvpp_moist_time.npy')
-    thlvpp_dry_time = np.load(lp+'/thlvpp_dry_time.npy')
-    thlvpp_prod_moist_time = np.load(lp+'/thlvpp_prod_moist_time.npy')
-    thlvpp_prod_dry_time = np.load(lp+'/thlvpp_prod_dry_time.npy')
-    thlvpp_vdiv_moist_time = np.load(lp+'/thlvpp_vdiv_moist_time.npy')
-    thlvpp_vdiv_dry_time = np.load(lp+'/thlvpp_vdiv_dry_time.npy')
-    thlvpp_hdiv_moist_time = np.load(lp+'/thlvpp_hdiv_moist_time.npy')
-    thlvpp_hdiv_dry_time = np.load(lp+'/thlvpp_hdiv_dry_time.npy')
-    thlvpp_subs_moist_time = np.load(lp+'/thlvpp_subs_moist_time.npy')
-    thlvpp_subs_dry_time = np.load(lp+'/thlvpp_subs_dry_time.npy')
+    ld[i]['thlvpp_moist_time'] = np.load(lp+'/thlvpp_moist_time.npy')
+    ld[i]['thlvpp_dry_time'] = np.load(lp+'/thlvpp_dry_time.npy')
+    ld[i]['thlvpp_prod_moist_time'] = np.load(lp+'/thlvpp_prod_moist_time.npy')
+    ld[i]['thlvpp_prod_dry_time'] = np.load(lp+'/thlvpp_prod_dry_time.npy')
+    ld[i]['thlvpp_vdiv_moist_time'] = np.load(lp+'/thlvpp_vdiv_moist_time.npy')
+    ld[i]['thlvpp_vdiv_dry_time'] = np.load(lp+'/thlvpp_vdiv_dry_time.npy')
+    ld[i]['thlvpp_hdiv_moist_time'] = np.load(lp+'/thlvpp_hdiv_moist_time.npy')
+    ld[i]['thlvpp_hdiv_dry_time'] = np.load(lp+'/thlvpp_hdiv_dry_time.npy')
+    ld[i]['thlvpp_subs_moist_time'] = np.load(lp+'/thlvpp_subs_moist_time.npy')
+    ld[i]['thlvpp_subs_dry_time'] = np.load(lp+'/thlvpp_subs_dry_time.npy')
     
-    thl_av_time = np.load(lp+'/thl_av_time.npy')
-    thlv_av_time = np.load(lp+'/thlv_av_time.npy')
-    qt_av_time = np.load(lp+'/qt_av_time.npy')
+    ld[i]['thl_av_time'] = np.load(lp+'/thl_av_time.npy')
+    ld[i]['thlv_av_time'] = np.load(lp+'/thlv_av_time.npy')
+    ld[i]['qt_av_time'] = np.load(lp+'/qt_av_time.npy')
     
-    thlpf_moist_time = np.load(lp+'/thlpf_moist_time.npy')
-    thlpf_dry_time = np.load(lp+'/thlpf_dry_time.npy')
-    wff_moist_time = np.load(lp+'/wff_moist_time.npy')
-    wff_dry_time = np.load(lp+'/wff_dry_time.npy')
-    qlpf_moist_time = np.load(lp+'/qlpf_moist_time.npy') 
-    qlpf_dry_time = np.load(lp+'/qlpf_dry_time.npy')
+    ld[i]['thlpf_moist_time'] = np.load(lp+'/thlpf_moist_time.npy')
+    ld[i]['thlpf_dry_time'] = np.load(lp+'/thlpf_dry_time.npy')
+    ld[i]['wff_moist_time'] = np.load(lp+'/wff_moist_time.npy')
+    ld[i]['wff_dry_time'] = np.load(lp+'/wff_dry_time.npy')
+    ld[i]['qlpf_moist_time'] = np.load(lp+'/qlpf_moist_time.npy') 
+    ld[i]['qlpf_dry_time'] = np.load(lp+'/qlpf_dry_time.npy')
     
-    thlpp_moist_time = np.load(lp+'/thlpp_moist_time.npy')
-    thlpp_dry_time = np.load(lp+'/thlpp_dry_time.npy')
-    wfp_moist_time = np.load(lp+'/wfp_moist_time.npy')
-    wfp_dry_time = np.load(lp+'/wfp_dry_time.npy')
-    qlpp_moist_time = np.load(lp+'/qlpp_moist_time.npy') 
-    qlpp_dry_time = np.load(lp+'/qlpp_dry_time.npy')
+    ld[i]['thlpp_moist_time'] = np.load(lp+'/thlpp_moist_time.npy')
+    ld[i]['thlpp_dry_time'] = np.load(lp+'/thlpp_dry_time.npy')
+    ld[i]['wfp_moist_time'] = np.load(lp+'/wfp_moist_time.npy')
+    ld[i]['wfp_dry_time'] = np.load(lp+'/wfp_dry_time.npy')
+    ld[i]['qlpp_moist_time'] = np.load(lp+'/qlpp_moist_time.npy') 
+    ld[i]['qlpp_dry_time'] = np.load(lp+'/qlpp_dry_time.npy')
     
-    wthlpf_moist_time = np.load(lp+'/wthlpf_moist_time.npy')
-    wthlpf_dry_time = np.load(lp+'/wthlpf_dry_time.npy')
+    ld[i]['wthlpf_moist_time'] = np.load(lp+'/wthlpf_moist_time.npy')
+    ld[i]['wthlpf_dry_time'] = np.load(lp+'/wthlpf_dry_time.npy')
     
-    wqtpf_moist_time = np.load(lp+'/wqtpf_moist_time.npy')
-    wqtpf_dry_time = np.load(lp+'/wqtpf_dry_time.npy')
+    ld[i]['wqtpf_moist_time'] = np.load(lp+'/wqtpf_moist_time.npy')
+    ld[i]['wqtpf_dry_time'] = np.load(lp+'/wqtpf_dry_time.npy')
     
-    wqlpf_moist_time = np.load(lp+'/wqlpf_moist_time.npy')
-    wqlpf_dry_time = np.load(lp+'/wqlpf_dry_time.npy')
+    ld[i]['wqlpf_moist_time'] = np.load(lp+'/wqlpf_moist_time.npy')
+    ld[i]['wqlpf_dry_time'] = np.load(lp+'/wqlpf_dry_time.npy')
     
-    wthlvp_av_time = np.load(lp+'/wthlvp_av_time.npy')
-    wthlvpf_moist_time = np.load(lp+'/wthlvpf_moist_time.npy')
-    wthlvpf_dry_time = np.load(lp+'/wthlvpf_dry_time.npy')
-    wthlvpf_l_moist_time = np.load(lp+'/wthlvpf_l_moist_time.npy')
-    wthlvpf_l_dry_time = np.load(lp+'/wthlvpf_l_dry_time.npy')
-    wthlvpf_c_moist_time = np.load(lp+'/wthlvpf_c_moist_time.npy')
-    wthlvpf_c_dry_time = np.load(lp+'/wthlvpf_c_dry_time.npy')
-    wthlvpf_r_moist_time = np.load(lp+'/wthlvpf_r_moist_time.npy')
-    wthlvpf_r_dry_time = np.load(lp+'/wthlvpf_r_dry_time.npy')
-    wthlvpp_moist_time = np.load(lp+'/wthlvpp_moist_time.npy')
-    wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
+    ld[i]['wthlvp_av_time'] = np.load(lp+'/wthlvp_av_time.npy')
+    ld[i]['wthlvpf_moist_time'] = np.load(lp+'/wthlvpf_moist_time.npy')
+    ld[i]['wthlvpf_dry_time'] = np.load(lp+'/wthlvpf_dry_time.npy')
+    ld[i]['wthlvpf_l_moist_time'] = np.load(lp+'/wthlvpf_l_moist_time.npy')
+    ld[i]['wthlvpf_l_dry_time'] = np.load(lp+'/wthlvpf_l_dry_time.npy')
+    ld[i]['wthlvpf_c_moist_time'] = np.load(lp+'/wthlvpf_c_moist_time.npy')
+    ld[i]['wthlvpf_c_dry_time'] = np.load(lp+'/wthlvpf_c_dry_time.npy')
+    ld[i]['wthlvpf_r_moist_time'] = np.load(lp+'/wthlvpf_r_moist_time.npy')
+    ld[i]['wthlvpf_r_dry_time'] = np.load(lp+'/wthlvpf_r_dry_time.npy')
+    ld[i]['wthlvpp_moist_time'] = np.load(lp+'/wthlvpp_moist_time.npy')
+    ld[i]['wthlvpp_dry_time'] = np.load(lp+'/wthlvpp_dry_time.npy')
+    
+    ld[i]['wthlvpf_anom_moist_time'] = ld[i]['wthlvpf_moist_time'] - ld[i]['wthlvp_av_time']
+    ld[i]['wthlvpf_anom_dry_time'] = ld[i]['wthlvpf_dry_time'] - ld[i]['wthlvp_av_time']
 
-## Just lines to copy into a console with preloaded 100m res run for now
-runcell(0, '/nfs/home4/janssens/scripts/pp3d/stats3d_eco_load.py')
-runcell('Relation qtpf - wthlvpf_anom', '/nfs/home4/janssens/scripts/pp3d/stats3d_eco_load.py')
-qtpf_dry_time100 = qtpf_dry_time
-wthlvpf_moist_anom100 = wthlvpf_moist_anom
-wthlvpf_dry_anom100 = wthlvpf_dry_anom
-thlvpf_dry_time100 = thlvpf_dry_time
-wff_dry_time100 = wff_dry_time
-qlpf_dry_time100 = qlpf_dry_time
-wthlvp_av_time100 = wthlvp_av_time
-qtpf_moist_time100 = qtpf_moist_time
-thlvpf_moist_time100 = thlvpf_moist_time
-wff_moist_time100 = wff_moist_time
-thlpf_moist_time100 = thlpf_moist_time
-qlpf_moist_time100 = qlpf_moist_time
-wqlpf_moist_time100 = wqlpf_moist_time
-wqlpf_dry_time100 = wqlpf_moist_time
-wthlpf_moist_time100 = wthlpf_moist_time
-wthlpf_dry_time100 = wthlpf_dry_time
-wthlvpf_moist_time100 = wthlvpf_moist_time
-wthlvpf_dry_time100 = wthlvpf_dry_time
-wqtpf_moist_time100 = wqtpf_moist_time
-wqtpf_dry_time100 = wqtpf_moist_time
-thl_av_time100 = thl_av_time
+#%% Plot variables
 
-# old indices
+# Minus 'moist_time' or 'dry_time'
+pltvars = ['qtpf','wthlvpf_anom', 'wff']
+varlab = [r"$\widetilde{q_t'}$", 
+          r"$\widetilde{w'\theta_{lv}'}-\overline{w'\theta_{lv}'}$", 
+          r"$\widetilde{w'}$",]
+
+pltvars = ['qtpf_prod_wex','qtpf_vdiv', 'qtpf_hdiv']
+varlab = [r"Gradient production", 
+          r"Vertical transport",
+          r"Horizontal transport"]
+
+pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
+varlab = [r"Gradient production", 
+          r"Vertical transport",
+          r"Horizontal transport"]
+
+lines = ['-','--']
+
+tpltmin = 12.5
+tpltmax = 24.5
+dit = 4.0 # Rounds to closest multiple of dt in time
+tav = 0.5 # Averaging time centred around current time
+ndt = int((tpltmax-tpltmin)/dit)
+nvar = len(pltvars)
+
+fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(4*nvar,3*ndt+0.25),
+                       sharex=True,sharey=True,squeeze=False)
+
+col_moist = plt.cm.RdYlBu(0.99)
+col_dry = plt.cm.RdYlBu(0)
+for l in range(len(lps)):
+
+    itpltmin = np.where(ld[l]['time'][ld[l]['plttime']]>=tpltmin)[0][0]
+    itpltmax = np.where(ld[l]['time'][ld[l]['plttime']]<tpltmax)[0][-1]+1
+    idtplt = int(round(dit/(ld[l]['time'][ld[l]['plttime'][1]]-ld[l]['time'][ld[l]['plttime'][0]])))
+    plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+    
+    pltvars_moist = []
+    pltvars_dry = []
+    for p in range(nvar):
+        pltvars_moist.append(ld[l][pltvars[p]+'_moist_time'])
+        pltvars_dry.append(ld[l][pltvars[p]+'_dry_time'])
+    
+    for i in range(len(plttime_var)):
+        
+        ti = ld[l]['time'][plttime_var[i]]
+        itav_min = np.where(ld[l]['time'][ld[l]['plttime']] >= ti-tav)[0][0]
+        itav_max = np.where(ld[l]['time'][ld[l]['plttime']] <= ti+tav)[0][-1]
+        
+        for p in range(nvar):
+            pltvar_moist_av = np.mean(pltvars_moist[p][itav_min:itav_max,:],axis=0)
+            pltvar_dry_av = np.mean(pltvars_dry[p][itav_min:itav_max,:],axis=0)
+            
+            axs[i,p].plot(pltvar_moist_av, ld[l]['zflim'][1:-1], color=col_moist, linestyle=lines[l], label=labs[l]+', moist')
+            axs[i,p].plot(pltvar_dry_av, ld[l]['zflim'][1:-1], color=col_dry, linestyle=lines[l], label=labs[l]+', dry')
+
+    for i in range(len(plttime_var)):
+        axs[i,0].set_ylabel('Height [m]')
+        for p in range(nvar):
+            axs[i,p].set_title('%.1f hr'%ld[l]['time'][plttime_var[i]])
+
+for p in range(nvar):
+    axs[-1,p].set_xlabel(varlab[p])
+axs[-1,-1].legend(loc='best',bbox_to_anchor=(1,-0.25),ncol=2)
+
+#%%
 plt.plot(np.mean(wff_moist_time[35:39,:],axis=0),zflim)
 plt.plot(np.mean(wff_moist_time100[23:25,:],axis=0),zflim)
 plt.plot(np.mean(wff_dry_time[35:39,:],axis=0),zflim)
