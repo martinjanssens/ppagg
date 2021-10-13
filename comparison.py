@@ -12,20 +12,20 @@ import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
-# lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
-#        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
-# labs = [r'$\Delta x = 100m$',
-#         r'$\Delta x = 200m$']
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
+        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
+labs = [r'$\Delta x = 100m$',
+        r'$\Delta x = 200m$']
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
 #        '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg']
 # labs = [r'2nd order advection',
 #         r'5th order advection']
 
-lps = ['/scratch-shared/janssens/bomex200aswitch/a5/ppagg',
-       '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg']
-labs = [r'5th order advection',
-        r'2nd order advection']
+# lps = ['/scratch-shared/janssens/bomex200aswitch/a5/ppagg',
+#        '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg']
+# labs = [r'5th order advection',
+#         r'2nd order advection']
 
 # Loading loop
 ld = []
@@ -147,16 +147,19 @@ varlab = [r"Gradient production",
           r"Vertical transport",
           r"Horizontal transport"]
 
-pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
-varlab = [r"Gradient production", 
-          r"Vertical transport",
-          r"Horizontal transport"]
+# pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
+# varlab = [r"Gradient production", 
+#           r"Vertical transport",
+#           r"Horizontal transport"]
+
+pltvars = ['thlvpp']
+varlab = [r"$\theta_{lv}'''$"]
 
 lines = ['-','--']
 
 tpltmin = 12.5
-tpltmax = 24.5
-dit = 4.0 # Rounds to closest multiple of dt in time
+tpltmax = 14.5
+dit = 1.0 # Rounds to closest multiple of dt in time
 tav = 0.5 # Averaging time centred around current time
 ndt = int((tpltmax-tpltmin)/dit)
 nvar = len(pltvars)
@@ -189,8 +192,13 @@ for l in range(len(lps)):
             pltvar_moist_av = np.mean(pltvars_moist[p][itav_min:itav_max,:],axis=0)
             pltvar_dry_av = np.mean(pltvars_dry[p][itav_min:itav_max,:],axis=0)
             
-            axs[i,p].plot(pltvar_moist_av, ld[l]['zflim'][1:-1], color=col_moist, linestyle=lines[l], label=labs[l]+', moist')
-            axs[i,p].plot(pltvar_dry_av, ld[l]['zflim'][1:-1], color=col_dry, linestyle=lines[l], label=labs[l]+', dry')
+            if len(ld[l]['zflim']) != len(pltvar_moist_av):
+                zplt = ld[l]['zflim'][1:-1]
+            else:
+                zplt = ld[l]['zflim']
+            
+            axs[i,p].plot(pltvar_moist_av, zplt, color=col_moist, linestyle=lines[l], label=labs[l]+', moist')
+            axs[i,p].plot(pltvar_dry_av, zplt, color=col_dry, linestyle=lines[l], label=labs[l]+', dry')
 
     for i in range(len(plttime_var)):
         axs[i,0].set_ylabel('Height [m]')
