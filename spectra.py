@@ -16,15 +16,15 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 
 # Run specifics
-itmin = 11#23
-itmax = 47
+itmin = 63#23
+itmax = 67
 di    = 1
 izmin = 39
 izmax = 40
 
 klp = 4
 
-lp = '/scratch-shared/janssens/bomex100'
+lp = '/scratch-shared/janssens/bomex100_e12'
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
@@ -105,11 +105,15 @@ for i in range(len(plttime)):
         k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, qt[iz,:,:])
         k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thl[iz,:,:])
         k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thlv[iz,:,:])
-    
+        
+        # k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:]*qt[iz,:,:], dx,sqrt=True)
+        # k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx,sqrt=True)
+        # k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx,sqrt=True)
+        
     gc.collect()
 
 #%% Average over time
-itav = 2 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
+itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
 
 spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
 spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
@@ -197,10 +201,17 @@ for i in range(len(plttime)):
     gc.collect()
     
     for iz in range(len(zflim)):
-        k1d,spec_wthlv_l[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvf[iz,:,:], dx)
-        k1d,spec_wthlv_c[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvp[iz,:,:]+
-                                                    wfp[iz,:,:]*thlvf[iz,:,:], dx)
-        k1d,spec_wthlv_r[i,iz,:] = compute_spectrum(wfp[iz,:,:]*thlvp[iz,:,:], dx)
+        # k1d,spec_wthlv_l[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvf[iz,:,:], dx)
+        # k1d,spec_wthlv_c[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvp[iz,:,:]+
+        #                                             wfp[iz,:,:]*thlvf[iz,:,:], dx)
+        # k1d,spec_wthlv_r[i,iz,:] = compute_spectrum(wfp[iz,:,:]*thlvp[iz,:,:], dx)
+
+        k1d,spec_wthlv_l[i,iz,:] = compute_spectrum(wff[iz,:,:], dx,thlvf[iz,:,:])
+        k1d,spec_wthlv_c[i,iz,:] = compute_spectrum(wff[iz,:,:], dx, thlvp[iz,:,:])
+        _,spec_wthlv_c2 = compute_spectrum(wfp[iz,:,:], dx, thlvf[iz,:,:])
+        spec_wthlv_c[i,iz,:] += spec_wthlv_c2
+        k1d,spec_wthlv_r[i,iz,:] = compute_spectrum(wfp[iz,:,:], dx, thlvp[iz,:,:])
+
 
 spec_wthlv_l_mn = block_reduce(spec_wthlv_l,(itav,1,1),func=np.mean)
 spec_wthlv_c_mn = block_reduce(spec_wthlv_c,(itav,1,1),func=np.mean)
@@ -209,8 +220,8 @@ sumtest = spec_wthlv_l_mn + spec_wthlv_c_mn + spec_wthlv_r_mn
 
 fig = plt.figure(); ax = plt.gca()
 ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"$w'\theta_{lv}'$")
-# ax.loglog(k1d,spec_wthlv_l_mn[-1,izpl,:],label=r"$\widetilde{w'}\widetilde{\theta_{lv}'}$")
-# ax.loglog(k1d,spec_wthlv_c_mn[-1,izpl,:],label=r"$\widetilde{w'}\theta_{lv}'''+w'''\widetilde{\theta_{lv}'}$")
+ax.loglog(k1d,spec_wthlv_l_mn[-1,izpl,:],label=r"$\widetilde{w'}\widetilde{\theta_{lv}'}$")
+ax.loglog(k1d,spec_wthlv_c_mn[-1,izpl,:],label=r"$\widetilde{w'}\theta_{lv}'''+w'''\widetilde{\theta_{lv}'}$")
 ax.loglog(k1d,spec_wthlv_r_mn[-1,izpl,:],label=r"$w'''\theta_{lv}'''$")
 # ax.loglog(k1d,sumtest[-1,izpl,:],label=r"sum")
 # ax.set_ylim((1e-4,1e2))

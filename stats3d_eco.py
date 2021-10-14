@@ -13,8 +13,35 @@ import gc
 import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
+import argparse
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+parseFlag = True
+
+if parseFlag:
+    parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
+    parser.add_argument("--dir", metavar="DIR", type=str, default=".", help="Directory to load/store data from/to")
+    parser.add_argument("--itmin", metavar="N", type=int, default=0, help="First time index")
+    parser.add_argument("--itmax", metavar="N", type=int, default=-1, help="Last time index")
+    parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
+    parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
+    parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
+    parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
+    parser.add_argument("--store", action="store_true", default=False, help="Process only fielddump")
+
+    args = parser.parse_args()
+
+    lp = args.dir
+    itmin = args.itmin
+    itmax = args.itmax
+    di = args.dt
+    izmin = args.izmin
+    izmax = args.izmax
+    klp = args.klp
+    store = args.store
+
+else:
+    lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ds0= nc.Dataset(lp+'/tmser.001.nc')
@@ -43,6 +70,7 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
+<<<<<<< HEAD
 itmin = 63#23
 itmax = 64#len(time)
 di    = 1
@@ -51,6 +79,16 @@ izmax = 80
 store = False
 
 klp = 4
+=======
+if not parseFlag:
+    itmin = 0#23
+    itmax = 1
+    di    = 1
+    izmin = 0
+    izmax = 80
+    store = False
+    klp = 4
+>>>>>>> master
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
@@ -138,6 +176,12 @@ wqlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_l_moist_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_l_dry_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_c_moist_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_c_dry_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_r_moist_time = np.zeros((plttime.size,izmax-izmin))
+wthlvpf_r_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
@@ -186,6 +230,9 @@ for i in range(len(plttime)):
     # del e12
     # del dthvdz
     
+    # Define thlv
+    thlvp = thlp + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
+    
     # Perturbations
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
     twp = np.trapz(rhobfi[:,np.newaxis,np.newaxis]*qt[:,:,:],zflim,axis=0)
@@ -197,6 +244,7 @@ for i in range(len(plttime)):
     wh = wh[:-1,:,:]
 
     thlp = thlp - thl_av[:,np.newaxis,np.newaxis]
+    thlvp = thlvp - thlv_av[:,np.newaxis,np.newaxis]
     qlp = qlp - ql_av[:,np.newaxis,np.newaxis]
     
     # Slab average resolved fluxes
@@ -220,6 +268,10 @@ for i in range(len(plttime)):
     thlpf = lowPass(thlp, circ_mask)
     thlpp = thlp - thlpf
     del thlp
+    
+    thlvpf = lowPass(thlvp, circ_mask)
+    thlvpp = thlvp - thlvpf
+    del thlvp
     
     qlpf = lowPass(qlp, circ_mask)
     qlpp = qlp - qlpf
@@ -311,6 +363,16 @@ for i in range(len(plttime)):
     wthlvpp_moist = mean_mask(wthlvpp, mask_moist)
     wthlvpp_dry = mean_mask(wthlvpp, mask_dry)
     
+    # Scale decompose wthlvf contributions FIXME need to make Galilean invariant
+    wthlvpf_l, wthlvpf_c, wthlvpf_r = scaleDecomposeFlux(wff , wfp, thlvpf, thlvpp, circ_mask)
+    
+    wthlvpf_l_moist_time[i,:] = mean_mask(wthlvpf_l, mask_moist)
+    wthlvpf_l_dry_time[i,:] = mean_mask(wthlvpf_l, mask_dry)
+    wthlvpf_c_moist_time[i,:] = mean_mask(wthlvpf_c, mask_moist)
+    wthlvpf_c_dry_time[i,:] = mean_mask(wthlvpf_c, mask_dry)
+    wthlvpf_r_moist_time[i,:] = mean_mask(wthlvpf_r, mask_moist)
+    wthlvpf_r_dry_time[i,:] = mean_mask(wthlvpf_r, mask_dry)
+    
     wthlpf_moist_time[i,:] = wthlpf_moist
     wthlpf_dry_time[i,:] = wthlpf_dry
     
@@ -325,6 +387,7 @@ for i in range(len(plttime)):
     wthlvpf_dry_time[i,:] = wthlvpf_dry
     wthlvpp_moist_time[i,:] = wthlvpp_moist
     wthlvpp_dry_time[i,:] = wthlvpp_dry
+    
     
     del wthlpf
     del wqtpf
@@ -534,6 +597,7 @@ for i in range(len(plttime)):
     # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
     # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
 if store:
+    np.save(lp+'/time.npy',time[plttime])
     np.save(lp+'/plttime.npy',plttime)
     np.save(lp+'/zf.npy',zflim)
     
@@ -608,6 +672,12 @@ if store:
     np.save(lp+'/wthlvp_av_time.npy',wthlvp_av_time)
     np.save(lp+'/wthlvpf_moist_time.npy',wthlvpf_moist_time)
     np.save(lp+'/wthlvpf_dry_time.npy',wthlvpf_dry_time)
+    np.save(lp+'/wthlvpf_l_moist_time.npy',wthlvpf_l_moist_time)
+    np.save(lp+'/wthlvpf_l_dry_time.npy',wthlvpf_l_dry_time)
+    np.save(lp+'/wthlvpf_c_moist_time.npy',wthlvpf_c_moist_time)
+    np.save(lp+'/wthlvpf_c_dry_time.npy',wthlvpf_c_dry_time)
+    np.save(lp+'/wthlvpf_r_moist_time.npy',wthlvpf_r_moist_time)
+    np.save(lp+'/wthlvpf_r_dry_time.npy',wthlvpf_r_dry_time)
     np.save(lp+'/wthlvpp_moist_time.npy',wthlvpp_moist_time)
     np.save(lp+'/wthlvpp_dry_time.npy',wthlvpp_dry_time)
     

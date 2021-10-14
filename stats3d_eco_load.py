@@ -13,13 +13,14 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex100'
-ds = nc.Dataset(lp+'/fielddump.001.nc')
-ds1= nc.Dataset(lp+'/profiles.001.nc')
-ds0= nc.Dataset(lp+'/tmser.001.nc')
-ilp = np.loadtxt(lp+'/lscale.inp.001')
+lp = '/scratch-shared/janssens/bomex200_e12/ppagg'
+ds = nc.Dataset(lp+'/../fielddump.001.nc')
+ds1= nc.Dataset(lp+'/../profiles.001.nc')
+ds0= nc.Dataset(lp+'/../tmser.001.nc')
+ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
-time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+# time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+time = np.load(lp+'/time.npy')
 zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
 
 time1d = np.ma.getdata(ds1.variables['time'][:])
@@ -101,6 +102,12 @@ wqlpf_dry_time = np.load(lp+'/wqlpf_dry_time.npy')
 wthlvp_av_time = np.load(lp+'/wthlvp_av_time.npy')
 wthlvpf_moist_time = np.load(lp+'/wthlvpf_moist_time.npy')
 wthlvpf_dry_time = np.load(lp+'/wthlvpf_dry_time.npy')
+wthlvpf_l_moist_time = np.load(lp+'/wthlvpf_l_moist_time.npy')
+wthlvpf_l_dry_time = np.load(lp+'/wthlvpf_l_dry_time.npy')
+wthlvpf_c_moist_time = np.load(lp+'/wthlvpf_c_moist_time.npy')
+wthlvpf_c_dry_time = np.load(lp+'/wthlvpf_c_dry_time.npy')
+wthlvpf_r_moist_time = np.load(lp+'/wthlvpf_r_moist_time.npy')
+wthlvpf_r_dry_time = np.load(lp+'/wthlvpf_r_dry_time.npy')
 wthlvpp_moist_time = np.load(lp+'/wthlvpp_moist_time.npy')
 wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
 
@@ -109,7 +116,7 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 24.
+tpltmax = 20.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -124,39 +131,45 @@ for i in range(len(plttime_var)):
     axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
     axs[0].axvline(0,color='gray',linestyle='dotted')
     axs[0].set_xlabel(r"$\widetilde{q_t'}$")
+    axs[0].set_xlim((0,6e-4))
     axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
     axs[1].axvline(0,color='gray',linestyle='dotted')
     axs[1].set_xlabel(r"$\widetilde{\theta_{lv}'}$")
+    axs[1].set_xlim((-4e-2,1e-2))
     axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
     axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[2].axvline(0,color='gray',linestyle='dotted')
     axs[2].set_xlabel(r"$\widetilde{w'}$")
+    axs[2].set_xlim((-1e-2,1.7e-2))
     axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[3].axvline(0,color='gray',linestyle='dotted')
     axs[3].set_xlabel(r"$\widetilde{\theta_l'}$")
+    axs[3].set_xlim((-1.2e-1,0))
     axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[4].plot(thvpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
     axs[4].axvline(0,color='gray',linestyle='dotted')
     axs[4].set_xlabel(r"$\widetilde{\theta_v'}$")
+    axs[4].set_xlim((-2.5e-2,2.5e-2))
     axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
     axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime_var[i]],color=col,linestyle='-')
     axs[5].axvline(0,color='gray',linestyle='dotted')
     axs[5].set_xlabel(r"$\widetilde{q_l'}$")
+    axs[5].set_xlim((0,9e-6))
     axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
 axs[0].set_ylabel('z [m]')
 axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%% Plot profiles of small-scale-filtered variables in time
-tpltmin = 6.
-tpltmax = 18.
+tpltmin = 12.
+tpltmax = 13.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -193,8 +206,8 @@ axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 18.
-tpltmax = 22.
+tpltmin = 12.
+tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -575,8 +588,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes (no sgs yet)
 
 # Time to average over
-tpltmin = 9.
-tpltmax = 10.
+tpltmin = 11.
+tpltmax = 12.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -595,6 +608,12 @@ wqlpfmn_dry = np.mean(wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpmn_av = np.mean(wthlvp_av_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_moist = np.mean(wthlvpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_dry = np.mean(wthlvpf_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_moist = np.mean(wthlvpf_l_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_dry = np.mean(wthlvpf_l_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_moist = np.mean(wthlvpf_c_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_dry = np.mean(wthlvpf_c_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_moist = np.mean(wthlvpf_r_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_dry = np.mean(wthlvpf_r_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvppmn_moist = np.mean(wthlvpp_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvppmn_dry = np.mean(wthlvpp_dry_time[itpltmin:itpltmax,:],axis=0)
 
@@ -658,6 +677,27 @@ plt.plot(wthlvppmn_moist,zflim,linestyle='--',c='C0',label=r"Moist, small")
 plt.plot(wthlvppmn_dry,zflim,linestyle='--',c='C1',label=r"Dry, small")
 plt.ylabel('z [m]')
 plt.xlabel(r"$w'''\theta_{lv}''' - \overline{w'''\theta_{lv}'''}$ [Km/s]")
+plt.legend()
+plt.show()
+
+# Plot scale decomposition of wthlvf
+plt.plot(wthlvpfmn_moist,zflim,label=r"$\widetilde{w'\theta_{lv}'}$")
+plt.plot(wthlvpfmn_l_moist,zflim,label=r"$\widetilde{\widetilde{w'}\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_c_moist,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}'''} + \widetilde{w'''\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_r_moist,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
+plt.xlim((-0.045,0.015))
+plt.legend()
+plt.show()
+
+plt.plot(wthlvpfmn_dry,zflim,label=r"$\widetilde{w'\theta_{lv}'}$")
+plt.plot(wthlvpfmn_l_dry,zflim,label=r"$\widetilde{\widetilde{w'}\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_c_dry,zflim,label=r"$\widetilde{\widetilde{w'}\theta_{lv}'''} + \widetilde{w'''\widetilde{\theta_{lv}'}}$")
+plt.plot(wthlvpfmn_r_dry,zflim,label=r"$\widetilde{w'''\theta_{lv}''''}$")
+plt.ylabel('z [m]')
+plt.xlabel(r"$\widetilde{w'\theta_{lv}'}$ [Km/s]")
+plt.xlim((-0.045,0.015))
 plt.legend()
 plt.show()
 
@@ -761,14 +801,36 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 
+
 fig = plt.figure(figsize=(5,5))
 ax = plt.gca()
 for i in range(len(plttime_var)):
+    
+    imin = np.argmin(wthlvp_av_time[plttime_var[i],:])
+    ilab = r"$\widetilde{w'\theta_{lv}'}$ min" if i==0 else None
+    # wthlv_min = np.min(wthlvp_av_time[plttime_var[i],:])
+    # zmin_time = zf[imin]
+    
+    iqlbase = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][0]
+    qlbaselab = r"Cloud base" if i==0 else None
+    
+    iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
+    qltoplab = r"Cloud top" if i==0 else None
+    
     col = plt.cm.cubehelix(i/len(plttime_var))
-        
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
             label='t=%.2f'%time[plttime_var[i]],color=col)
-    ax.set_xlabel(r"$\overline{\theta_{lv}}$")
-    ax.set_ylabel(r"$\overline{q_t}$")
+    ax.scatter(thlv_av_time[plttime_var[i],imin],qt_av_time[plttime_var[i],imin],
+               color=col,zorder=100,label=ilab)
+    ax.scatter(thlv_av_time[plttime_var[i],iqlbase],qt_av_time[plttime_var[i],iqlbase],
+               marker='s',color=col,zorder=100,label=qlbaselab)
+    ax.scatter(thlv_av_time[plttime_var[i],iqltop],qt_av_time[plttime_var[i],iqltop],
+               marker='^',color=col,zorder=100,label=qltoplab)
+    ax.set_xlabel(r"$\overline{\theta_{lv}} [K]$")
+    ax.set_ylabel(r"$\overline{q_t}$ [kg/kg]")
 
 ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+    
+    
+    
+
