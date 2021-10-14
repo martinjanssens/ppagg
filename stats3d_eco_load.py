@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex100_e12/ppagg_merged'
+lp = '/scratch-shared/janssens/bomex200_e12/ppagg'
 ds = nc.Dataset(lp+'/../fielddump.001.nc')
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
 ds0= nc.Dataset(lp+'/../tmser.001.nc')
@@ -801,14 +801,36 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 
+
 fig = plt.figure(figsize=(5,5))
 ax = plt.gca()
 for i in range(len(plttime_var)):
+    
+    imin = np.argmin(wthlvp_av_time[plttime_var[i],:])
+    ilab = r"$\widetilde{w'\theta_{lv}'}$ min" if i==0 else None
+    # wthlv_min = np.min(wthlvp_av_time[plttime_var[i],:])
+    # zmin_time = zf[imin]
+    
+    iqlbase = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][0]
+    qlbaselab = r"Cloud base" if i==0 else None
+    
+    iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
+    qltoplab = r"Cloud top" if i==0 else None
+    
     col = plt.cm.cubehelix(i/len(plttime_var))
-        
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
             label='t=%.2f'%time[plttime_var[i]],color=col)
-    ax.set_xlabel(r"$\overline{\theta_{lv}}$")
-    ax.set_ylabel(r"$\overline{q_t}$")
+    ax.scatter(thlv_av_time[plttime_var[i],imin],qt_av_time[plttime_var[i],imin],
+               color=col,zorder=100,label=ilab)
+    ax.scatter(thlv_av_time[plttime_var[i],iqlbase],qt_av_time[plttime_var[i],iqlbase],
+               marker='s',color=col,zorder=100,label=qlbaselab)
+    ax.scatter(thlv_av_time[plttime_var[i],iqltop],qt_av_time[plttime_var[i],iqltop],
+               marker='^',color=col,zorder=100,label=qltoplab)
+    ax.set_xlabel(r"$\overline{\theta_{lv}} [K]$")
+    ax.set_ylabel(r"$\overline{q_t}$ [kg/kg]")
 
 ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+    
+    
+    
+
