@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -40,7 +40,7 @@ if parseFlag:
     store = args.store
 
 else:
-    lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+    lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -70,25 +70,14 @@ wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
-<<<<<<< HEAD
-itmin = 63#23
-itmax = 64#len(time)
-di    = 1
-izmin = 0
-izmax = 80
-store = False
-
-klp = 4
-=======
 if not parseFlag:
-    itmin = 0#23
-    itmax = 1
+    itmin = 46#23
+    itmax = 47
     di    = 1
     izmin = 0
     izmax = 80
     store = False
     klp = 4
->>>>>>> master
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
@@ -465,10 +454,19 @@ for i in range(len(plttime)):
     
     # wthlv
     wdiv_wthlvf_r = lowPass(wfp[1:-1,:,:]*div_wthlv_r,circ_mask)
-    # wdiv_wthlvf_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
-    wdivwthlvf_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
+    # wdiv_wthlv_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
+    wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
 
-    # thlvpdiv_wwf_r = FIXME START HERE
+    div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
+    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels (lose highest one)
+    
+    thlvpdiv_wwf_r = lowPass((thlvpf+thlvpp)[1:-2,:,:]*div_ww_r,circ_mask)
+    thlvpdiv_ww_av = np.mean((thlvpf+thlvpp)[1:-2,:,:]*div_ww_r,axis=(1,2))
+    
+    wthlvpf_vdiv_moist_time[i,:] = (mean_mask(wdiv_wthlvf_r[:-1,:,:]+thlvpdiv_wwf_r, mask_moist) - 
+                               (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
+    wthlvpf_vdiv_dry_time[i,:] = (mean_mask(wdiv_wthlvf_r[:-1,:,:]+thlvpdiv_wwf_r, mask_dry) - 
+                               (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
     
     # qt
     div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)

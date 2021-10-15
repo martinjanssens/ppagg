@@ -49,6 +49,7 @@ def scaleDecomposeFlux(xt,xp,yt,yp,mask):
     
     return Le, Cr, Re
 
+# Advection at the cell centre
 def ddzwx_2nd(wh,x,dzh,rhobf=None):
     # Assumes constant dz
     if type(rhobf) == type(None):
@@ -59,15 +60,30 @@ def ddzwx_2nd(wh,x,dzh,rhobf=None):
                            rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
              (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
 
-def ddzw2x_2nd(wh,x,dzh,rhobf=None):
+# Advection at half z-level (for w)
+def ddzww_2nd(wh,dzh,rhobf=None,rhobh=None):
     # Assumes constant dz
-    if type(rhobf) == type(None):
-        rhobf = np.ones(x.shape[0])
-    return ((wh[2:,:,:]**2*(rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:] + 
-                            rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]) - 
-             wh[1:-1,:,:]**2*(rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:]+
-                              rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
-             (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
+    if type(rhobf) == type(None): # then rhobh must also be None, else you're a moron
+        rhobf = np.ones(wh.shape[0])
+        rhobf = np.ones(wh.shape[0]) #Check this shape
+    return ((wh[2:,:,:] + wh[1:-1,:,:]) *
+            (rhobh[2:,np.newaxis,np.newaxis]*wh[2:,:,:] + 
+             rhobh[1:-1,np.newaxis,np.newaxis]*wh[1:-1,:,:]) -
+            (wh[:-2,:,:] + wh[1:-1,:,:]) *
+            (rhobh[:-2,np.newaxis,np.newaxis]*wh[:-2,:,:] + 
+             rhobh[1:-1,np.newaxis,np.newaxis]*wh[1:-1,:,:])
+           ) / (4*dzh*rhobf[1:-1,np.newaxis,np.newaxis])
+            
+
+# def ddzw2x_2nd(wh,x,dzh,rhobf=None):
+#     # Assumes constant dz
+#     if type(rhobf) == type(None):
+#         rhobf = np.ones(x.shape[0])
+#     return ((wh[2:,:,:]**2*(rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:] + 
+#                             rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]) - 
+#              wh[1:-1,:,:]**2*(rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:]+
+#                               rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
+#              (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
 
 def kddza_2nd(k,x,zf,rhobf=None):
     # Assumes constant dz
