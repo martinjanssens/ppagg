@@ -125,8 +125,8 @@ thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
 wthlvpf_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
-wthlvpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
-wthlvpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-3))
+wthlvpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-3))
 wthlvpf_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_buoy_moist_time = np.zeros((plttime.size,izmax-izmin-2))
@@ -460,8 +460,8 @@ for i in range(len(plttime)):
     div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
     div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels (lose highest one)
     
-    thlvpdiv_wwf_r = lowPass((thlvpf+thlvpp)[1:-2,:,:]*div_ww_r,circ_mask)
-    thlvpdiv_ww_av = np.mean((thlvpf+thlvpp)[1:-2,:,:]*div_ww_r,axis=(1,2))
+    thlvpdiv_wwf_r = lowPass(thlvpp[1:-2,:,:]*div_ww_r,circ_mask)
+    thlvpdiv_ww_av = np.mean(thlvpp[1:-2,:,:]*div_ww_r,axis=(1,2))
     
     wthlvpf_vdiv_moist_time[i,:] = (mean_mask(wdiv_wthlvf_r[:-1,:,:]+thlvpdiv_wwf_r, mask_moist) - 
                                (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
@@ -481,6 +481,9 @@ for i in range(len(plttime)):
 
     del div_wthlv_rf
     del div_wthlv_rp    
+    del wdiv_wthlvf_r
+    del div_ww_r
+    del thlvpdiv_wwf_r
     del div_wqt_r
     del div_wqt_rf
     gc.collect()
@@ -520,6 +523,8 @@ for i in range(len(plttime)):
     thlvpf_hdiv_dry_time[i,:] = div_uhthlvpf_dry[1:-1]
     thlvpp_hdiv_moist_time[i,:] = div_uhthlvpp_moist[1:-1]
     thlvpp_hdiv_dry_time[i,:] = div_uhthlvpp_dry[1:-1]
+    
+    # TODO Add wthlvpf anomaly here
     
     # Horizontal moisture advection
     # intra-scale contribution largest, but entire term kept for now
@@ -564,6 +569,10 @@ for i in range(len(plttime)):
     del wsubdthlvpdzf
     del wsubdqtpdzf
     gc.collect()
+    
+    # Buoyancy effect on wthlvpf
+    wthlvp_buoy = lowPass(thlvpp**2*grav/thlv_av[:,np.newaxis,np.newaxis], circ_mask)
+    
 
     # SFS diffusion
     # Heat
