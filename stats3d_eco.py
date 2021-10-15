@@ -543,7 +543,7 @@ for i in range(len(plttime)):
     gc.collect()
 
     # Subsidence warming
-    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dzh)
+    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlvpf+thlvpp, dzh)
     wsubdthlvpdzf = lowPass(wsubdthlvpdz, circ_mask)
     
     # moist/dry and large/small
@@ -556,6 +556,10 @@ for i in range(len(plttime)):
     thlvpf_subs_dry_time[i,:] = wsubdthlvpdzf_dry[1:]
     thlvpp_subs_moist_time[i,:] = wsubdthlvpdzp_moist[1:]
     thlvpp_subs_dry_time[i,:] = wsubdthlvpdzp_dry[1:]
+    
+    # wthlv
+    wwsubdthlvppdz = wfp[1:,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
+    
     
     # Subsidence drying
     wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzh),circ_mask)
@@ -570,10 +574,15 @@ for i in range(len(plttime)):
     del wsubdqtpdzf
     gc.collect()
     
-    # Buoyancy effect on wthlvpf
-    wthlvp_buoy = lowPass(thlvpp**2*grav/thlv_av[:,np.newaxis,np.newaxis], circ_mask)
-    
+    # Buoyancy tendency in wthlvpf budget
+    wthlvp_buoy = (thlvpp**2*grav/thlv_av[:,np.newaxis,np.newaxis])[1:-1,:,:]
+    wthlvp_buoy_av = np.mean(wthlvp_buoy,axis=(1,2))
+    wthlvp_buoy = lowPass(wthlvp_buoy, circ_mask)
+    wthlvpf_buoy_moist_time[i,:] = mean_mask(wthlvp_buoy, mask_moist) - wthlvp_buoy_av
+    wthlvpf_buoy_dry_time[i,:] = mean_mask(wthlvp_buoy, mask_dry) - wthlvp_buoy_av
 
+    del wthlvp_buoy
+    gc.collect()
     # SFS diffusion
     # Heat
     # diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], 
