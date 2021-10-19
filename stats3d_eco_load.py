@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex200_e12/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg'
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
 ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
@@ -792,8 +792,9 @@ plt.legend()
 #%% Gradients in time
 
 tpltmin = 0.
-tpltmax = 16.
-dit = 3.0 # Rounds to closest multiple of dt in time
+tpltmax = 20.
+dit = 4 # Rounds to closest multiple of dt in time
+fac=1e5
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -814,11 +815,30 @@ for i in range(len(plttime_var)):
     qlbaselab = r"Cloud base" if i==0 else None
     
     iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
+    if iqltop > izmax-3:
+        iqltop = izmax-3
     qltoplab = r"Cloud top" if i==0 else None
     
-    # Subsidence
-    qtavp_subs = -wfls[izmin+1:izmax-1]*Gamma_qt[plttime_var[i],:]
-    thlvavp_subs = -wfls[izmin+1:izmax-1]*Gamma_thlv[plttime_var[i],:]
+    # Subsidence at cloud base
+    qtavp_subs = (-wfls[izmin+1:izmax-1]*Gamma_qt[plttime_var[i],:])
+    thlvavp_subs = (-wfls[izmin+1:izmax-1]*Gamma_thlv[plttime_var[i],:])
+    
+    # Large-scale drying at cloud base
+    qtavp_larq = (qtavp_ls[izmin:izmax])
+    thlvavp_larq = (0.608*thl_av_time[plttime_var[i],:]*qtavp_ls[izmin:izmax])
+
+    # Large-scale cooling at cloud base
+    thlvavp_lart = (thlavp_ls[izmin:izmax])
+    
+    # Flux divergence, reconstructed (approximately) from closest 1D output
+    it1d = np.argmin(np.abs(time[plttime_var[i]]-time1d/3600))
+    wthl_av = ds1['wthlt'][it1d,izmin:izmax]
+    wqt_av = ds1['wqtt'][it1d,izmin:izmax]
+    thl_av_1d = ds1['thl'][it1d,izmin:izmax]
+    wthlv_av = wthl_av + 0.608*thl_av_1d*wqt_av
+        
+    ddz_wqt_av = -((wqt_av[1:] - wqt_av[:-1])/dzh)
+    ddz_wthlv_av = -((wthlv_av[1:] - wthlv_av[:-1])/dzh)
     
     col = plt.cm.cubehelix(i/len(plttime_var))
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
@@ -831,6 +851,32 @@ for i in range(len(plttime_var)):
                marker='^',color=col,zorder=100,label=qltoplab)
     ax.set_xlabel(r"$\overline{\theta_{lv}} [K]$")
     ax.set_ylabel(r"$\overline{q_t}$ [kg/kg]")
+    
+    heights_budg = [iqlbase, imin, iqltop]
+    heights_budg = np.arange(iqlbase, iqltop, 8)
+    if i == len(plttime_var)-1:
+        for k in range(len(heights_budg)):
+
+            subslab = r"subsidence" if k==0 else None  
+            moislab = r"large-scale moistening" if k==0 else None
+            heatlab = r"large-scale heating" if k==0 else None
+            fluxlab = r"Flux convergence" if k==0 else None
+
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_subs[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*qtavp_subs[heights_budg[k]]],
+                    color='olive',label=subslab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_larq[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*qtavp_larq[heights_budg[k]]],
+                    color='palevioletred',label=moislab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_lart[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]],
+                    color='peru',label=heatlab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*ddz_wthlv_av[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*ddz_wqt_av[heights_budg[k]]],
+                    color='maroon',label=fluxlab)
 
 ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
     
