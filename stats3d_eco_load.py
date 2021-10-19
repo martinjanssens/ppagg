@@ -14,25 +14,24 @@ from skimage.measure import block_reduce
 
 # Run specifics
 lp = '/scratch-shared/janssens/bomex200_e12/ppagg'
-ds = nc.Dataset(lp+'/../fielddump.001.nc')
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
-ds0= nc.Dataset(lp+'/../tmser.001.nc')
 ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
-# time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 time = np.load(lp+'/time.npy')
-zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
 
 time1d = np.ma.getdata(ds1.variables['time'][:])
 rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
 
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
-
-# Larger-scale subsidence
+# Larger-scale processes
+zf = ilp[:,0]
 wfls = ilp[:,3]
+qtavp_ls = ilp[:,6]
+thlavp_ls = ilp[:,7]
 
 plttime = np.load(lp+'/plttime.npy')
 zflim = np.load(lp+'/zf.npy')
+
+dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 izmin = np.where(zflim[0] == zf)[0][0]
 izmax = np.where(zflim[-1] == zf)[0][0]+1
@@ -792,9 +791,9 @@ plt.legend()
 
 #%% Gradients in time
 
-tpltmin = 6.
+tpltmin = 0.
 tpltmax = 16.
-dit = 1.0 # Rounds to closest multiple of dt in time
+dit = 3.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -816,6 +815,10 @@ for i in range(len(plttime_var)):
     
     iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
     qltoplab = r"Cloud top" if i==0 else None
+    
+    # Subsidence
+    qtavp_subs = -wfls[izmin+1:izmax-1]*Gamma_qt[plttime_var[i],:]
+    thlvavp_subs = -wfls[izmin+1:izmax-1]*Gamma_thlv[plttime_var[i],:]
     
     col = plt.cm.cubehelix(i/len(plttime_var))
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
