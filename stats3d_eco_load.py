@@ -13,26 +13,25 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/scratch-shared/janssens/bomex200_e12/ppagg'
-ds = nc.Dataset(lp+'/../fielddump.001.nc')
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg'
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
-ds0= nc.Dataset(lp+'/../tmser.001.nc')
 ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
-# time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 time = np.load(lp+'/time.npy')
-zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
 
 time1d = np.ma.getdata(ds1.variables['time'][:])
 rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
 
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
-
-# Larger-scale subsidence
+# Larger-scale processes
+zf = ilp[:,0]
 wfls = ilp[:,3]
+qtavp_ls = ilp[:,6]
+thlavp_ls = ilp[:,7]
 
 plttime = np.load(lp+'/plttime.npy')
 zflim = np.load(lp+'/zf.npy')
+
+dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 izmin = np.where(zflim[0] == zf)[0][0]
 izmax = np.where(zflim[-1] == zf)[0][0]+1
@@ -113,6 +112,22 @@ wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
 
 thvpf_moist_time = thlvpf_moist_time + 7*thl_av_time*qlpf_moist_time
 thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
+
+# Reconstruct mean flux divergence (approximately, i.e. ignoring rho)
+wthl_av = ds1['wthlt'][:,izmin:izmax]
+wqt_av = ds1['wqtt'][:,izmin:izmax]
+thl_av_1d = ds1['thl'][:,izmin:izmax]
+wthlv_av = wthl_av + 0.608*thl_av_1d*wqt_av
+
+ddz_wqt_av_time = -((wqt_av[:,1:] - wqt_av[:,:-1])/dzh)
+ddz_wthlv_av_time = -((wthlv_av[:,1:] - wthlv_av[:,:-1])/dzh)
+
+ddz_wqt_av_time = (ddz_wqt_av_time[:,1:] + ddz_wqt_av_time[:,:-1])*0.5
+ddz_wthlv_av_time = (ddz_wthlv_av_time[:,1:] + ddz_wthlv_av_time[:,:-1])*0.5
+
+# Slopes of mean profiles
+Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
+Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
@@ -335,10 +350,6 @@ axs[0].set_ylabel(r'Height [m]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
 # WTG-based model of moisture variance production
-
-# Slopes
-Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
-Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
 
 # Vertical velocities
 
@@ -790,17 +801,18 @@ plt.ylabel(r"Average $\widetilde{w'\theta_{lv}'} - \overline{w'\theta_{lv}'}$ in
 plt.xlabel(r"$0.608\overline{\theta_l}\widetilde{q_t'}$")
 plt.legend()
 
-#%% Gradients in time
+#%% Mean profiles
 
-tpltmin = 6.
-tpltmax = 16.
-dit = 1.0 # Rounds to closest multiple of dt in time
+tpltmin = 0.
+tpltmax = 20.
+dit = 4 # Rounds to closest multiple of dt in time
+fac=1e5 # Factor for plotting tendency magnitudes
+tav=0.25 # time (hrs) around plotting time over which to average flux divergence
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
-
 
 fig = plt.figure(figsize=(5,5))
 ax = plt.gca()
@@ -815,7 +827,27 @@ for i in range(len(plttime_var)):
     qlbaselab = r"Cloud base" if i==0 else None
     
     iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
+    if iqltop > izmax-3:
+        iqltop = izmax-3
     qltoplab = r"Cloud top" if i==0 else None
+    
+    # Subsidence at cloud base
+    qtavp_subs = (-wfls[izmin+1:izmax-1]*Gamma_qt[plttime_var[i],:])
+    thlvavp_subs = (-wfls[izmin+1:izmax-1]*Gamma_thlv[plttime_var[i],:])
+    
+    # Large-scale drying at cloud base
+    qtavp_larq = (qtavp_ls[izmin:izmax])
+    thlvavp_larq = (0.608*thl_av_time[plttime_var[i],:]*qtavp_ls[izmin:izmax])
+
+    # Large-scale cooling at cloud base
+    thlvavp_lart = (thlavp_ls[izmin:izmax])
+    
+    # Flux divergence, averaged over tav around the current time
+    it1d = np.argmin(np.abs(time[plttime_var[i]]-time1d/3600))
+    itmin = np.argmin(np.abs(time1d - (time1d[it1d]-tav*3600)))
+    itmax = np.argmin(np.abs(time1d - (time1d[it1d]+tav*3600)))
+    ddz_wthlv_av = np.mean(ddz_wthlv_av_time[itmin:itmax],axis=0)
+    ddz_wqt_av = np.mean(ddz_wqt_av_time[itmin:itmax],axis=0)
     
     col = plt.cm.cubehelix(i/len(plttime_var))
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
@@ -828,9 +860,84 @@ for i in range(len(plttime_var)):
                marker='^',color=col,zorder=100,label=qltoplab)
     ax.set_xlabel(r"$\overline{\theta_{lv}} [K]$")
     ax.set_ylabel(r"$\overline{q_t}$ [kg/kg]")
+    
+    heights_budg = [iqlbase, imin, iqltop]
+    heights_budg = np.arange(iqlbase, imin, 4)
+    if i == len(plttime_var)-1:
+        for k in range(len(heights_budg)):
 
-ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+            subslab = r"subsidence" if k==0 else None  
+            moislab = r"large-scale moistening" if k==0 else None
+            heatlab = r"large-scale heating" if k==0 else None
+            fluxlab = r"Flux convergence" if k==0 else None
+
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_subs[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*qtavp_subs[heights_budg[k]]],
+                    color='olive',label=subslab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_larq[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*qtavp_larq[heights_budg[k]]],
+                    color='palevioletred',label=moislab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*thlvavp_lart[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]],
+                    color='peru',label=heatlab)
+            
+            ax.plot([thlv_av_time[plttime_var[i],heights_budg[k]],thlv_av_time[plttime_var[i],heights_budg[k]]+fac*ddz_wthlv_av[heights_budg[k]]],
+                    [qt_av_time[plttime_var[i],heights_budg[k]],qt_av_time[plttime_var[i],heights_budg[k]]+fac*ddz_wqt_av[heights_budg[k]]],
+                    color='maroon',label=fluxlab)
+
+ax.legend(loc='upper right',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
     
     
+#%% Profiles of mean flux divergence
+
+tpltmin = 6.
+tpltmax = 16.
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0
+
+itpltmin = np.where(time1d/3600>=tpltmin)[0][0]
+itpltmax = np.where(time1d/3600<tpltmax)[0][-1]+1
+idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+
+fig,axs = plt.subplots(ncols=4,sharey=True,figsize=(10,5),squeeze=False)
+for i in range(len(plttime_var)):
+    col = plt.cm.cubehelix(i/len(plttime_var))
     
+    itmin = np.argmin(np.abs(time1d - (time1d[plttime_var[i]]-tav*3600)))
+    itmax = np.argmin(np.abs(time1d - (time1d[plttime_var[i]]+tav*3600)))
+    
+    thlv_av = np.mean(thlv_av_time[itmin:itmax],axis=0)
+    qt_av = np.mean(qt_av_time[itmin:itmax],axis=0)
+    ddz_wthlv_av = np.mean(ddz_wthlv_av_time[itmin:itmax],axis=0)
+    ddz_wqt_av = np.mean(ddz_wqt_av_time[itmin:itmax],axis=0)
+     
+    axs[0,0].plot(thlv_av, zflim, color=col,linestyle='-')
+    axs[0,0].set_xlabel(r"$\overline{\theta_{lv}}$")
+    # axs[0,0].set_xlim((0,6e-4))
+    axs[0,0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+    
+    axs[0,1].plot(qt_av, zflim, color=col,linestyle='-')
+    axs[0,1].set_xlabel(r"$\overline{q_t}$")
+    # axs[0,0].set_xlim((0,6e-4))
+    axs[0,1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+
+    axs[0,2].plot(ddz_wthlv_av, zflim[1:-1], color=col,linestyle='-')
+    axs[0,2].axvline(0,color='gray',linestyle='dotted')
+    axs[0,2].set_xlabel(r"$\frac{\partial}{\partial z}\left(\overline{w'\theta_{lv}'}\right)$")
+    # axs[0,0].set_xlim((0,6e-4))
+    axs[0,2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+    
+    axs[0,3].plot(ddz_wqt_av, zflim[1:-1], color=col,linestyle='-',label='t=%.2f'%(time1d[plttime_var[i]]/3600))
+    axs[0,3].axvline(0,color='gray',linestyle='dotted')
+    axs[0,3].set_xlabel(r"$\frac{\partial}{\partial z}\left(\overline{w'q_t'}\right)$")
+    # axs[0,0].set_xlim((0,6e-4))
+    axs[0,3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+
+axs[0,0].set_ylabel('z [m]')
+axs[0,3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+
+
 
