@@ -625,19 +625,22 @@ for i in range(len(plttime)):
         diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi) +
                       diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi))
         diff_thlvpf = lowPass(diff_thlvp, circ_mask)
-        
+
+        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi),axis=(1,2))                      
+
         # moist/dry and large/small
         diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
         diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
         diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
         diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
 
-        thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist
-        thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry
-        thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
-        thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
+        thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist - diff_thlvp_av
+        thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry - diff_thlvp_av
+        thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist - diff_thlvp_av
+        thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry - diff_thlvp_av
         
         # wthlv - now uses thlvp and not thlvpp, but well...
+        # Do not need to account for diff_thlvp_av or diff_wp_av
         wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
         wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
 
@@ -656,20 +659,21 @@ for i in range(len(plttime)):
         diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
                             diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
                             circ_mask)
+        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi), axis=(1,2))
+        
         diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
         diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
 
-        qtpf_diff_moist_time[i,:] = diff_qtpf_moist
-        qtpf_diff_dry_time[i,:] = diff_qtpf_dry
+        qtpf_diff_moist_time[i,:] = diff_qtpf_moist - diff_qtp_av
+        qtpf_diff_dry_time[i,:] = diff_qtpf_dry - diff_qtp_av
 
         del diff_thlvp
         del diff_thlvpf
+        del wdiff_thlvpf
+        del thlvpdiffw
+        del thlvpdiffwf
         del diff_qtpf
         gc.collect()
-    
-    del u
-    del v
-    gc.collect()
 
 if store:
     np.save(lp+'/time.npy',time[plttime])
