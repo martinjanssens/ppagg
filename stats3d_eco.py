@@ -222,8 +222,10 @@ for i in range(len(plttime)):
     # Eddy diffusivities
     if eflag:
         dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
-        _,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
+        ekmp,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
+        ekm_av = np.mean(ekmp,axis=(1,2))
         ekh_av = np.mean(ekhp,axis=(1,2))
+        ekmp = ekmp - ekm_av[:,np.newaxis,np.newaxis]
         ekhp = ekhp - ekh_av[:,np.newaxis,np.newaxis]
         del e12
         del dthvdz
@@ -637,6 +639,13 @@ for i in range(len(plttime)):
         thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
         thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
         
+        # wthlv - now uses thlvp and not thlvpp, but well...
+        wdiff_thlvpf = lowPass(wfp*diff_thlvp, circ_mask)
+        wdiff_thlv_av = np.mean(wfp*diff_thlvp, axis=(1,2))
+
+        thlvpdiffw = 
+
+
         # Moisture
         diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
                             diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),

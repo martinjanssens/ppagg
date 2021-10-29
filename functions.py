@@ -222,6 +222,44 @@ def diffeka(ekh,a,dx,dy,zf,rhobf=None,rhobh=None):
     
     return diffxh[1:-1,:,:] + diffz
 
+def diffekw(ekm,w,dx,dy,dzh,rhob=None,rhobh=None):
+    # Assumes constant vertical spacing
+    if type(rhobf) == type(None):
+        rhobf = np.ones(zf.shape)
+    if type(rhobh) == type(None):
+        rhobh = np.ones(zf.shape)
+    
+    # Set to ekm shape
+    u = u[1:-1,:,:]
+    v = v[1:-1,:,:]
+    w = w[1:-1,:,:]
+
+    emom = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=2) +
+            ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=2)) / 4.
+
+    eomm = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=1) + 
+            ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=1)) / 4.
+
+    eopm = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=1) + 
+            ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=1)) / 4.
+
+    epom = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=2) +
+            ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=2)) / 4.
+
+    return ((epom*((np.roll(w[1:-1,:,:],-1,axis=2) - w[1:-1,:,:]) / dx +
+                   (np.roll(u[1:-1,:,:],-1,axis=2) - np.roll(u[:-2, :,:],-1,axis=2) / dzh))
+            -emom*((w[1:-1,:,:] - np.roll(w[1:-1,:,:],1,axis=2)) / dx +
+                   (u[1:-1,:,:] - u[:-2,:,:]) / dzh)) / dx
+           +
+            (eopm*((np.roll(w[1:-1,:,:],-1,axis=1) - w[1:-1,:,:]) / dy +
+                   (np.roll(v[1:-1,:,:],-1,axis=1) - np.roll(v[:-2, :,:],-1,axis=1) / dzh))
+            -eomm*((w[1:-1,:,:] - np.roll(w[1:-1,:,:],1,axis=1)) / dy +
+                   (v[1:-1,:,:] - v[:-2,:,:]) / dzh)) / dy
+           + 
+            2./rhobh[1:-1,np.newaxis,np.newaxis]*
+            (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dzh -
+             rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh)/dzh
+
 def mean_mask(field,mask):
     masked = np.ma.masked_equal(field*mask,0)
     if len(field.shape) == 2:
