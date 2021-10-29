@@ -135,12 +135,12 @@ def ddxhuhw_2nd(u,v,w,dx,dy):
     # Starts at half level above full level 0 (i.e. u_ijk=u[1:,:,:])
     # Return z-shape will thus be w.shape[0]-1
     return (((np.roll(u[1:,:,:],-1,axis=2) + np.roll(u[:-1,:,:],-1,axis=2))*
-             (w[1,:,:] + np.roll(w[1,:,:],-1,axis=2)) -
+             (w[1:,:,:] + np.roll(w[1:,:,:],-1,axis=2)) -
              (u[1:,:,:] + u[:-1,:,:])*
              (np.roll(w[1:,:,:],1,axis=2) + w[1:,:,:]))
               / (4*dx) +
             ((np.roll(v[1:,:,:],-1,axis=1) + np.roll(v[:-1,:,:],-1,axis=1))*
-             (w[1,:,:] + np.roll(w[1,:,:],-1,axis=1)) -
+             (w[1:,:,:] + np.roll(w[1:,:,:],-1,axis=1)) -
              (v[1:,:,:] + v[:-1,:,:])*
              (np.roll(w[1:,:,:],1,axis=1) + w[1:,:,:]))
              / (4*dy))

@@ -131,6 +131,8 @@ wthlvpf_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_buoy_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_buoy_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_pres_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_pres_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
@@ -548,6 +550,10 @@ for i in range(len(plttime)):
     
     del div_uhthlvp
     del div_uhthlvpf
+    del wdiv_uhthlvp
+    del wdiv_uhthlvpf
+    del thlvpdiv_uhwp
+    del thlvpdiv_uhwpf
     del div_uhqtp
     del u
     del v
@@ -574,6 +580,7 @@ for i in range(len(plttime)):
     wwsubdthlvppdz = wfp[:-1,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
     wwsubdthlvppdz_av = np.mean(wwsubdthlvppdz,axis=(1,2))
     wwsubdthlvppdzf = lowPass(wwsubdthlvppdz, circ_mask)
+    
     wwsubdthlvppdzf_moist = mean_mask(wwsubdthlvppdzf, mask_moist)
     wwsubdthlvppdzf_dry = mean_mask(wwsubdthlvppdzf, mask_dry)
     
@@ -585,7 +592,7 @@ for i in range(len(plttime)):
     wsubdqtpdzf_moist = mean_mask(wsubdqtpdzf,mask_moist)
     wsubdqtpdzf_dry = mean_mask(wsubdqtpdzf,mask_dry)
     
-    qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:] 
+    qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:]
     qtpf_subs_dry_time[i,:] = wsubdqtpdzf_dry[1:]
     
     del wsubdthlvpdz
