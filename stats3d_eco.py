@@ -26,7 +26,9 @@ if parseFlag:
     parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
     parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
     parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
-    parser.add_argument("--store", action="store_true", default=False, help="Process only fielddump")
+    parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
+    parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
+    parser.add_argument("--e12", action="store_true", default=False, help="3D e12 data is available")
 
     args = parser.parse_args()
 
@@ -38,7 +40,8 @@ if parseFlag:
     izmax = args.izmax
     klp = args.klp
     store = args.store
-
+    pflag = args.pres
+    eflag = args.e12
 else:
     lp = '/scratch-shared/janssens/bomex200_e12'
 
@@ -77,6 +80,8 @@ if not parseFlag:
     izmin = 0
     izmax = 80
     store = False
+    pflag = False
+    eflag = True
     klp = 4
 
 plttime = np.arange(itmin, itmax, di)
@@ -195,7 +200,8 @@ for i in range(len(plttime)):
     qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
     u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
-    # e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+    if eflag:
+        e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
 
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
@@ -214,12 +220,13 @@ for i in range(len(plttime)):
     thv_av = (thl_av[:-1] + (Lv/cp)*ql_av[:-1]/exnf)*(1.+(Rv/Rd-1)*qt_av[:-1] -Rv/Rd*ql_av[:-1])
     
     # Eddy diffusivities
-    # dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
-    # _,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
-    # ekh_av = np.mean(ekhp,axis=(1,2))
-    # ekhp = ekhp - ekh_av[:,np.newaxis,np.newaxis]
-    # del e12
-    # del dthvdz
+    if eflag:
+        dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
+        _,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
+        ekh_av = np.mean(ekhp,axis=(1,2))
+        ekhp = ekhp - ekh_av[:,np.newaxis,np.newaxis]
+        del e12
+        del dthvdz
     
     # Define thlv
     thlvp = thlp + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
@@ -611,35 +618,40 @@ for i in range(len(plttime)):
 
     del wthlvp_buoy
     gc.collect()
+    
     # SFS diffusion
-    # Heat
-    # diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], 
-    #                       thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
-    #                       dx, dy, zf, rhobfi, rhobhi) +
-    #               diffzeka(ekhp, thl_av[:,np.newaxis,np.newaxis]*(1+0.608*qt_av[:,np.newaxis,np.newaxis]),
-    #                        dzh, rhobfi, rhobhi))
-    # diff_thlvpf = lowPass(diff_thlvp, circ_mask)
-    
-    # # moist/dry and large/small
-    # diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
-    # diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
-    # diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
-    # diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
+    if eflag:
+        # Heat
+        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi) +
+                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi))
+        diff_thlvpf = lowPass(diff_thlvp, circ_mask)
+        
+        # moist/dry and large/small
+        diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
+        diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
+        diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
+        diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
 
-    # thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist
-    # thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry
-    # thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
-    # thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
-    
-    # # Moisture
-    # diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
-    #                     diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
-    #                     circ_mask)
-    # diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
-    # diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
+        thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist
+        thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry
+        thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
+        thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
+        
+        # Moisture
+        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
+                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
+                            circ_mask)
+        diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
+        diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
 
-    # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
-    # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
+        qtpf_diff_moist_time[i,:] = diff_qtpf_moist
+        qtpf_diff_dry_time[i,:] = diff_qtpf_dry
+
+        del diff_thlvp
+        del diff_thlvpf
+        del diff_qtpf
+        gc.collect()
+
 if store:
     np.save(lp+'/time.npy',time[plttime])
     np.save(lp+'/plttime.npy',plttime)
