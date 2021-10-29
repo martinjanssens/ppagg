@@ -130,8 +130,25 @@ def ddxhuhwa_2nd(u,v,w,a,dx,dy):
               w[2:,:,:] + w[1:-1,:,:]))
             / (8*dy))
 
+def ddxhuhw_2nd(u,v,w,dx,dy):
+    # Assumes constant dx, dy, shape (z,y,x), horizontal advection of w at half vertical level
+    # Starts at half level above full level 0 (i.e. u_ijk=u[1:,:,:])
+    # Return z-shape will thus be w.shape[0]-1
+    return (((np.roll(u[1:,:,:],-1,axis=2) + np.roll(u[:-1,:,:],-1,axis=2))*
+             (w[1,:,:] + np.roll(w[1,:,:],-1,axis=2)) -
+             (u[1:,:,:] + u[:-1,:,:])*
+             (np.roll(w[1:,:,:],1,axis=2) + w[1:,:,:]))
+              / (4*dx) +
+            ((np.roll(v[1:,:,:],-1,axis=1) + np.roll(v[:-1,:,:],-1,axis=1))*
+             (w[1,:,:] + np.roll(w[1,:,:],-1,axis=1)) -
+             (v[1:,:,:] + v[:-1,:,:])*
+             (np.roll(w[1:,:,:],1,axis=1) + w[1:,:,:]))
+             / (4*dy))
+
+
 def wsubdxdz(wfls,x,dzh):
-    # Assumes constant dz, wfls < 0, returns values starting at full level 0
+    # Assumes constant dz, wfls < 0
+    # eturns values starting at half level 1 (though they are used at full level 1 and on)
     # wsub defined at cell centres -> Interpolate to edges 
     whls = (wfls[1:] +  wfls[:-1])*0.5
     # upwinding

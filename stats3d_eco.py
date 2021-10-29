@@ -433,13 +433,10 @@ for i in range(len(plttime)):
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
     # thlv
-    div_wthlv_r = ddzwx_2nd(whp, thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*qtpp,
-                            dzh, rhobf=rhobfi)
-    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, 
-                                     thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
-                                     dzh, rhobf=rhobfi),axis=(1,2))
+    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzh, rhobf=rhobfi)
+    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzh, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
-    div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous flux
+    div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous p-scale flux
 
     # Moist/dry and large/small scale
     div_wthlv_rf_moist = mean_mask(div_wthlv_rf, mask_moist)
@@ -510,7 +507,7 @@ for i in range(len(plttime)):
     # Horizontal advection
 
     # Horizontal thlv advection
-    div_uhthlvp = ddxhuha_2nd(u, v, thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dx, dy)
+    div_uhthlvp = ddxhuha_2nd(u, v, thlvpf+thlvpp, dx, dy)
     div_uhthlvpf = lowPass(div_uhthlvp, circ_mask)
     
     # moist/dry and large/small scale
@@ -524,8 +521,22 @@ for i in range(len(plttime)):
     thlvpp_hdiv_moist_time[i,:] = div_uhthlvpp_moist[1:-1]
     thlvpp_hdiv_dry_time[i,:] = div_uhthlvpp_dry[1:-1]
     
-    # TODO Add wthlvpf anomaly here
-    
+    # wthlv
+    wdiv_uhthlvp = wfp*ddxhuha_2nd(u, v, thlvpp, dx, dy)
+    wdiv_uhthlvpf = lowPass(wdiv_uhthlvp, circ_mask)
+    wdiv_uhthlvp_av = np.mean(wdiv_uhthlvpf, axis=(1,2))
+
+    thlvpdiv_uhwp = ddxhuhw_2nd(u, v, whp, dx, dy) # half level 1 and up
+    thlvpdiv_uhwp = (thlvpdiv_uhwp[1:,:,:] + thlvpdiv_uhwp[:-1,:,:]) * 0.5 # Interpolated to zflim[1:-1]
+    thlvpdiv_uhwp = thlvpp[1:-1,:,:]*thlvpdiv_uhwp
+    thlvpdiv_uhwpf = lowPass(thlvpdiv_uhwp, circ_mask)
+    thlvpdiv_uhwp_av = np.mean(thlvpdiv_uhwp, axis=(1,2))
+
+    wthlvpf_hdiv_moist_time[i,:] = (mean_mask(wdiv_uhthlvpf[1:-1,:,:] + thlvpdiv_uhwpf, mask_moist) -
+                                   (wdiv_uhthlvp_av[1:-1] + thlvpdiv_uhwp_av))
+    wthlvpf_hdiv_dry_time[i,:] = (mean_mask(wdiv_uhthlvpf[1:-1,:,:] + thlvpdiv_uhwpf, mask_dry) -
+                                 (wdiv_uhthlvp_av[1:-1] + thlvpdiv_uhwp_av))
+
     # Horizontal moisture advection
     # intra-scale contribution largest, but entire term kept for now
     div_uhqtp = lowPass(ddxhuha_2nd(u, v, qtpf+qtpp, dx, dy), circ_mask)
@@ -543,6 +554,7 @@ for i in range(len(plttime)):
     gc.collect()
 
     # Subsidence warming
+    # Defined from half level 1 on, used from full level 0 on (upwinding)
     wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlvpf+thlvpp, dzh)
     wsubdthlvpdzf = lowPass(wsubdthlvpdz, circ_mask)
     
@@ -552,25 +564,34 @@ for i in range(len(plttime)):
     wsubdthlvpdzp_moist = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_moist)
     wsubdthlvpdzp_dry = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_dry)
     
+    # Write from full level 1 on, to match other terms
     thlvpf_subs_moist_time[i,:] = wsubdthlvpdzf_moist[1:]
     thlvpf_subs_dry_time[i,:] = wsubdthlvpdzf_dry[1:]
     thlvpp_subs_moist_time[i,:] = wsubdthlvpdzp_moist[1:]
     thlvpp_subs_dry_time[i,:] = wsubdthlvpdzp_dry[1:]
     
-    # wthlv
-    wwsubdthlvppdz = wfp[1:,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
+    # wthlv 
+    wwsubdthlvppdz = wfp[:-1,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
+    wwsubdthlvppdz_av = np.mean(wwsubdthlvppdz,axis=(1,2))
+    wwsubdthlvppdzf = lowPass(wwsubdthlvppdz, circ_mask)
+    wwsubdthlvppdzf_moist = mean_mask(wwsubdthlvppdzf, mask_moist)
+    wwsubdthlvppdzf_dry = mean_mask(wwsubdthlvppdzf, mask_dry)
     
+    wthlvpf_subs_moist_time[i,:] = wwsubdthlvppdzf_moist[1:] - wwsubdthlvppdz_av[1:]
+    wthlvpf_subs_dry_time[i,:] = wwsubdthlvppdzf_dry[1:] - wwsubdthlvppdz_av[1:]
     
     # Subsidence drying
     wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzh),circ_mask)
     wsubdqtpdzf_moist = mean_mask(wsubdqtpdzf,mask_moist)
     wsubdqtpdzf_dry = mean_mask(wsubdqtpdzf,mask_dry)
     
-    qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:]
+    qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:] 
     qtpf_subs_dry_time[i,:] = wsubdqtpdzf_dry[1:]
     
     del wsubdthlvpdz
     del wsubdthlvpdzf
+    del wwsubdthlvppdz
+    del wwsubdthlvppdzf
     del wsubdqtpdzf
     gc.collect()
     
