@@ -140,8 +140,8 @@ wthlvpf_pres_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_pres_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
-wthlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
-wthlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+wthlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-5))
+wthlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-5))
 
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
 qt_av_time = np.zeros((plttime.size,izmax-izmin))
@@ -564,8 +564,6 @@ for i in range(len(plttime)):
     del thlvpdiv_uhwp
     del thlvpdiv_uhwpf
     del div_uhqtp
-    del u
-    del v
     gc.collect()
 
     # Subsidence warming
@@ -640,11 +638,19 @@ for i in range(len(plttime)):
         thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
         
         # wthlv - now uses thlvp and not thlvpp, but well...
-        wdiff_thlvpf = lowPass(wfp*diff_thlvp, circ_mask)
-        wdiff_thlv_av = np.mean(wfp*diff_thlvp, axis=(1,2))
+        wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
+        wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
 
-        thlvpdiffw = 
+        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,zf,rhobfi,rhobhi)
+        thlvpdiffw = thlvpp[2:-3]*(thlvpdiffw[1:,:,:] + thlvpdiffw[:-1,:,:])/2. # At zflim[2:-3]
+        thlvpdiffwf = lowPass(thlvpdiffw, circ_mask)
+        thlvpdiffw_av = np.mean(thlvpdiffw, axis=(1,2))
 
+        wthlvpf_diff_moist_time[i,:] = (mean_mask(wdiff_thlvpf[:-1,:,:] + thlvpdiffwf, mask_moist) - 
+                                        (wdiff_thlv_av[:-1] + thlvpdiffw_av))
+
+        wthlvpf_diff_dry_time[i,:] = (mean_mask(wdiff_thlvpf[:-1,:,:] + thlvpdiffwf, mask_dry) - 
+                                      (wdiff_thlv_av[:-1] + thlvpdiffw_av))
 
         # Moisture
         diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
@@ -660,6 +666,10 @@ for i in range(len(plttime)):
         del diff_thlvpf
         del diff_qtpf
         gc.collect()
+    
+    del u
+    del v
+    gc.collect()
 
 if store:
     np.save(lp+'/time.npy',time[plttime])

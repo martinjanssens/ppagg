@@ -222,17 +222,22 @@ def diffeka(ekh,a,dx,dy,zf,rhobf=None,rhobh=None):
     
     return diffxh[1:-1,:,:] + diffz
 
-def diffekw(ekm,w,dx,dy,dzh,rhob=None,rhobh=None):
+def diffekw(ekm,u,v,w,dx,dy,zf,rhobf=None,rhobh=None):
     # Assumes constant vertical spacing
     if type(rhobf) == type(None):
         rhobf = np.ones(zf.shape)
     if type(rhobh) == type(None):
         rhobh = np.ones(zf.shape)
     
+    # bodge
+    dzh = np.diff(zf)[0]
+    
     # Set to ekm shape
     u = u[1:-1,:,:]
     v = v[1:-1,:,:]
     w = w[1:-1,:,:]
+    rhobf = rhobf[1:-1]
+    rhobh = rhobh[1:-1]
 
     emom = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=2) +
             ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=2)) / 4.
@@ -258,7 +263,7 @@ def diffekw(ekm,w,dx,dy,dzh,rhob=None,rhobh=None):
            + 
             2./rhobh[1:-1,np.newaxis,np.newaxis]*
             (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dzh -
-             rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh)/dzh
+             rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh)/dzh)
 
 def mean_mask(field,mask):
     masked = np.ma.masked_equal(field*mask,0)
