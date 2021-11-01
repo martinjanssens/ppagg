@@ -468,7 +468,7 @@ for i in range(len(plttime)):
     wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
 
     div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
-    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels (lose highest one)
+    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels zflim[1:-2]
     
     thlvpdiv_wwf_r = lowPass(thlvpp[1:-2,:,:]*div_ww_r,circ_mask)
     thlvpdiv_ww_av = np.mean(thlvpp[1:-2,:,:]*div_ww_r,axis=(1,2))
