@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -t 6:00:00
+#SBATCH -n 1  #total number of tasks, number of nodes calculated automatically
+#SBATCH --exclusive
+
+# ATTENTION: MAKE SURE TO SWITCH THE parseFlag BOOLEAN in stats3d_eco.py TO True BEFORE RUNNING THIS
+
+source ~/.bashrc
+conda activate ppaggenv
+
+STATS3D=~/scripts/pp3d/stats3d_eco.py
+DIR=`pwd`
+ITMIN=0
+ITMAX=-1
+DT=1
+IZMIN=1
+IZMAX=80
+KLP=4
+STORE=TRUE
+
+python $STATS3D --dir $DIR --itmin $ITMIN --itmax $ITMAX --izmin $IZMIN --izmax $IZMAX --klp $KLP --store --e12 --pres
