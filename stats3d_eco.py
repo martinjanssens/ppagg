@@ -43,7 +43,7 @@ if parseFlag:
     pflag = args.pres
     eflag = args.e12
 else:
-    lp = '/scratch-shared/janssens/bomex200_e12'
+    lp = '/scratch-shared/janssens/bomex100_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -80,7 +80,7 @@ if not parseFlag:
     izmin = 0
     izmax = 80
     store = False
-    pflag = False
+    pflag = True
     eflag = True
     klp = 4
 
@@ -202,6 +202,8 @@ for i in range(len(plttime)):
     v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
     if eflag:
         e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+    if pflag:
+        pp = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
 
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
@@ -674,6 +676,23 @@ for i in range(len(plttime)):
         del thlvpdiffwf
         del diff_qtpf
         gc.collect()
+    
+    # Pressure fluctuation gradient (in wthlvp budget)
+    if pflag:
+        thlvppgrad = (pp[1:,:,:] - pp[:-1,:,:])/dzh # At half levels (as it appears in w eq)
+        thlvppgrad = (thlvppgrad[1:,:,:] + thlvppgrad[:-1,:,:])*0.5 # Move to full levels
+        thlvppgrad = thlvpp[1:-1,:,:]*thlvppgrad
+        thlvppgrad_av = np.mean(thlvppgrad,axis=(1,2))
+        thlvppgrad = lowPass(thlvppgrad, circ_mask)
+
+        thlvppgradf_moist = mean_mask(thlvppgrad, mask_moist)
+        thlvppgradf_dry = mean_mask(thlvppgrad, mask_dry)
+
+        wthlvpf_pres_moist_time[i,:] = thlvppgradf_moist - thlvppgrad_av
+        wthlvpf_pres_dry_time[i,:] = thlvppgradf_dry - thlvppgrad_av
+
+        del thlvppgrad
+        gc.collect()
 
 if store:
     np.save(lp+'/time.npy',time[plttime])
@@ -721,6 +740,21 @@ if store:
     np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
     np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
     
+    np.save(lp+'/wthlvpf_prod_moist_time',wthlvpf_prod_moist_time)
+    np.save(lp+'/wthlvpf_prod_dry_time',wthlvpf_prod_dry_time)
+    np.save(lp+'/wthlvpf_vdiv_moist_time',wthlvpf_vdiv_moist_time)
+    np.save(lp+'/wthlvpf_vdiv_dry_time',wthlvpf_vdiv_dry_time)
+    np.save(lp+'/wthlvpf_hdiv_moist_time',wthlvpf_hdiv_moist_time)
+    np.save(lp+'/wthlvpf_hdiv_dry_time',wthlvpf_hdiv_dry_time)
+    np.save(lp+'/wthlvpf_buoy_moist_time',wthlvpf_buoy_moist_time)
+    np.save(lp+'/wthlvpf_buoy_dry_time',wthlvpf_buoy_dry_time)
+    np.save(lp+'/wthlvpf_pres_moist_time',wthlvpf_pres_moist_time)
+    np.save(lp+'/wthlvpf_pres_dry_time',wthlvpf_pres_dry_time)
+    np.save(lp+'/wthlvpf_subs_moist_time',wthlvpf_subs_moist_time)
+    np.save(lp+'/wthlvpf_subs_dry_time',wthlvpf_subs_dry_time)
+    np.save(lp+'/wthlvpf_diff_moist_time',wthlvpf_diff_moist_time)
+    np.save(lp+'/wthlvpf_diff_dry_time',wthlvpf_diff_dry_time)
+
     np.save(lp+'/thl_av_time.npy',thl_av_time)
     np.save(lp+'/thlv_av_time.npy',thlv_av_time)
     np.save(lp+'/qt_av_time.npy',qt_av_time)
