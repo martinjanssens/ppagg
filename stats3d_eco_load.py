@@ -12,6 +12,10 @@ import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
+# Settings
+pflag = False
+eflag = False
+
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg'
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
@@ -48,6 +52,8 @@ qtpf_hdiv_moist_time = np.load(lp+'/qtpf_hdiv_moist_time.npy')
 qtpf_hdiv_dry_time = np.load(lp+'/qtpf_hdiv_dry_time.npy')
 qtpf_subs_moist_time = np.load(lp+'/qtpf_subs_moist_time.npy')
 qtpf_subs_dry_time = np.load(lp+'/qtpf_subs_dry_time.npy')
+qtpf_diff_moist_time = np.load(lp+'/qtpf_diff_moist_time.npy')
+qtpf_diff_dry_time = np.load(lp+'/qtpf_diff_dry_time.npy')
 
 thlvpf_moist_time = np.load(lp+'/thlvpf_moist_time.npy')
 thlvpf_dry_time = np.load(lp+'/thlvpf_dry_time.npy')
@@ -58,7 +64,9 @@ thlvpf_vdiv_dry_time = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
 thlvpf_hdiv_moist_time = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
 thlvpf_hdiv_dry_time = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
 thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_dry_time.npy')
+thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
+thlvpf_diff_dry_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
+thlvpf_diff_dry_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
 
 thlvpp_moist_time = np.load(lp+'/thlvpp_moist_time.npy')
 thlvpp_dry_time = np.load(lp+'/thlvpp_dry_time.npy')
@@ -70,6 +78,8 @@ thlvpp_hdiv_moist_time = np.load(lp+'/thlvpp_hdiv_moist_time.npy')
 thlvpp_hdiv_dry_time = np.load(lp+'/thlvpp_hdiv_dry_time.npy')
 thlvpp_subs_moist_time = np.load(lp+'/thlvpp_subs_moist_time.npy')
 thlvpp_subs_dry_time = np.load(lp+'/thlvpp_subs_dry_time.npy')
+thlvpp_diff_moist_time = np.load(lp+'/thlvpp_diff_moist_time.npy')
+thlvpp_diff_dry_time = np.load(lp+'/thlvpp_diff_dry_time.npy')
 
 wthlvpf_prod_moist_time = np.load(lp+'/wthlvpf_prod_moist_time')
 wthlvpf_prod_dry_time =  np.load(lp+'/wthlvpf_prod_dry_time')
@@ -246,52 +256,52 @@ qtpfmn_prod_moist_wex = np.mean(qtpf_prod_moist_wex_time[itpltmin:itpltmax,:],ax
 qtpfmn_vdiv_moist = np.mean(qtpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_hdiv_moist = np.mean(qtpf_hdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_subs_moist = np.mean(qtpf_subs_moist_time[itpltmin:itpltmax,:],axis=0)
-# qtpfmn_diff_moist = np.mean(qtpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+qtpfmn_diff_moist = np.mean(qtpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_budg_moist = (-qtpfmn_prod_moist_wex[1:-1] - qtpfmn_vdiv_moist[1:-1]
-                     -qtpfmn_hdiv_moist[1:-1] - qtpfmn_subs_moist[1:-1])
-                     # +qtpfmn_diff_moist)
+                     -qtpfmn_hdiv_moist[1:-1] - qtpfmn_subs_moist[1:-1]
+                     +qtpfmn_diff_moist)
 qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_vdiv_dry = np.mean(qtpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_hdiv_dry = np.mean(qtpf_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_subs_dry = np.mean(qtpf_subs_dry_time[itpltmin:itpltmax,:],axis=0)
-# qtpfmn_diff_dry = np.mean(qtpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
+qtpfmn_diff_dry = np.mean(qtpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_budg_dry = (-qtpfmn_prod_dry_wex[1:-1] - qtpfmn_vdiv_dry[1:-1]
-                     -qtpfmn_hdiv_dry[1:-1] - qtpfmn_subs_dry[1:-1])
-                     # +qtpfmn_diff_dry)
+                     -qtpfmn_hdiv_dry[1:-1] - qtpfmn_subs_dry[1:-1]
+                     +qtpfmn_diff_dry)
 
 thlvpfmn_prod_moist = np.mean(thlvpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_vdiv_moist = np.mean(thlvpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_hdiv_moist = np.mean(thlvpf_hdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_subs_moist = np.mean(thlvpf_subs_moist_time[itpltmin:itpltmax,:],axis=0)
-# thlvpfmn_diff_moist = np.mean(thlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_diff_moist = np.mean(thlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_budg_moist = (-thlvpfmn_prod_moist[1:-1] - thlvpfmn_vdiv_moist[1:-1]
-                       -thlvpfmn_hdiv_moist[1:-1] - thlvpfmn_subs_moist[1:-1])
-                     # +thlvpfmn_diff_moist)
+                       -thlvpfmn_hdiv_moist[1:-1] - thlvpfmn_subs_moist[1:-1]
+                       +thlvpfmn_diff_moist)
 thlvpfmn_prod_dry = np.mean(thlvpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_vdiv_dry = np.mean(thlvpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_hdiv_dry = np.mean(thlvpf_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_subs_dry = np.mean(thlvpf_subs_dry_time[itpltmin:itpltmax,:],axis=0)
-# thlvpfmn_diff_dry = block_reduce(thlvpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_diff_dry = block_reduce(thlvpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_budg_dry = (-thlvpfmn_prod_dry[1:-1] - thlvpfmn_vdiv_dry[1:-1]
-                     -thlvpfmn_hdiv_dry[1:-1] - thlvpfmn_subs_dry[1:-1])
-                     # +thlvpfmn_diff_dry)
+                     -thlvpfmn_hdiv_dry[1:-1] - thlvpfmn_subs_dry[1:-1]
+                     +thlvpfmn_diff_dry)
 
 thlvppmn_prod_moist = np.mean(thlvpp_prod_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_vdiv_moist = np.mean(thlvpp_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_hdiv_moist = np.mean(thlvpp_hdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_subs_moist = np.mean(thlvpp_subs_moist_time[itpltmin:itpltmax,:],axis=0)
-# thlvppmn_diff_moist = np.mean(thlvpp_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+thlvppmn_diff_moist = np.mean(thlvpp_diff_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_budg_moist = (-thlvppmn_prod_moist[1:-1] - thlvppmn_vdiv_moist[1:-1]
-                       -thlvppmn_hdiv_moist[1:-1] - thlvppmn_subs_moist[1:-1])
-                     # +thlvppmn_diff_moist)
+                       -thlvppmn_hdiv_moist[1:-1] - thlvppmn_subs_moist[1:-1]
+                       +thlvppmn_diff_moist)
 thlvppmn_prod_dry = np.mean(thlvpp_prod_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_vdiv_dry = np.mean(thlvpp_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_hdiv_dry = np.mean(thlvpp_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_subs_dry = np.mean(thlvpp_subs_dry_time[itpltmin:itpltmax,:],axis=0)
-# thlvppmn_diff_dry = block_reduce(thlvpp_diff_dry_time[itpltmin:itpltmax,:],axis=0)
+thlvppmn_diff_dry = block_reduce(thlvpp_diff_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvppmn_budg_dry = (-thlvppmn_prod_dry[1:-1] - thlvppmn_vdiv_dry[1:-1]
-                     -thlvppmn_hdiv_dry[1:-1] - thlvppmn_subs_dry[1:-1])
-                     # +thlvppmn_diff_dry)
+                     -thlvppmn_hdiv_dry[1:-1] - thlvppmn_subs_dry[1:-1]
+                     +thlvppmn_diff_dry)
 
 wthlvfpmn_prod_moist = np.mean(wthlvpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_vdiv_moist = np.mean(wthlvpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
@@ -299,9 +309,10 @@ wthlvpfmn_hdiv_moist = np.mean(wthlvpf_hdiv_moist_time[itpltmin:itpltmax,:],axis
 wthlvpfmn_buoy_moist = np.mean(wthlvpf_buoy_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_pres_moist = np.mean(wthlvpf_pres_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_subs_moist = np.mean(wthlvpf_subs_moist_time[itpltmin:itpltmax,:],axis=0)
-# wthlvpfmn_diff_moist = np.mean(wthlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_diff_moist = np.mean(wthlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_budg_moist = (-wthlvpfmn_prod_moist[1:-1] - wthlvpfmn_vdiv_moist[1:-1]
-                       -wthlvpfmn_hdiv_moist[1:-1] - wthlvpfmn_subs_moist[1:-1])
+                       -wthlvpfmn_hdiv_moist[1:-1] - wthlvpfmn_subs_moist[1:-1]
+                       +wthlvpfmn_diff_moist)
 
 wthlvfpmn_prod_dry = np.mean(wthlvpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_vdiv_dry = np.mean(wthlvpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
@@ -309,9 +320,10 @@ wthlvpfmn_hdiv_dry = np.mean(wthlvpf_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_buoy_dry = np.mean(wthlvpf_buoy_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_pres_dry = np.mean(wthlvpf_pres_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_subs_dry = np.mean(wthlvpf_subs_dry_time[itpltmin:itpltmax,:],axis=0)
-# wthlvpfmn_diff_dry = np.mean(wthlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_diff_dry = np.mean(wthlvpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_budg_dry = (-wthlvpfmn_prod_dry[1:-1] - wthlvpfmn_vdiv_dry[1:-1]
-                       -wthlvpfmn_hdiv_dry[1:-1] - wthlvpfmn_subs_dry[1:-1])
+                      -wthlvpfmn_hdiv_dry[1:-1] - wthlvpfmn_subs_dry[1:-1]
+                      +wthlvpfmn_diff_dry)
 
 # Budget terms
 terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
