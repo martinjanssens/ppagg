@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -t 6:00:00
 #SBATCH -n 1  #total number of tasks, number of nodes calculated automatically
-#SBATCH --exclusive
+#SBATCH --mem=250G
 
 # ATTENTION: MAKE SURE TO SWITCH THE parseFlag BOOLEAN in stats3d_eco.py TO True BEFORE RUNNING THIS
 
