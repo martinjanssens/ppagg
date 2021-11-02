@@ -436,7 +436,7 @@ for i in range(len(plttime)):
     
     # wthlv
     wthlvpf_prod = lowPass(wfp**2,circ_mask)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis]
-    wthlvp_prod_av = np.mean(wthlvpf_prod,axis=(1,2))
+    wthlvp_prod_av = np.mean((wfp**2)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis],axis=(1,2))
     wthlvpf_prod_moist_time[i,:] = mean_mask(wthlvpf_prod, mask_moist) - wthlvp_prod_av
     wthlvpf_prod_dry_time[i,:] = mean_mask(wthlvpf_prod, mask_dry) - wthlvp_prod_av
     
@@ -468,7 +468,7 @@ for i in range(len(plttime)):
     wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
 
     div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
-    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels (lose highest one)
+    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels zflim[1:-2]
     
     thlvpdiv_wwf_r = lowPass(thlvpp[1:-2,:,:]*div_ww_r,circ_mask)
     thlvpdiv_ww_av = np.mean(thlvpp[1:-2,:,:]*div_ww_r,axis=(1,2))
