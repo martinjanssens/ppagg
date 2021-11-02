@@ -43,7 +43,7 @@ if parseFlag:
     pflag = args.pres
     eflag = args.e12
 else:
-    lp = '/scratch-shared/janssens/bomex100_e12'
+    lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -80,7 +80,7 @@ if not parseFlag:
     izmin = 0
     izmax = 80
     store = False
-    pflag = True
+    pflag = False
     eflag = True
     klp = 4
 
@@ -219,7 +219,9 @@ for i in range(len(plttime)):
     presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
     presf  = (presh[1:]+presh[:-1])*0.5
     exnf   = (presf/1e5)**(Rd/cp)
-    thv_av = (thl_av[:-1] + (Lv/cp)*ql_av[:-1]/exnf)*(1.+(Rv/Rd-1)*qt_av[:-1] -Rv/Rd*ql_av[:-1])
+    thv    = ((thlp[:-1,:,:] + (Lv/cp)*qlp[:-1,:,:]/exnf[:,np.newaxis,np.newaxis])
+              *(1.+(Rv/Rd-1)*qt[:-1,:,:] -Rv/Rd*qlp[:-1,:,:]))
+    thv_av = np.mean(thv,axis=(1,2))
     
     # Eddy diffusivities
     if eflag:
@@ -434,7 +436,9 @@ for i in range(len(plttime)):
     qtpf_prod_moist_wex_time[i,:] = qtpf_prod_wex_moist
     qtpf_prod_dry_wex_time[i,:] = qtpf_prod_wex_dry
     
-    # wthlv
+    # wthlv:
+    # Doesn't matter if you use wfp instead of wfp+wff, neither in *_av nor *f
+    # Doesn't matter if you use filtered wthlvpf_prod to calculate *_av instead of full wthlvpf_prod
     wthlvpf_prod = lowPass(wfp**2,circ_mask)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis]
     wthlvp_prod_av = np.mean((wfp**2)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis],axis=(1,2))
     wthlvpf_prod_moist_time[i,:] = mean_mask(wthlvpf_prod, mask_moist) - wthlvp_prod_av
@@ -462,7 +466,11 @@ for i in range(len(plttime)):
     thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist
     thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry
     
-    # wthlv
+    # wthlvp
+    # Valid approximations that allow bypassing high-pass filtering the div-terms:
+    #  - lowPass(wfp[1:-1,:,:]*div_wthlv_r) \approx lowPass(wfp[1:-1,:,:]*div_wthlv)
+    #  - lowPass(thlvpp[1:-2,:,:]*div_ww_r) \approx lowPass(thlvpp[1:-2,:,:]*div_ww)
+    # Though this introduces small errors
     wdiv_wthlvf_r = lowPass(wfp[1:-1,:,:]*div_wthlv_r,circ_mask)
     # wdiv_wthlv_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
     wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
@@ -535,6 +543,10 @@ for i in range(len(plttime)):
     thlvpp_hdiv_dry_time[i,:] = div_uhthlvpp_dry[1:-1]
     
     # wthlv
+    # Valid approximations that allow bypassing high-pass filtering the div-terms:
+    #  - lowPass(wfp*ddxhuha_2nd(u,v,thlvpp)) \approx lowPass(wfp*ddxhuha_2nd(u,v,thlvpf+thlvpp))
+    #  - lowPass(thlvpp*ddxhuhw_2nd(u,v,whp)) \approx lowPass(thlvpp*ddxhuhw_2nd(u,v,whf+whp))
+    
     wdiv_uhthlvp = wfp*ddxhuha_2nd(u, v, thlvpp, dx, dy)
     wdiv_uhthlvpf = lowPass(wdiv_uhthlvp, circ_mask)
     wdiv_uhthlvp_av = np.mean(wdiv_uhthlvpf, axis=(1,2))
@@ -612,7 +624,7 @@ for i in range(len(plttime)):
     gc.collect()
     
     # Buoyancy tendency in wthlvpf budget
-    wthlvp_buoy = (thlvpp**2*grav/thlv_av[:,np.newaxis,np.newaxis])[1:-1,:,:]
+    wthlvp_buoy = (thlvpp[:-1]*grav*(thv-thv_av[:,np.newaxis,np.newaxis])/thv_av[:,np.newaxis,np.newaxis])[1:,:,:]
     wthlvp_buoy_av = np.mean(wthlvp_buoy,axis=(1,2))
     wthlvp_buoy = lowPass(wthlvp_buoy, circ_mask)
     wthlvpf_buoy_moist_time[i,:] = mean_mask(wthlvp_buoy, mask_moist) - wthlvp_buoy_av
@@ -641,7 +653,11 @@ for i in range(len(plttime)):
         thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist - diff_thlvp_av
         thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry - diff_thlvp_av
         
-        # wthlv - now uses thlvp and not thlvpp, but well...
+        # wthlv
+        # Valid approximations that allow bypassing high-pass filtering the diff-terms:
+        # - lowPass(wpp*diff_thlvp) \approx lowPass(wpp*(diff_thlvp-lowPass(diff_thlvp)))
+        # - lowPass(thlvpp*diff_wp) \approx lowPass(thlvpp*(diff_wpp-lowPass(diff_wpp)))
+        
         # Do not need to account for diff_thlvp_av or diff_wp_av
         wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
         wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
