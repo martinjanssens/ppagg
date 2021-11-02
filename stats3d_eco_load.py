@@ -152,7 +152,7 @@ Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 20.
+tpltmax = 23.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -242,8 +242,8 @@ axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%%
 # Average budget contributions over time dimension
-tpltmin = 12.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 23.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1

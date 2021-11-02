@@ -436,7 +436,7 @@ for i in range(len(plttime)):
     
     # wthlv
     wthlvpf_prod = lowPass(wfp**2,circ_mask)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis]
-    wthlvp_prod_av = np.mean(wthlvpf_prod,axis=(1,2))
+    wthlvp_prod_av = np.mean((wfp**2)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis],axis=(1,2))
     wthlvpf_prod_moist_time[i,:] = mean_mask(wthlvpf_prod, mask_moist) - wthlvp_prod_av
     wthlvpf_prod_dry_time[i,:] = mean_mask(wthlvpf_prod, mask_dry) - wthlvp_prod_av
     
