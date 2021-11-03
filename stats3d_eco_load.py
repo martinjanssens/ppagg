@@ -14,6 +14,7 @@ from skimage.measure import block_reduce
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg'
+sp = lp+'/../figs'
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
 ilp = np.loadtxt(lp+'/../lscale.inp.001')
 
@@ -131,8 +132,9 @@ Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 20.
+tpltmax = 16.
 dit = 1.0 # Rounds to closest multiple of dt in time
+dtav = 1.0
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -141,46 +143,60 @@ plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 
 fig,axs = plt.subplots(ncols=6,sharey=True,figsize=(12,5))
 for i in range(len(plttime_var)):
-    col = plt.cm.cubehelix(i/len(plttime_var))
-     
-    axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
+    colm = plt.cm.Blues(i/len(plttime_var))
+    cold = plt.cm.Reds(i/len(plttime_var))
+    
+    axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=colm,linestyle='-')
+    axs[0].plot(qtpf_dry_time  [plttime_var[i],:], zflim, color=cold,linestyle='-')
     axs[0].axvline(0,color='gray',linestyle='dotted')
-    axs[0].set_xlabel(r"$\widetilde{q_t'}$")
-    axs[0].set_xlim((0,6e-4))
+    axs[0].set_xlabel(r"$q_{t_m}'$")
+    axs[0].set_xlim((-6e-4,6e-4))
     axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=col,linestyle='-')
+    axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=colm,linestyle='-')
+    axs[1].plot(thlvpf_dry_time  [plttime_var[i],:], zflim, color=cold,linestyle='-')
     axs[1].axvline(0,color='gray',linestyle='dotted')
-    axs[1].set_xlabel(r"$\widetilde{\theta_{lv}'}$")
-    axs[1].set_xlim((-4e-2,1e-2))
+    axs[1].set_xlabel(r"$\theta_{lv_m}'$")
+    axs[1].set_xlim((-4e-2,4e-2))
     axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
-    axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
+    axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
+    axs[2].plot(wff_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
     axs[2].axvline(0,color='gray',linestyle='dotted')
-    axs[2].set_xlabel(r"$\widetilde{w'}$")
-    axs[2].set_xlim((-1e-2,1.7e-2))
+    axs[2].set_xlabel(r"$w_m'$")
+    axs[2].set_xlim((-1.7e-2,1.7e-2))
     axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
+    axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
+    axs[3].plot(thlpf_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
     axs[3].axvline(0,color='gray',linestyle='dotted')
-    axs[3].set_xlabel(r"$\widetilde{\theta_l'}$")
-    axs[3].set_xlim((-1.2e-1,0))
+    axs[3].set_xlabel(r"$\theta_{l_m}'$")
+    axs[3].set_xlim((-1.2e-1,1.2e-1))
     axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[4].plot(thvpf_moist_time[plttime_var[i],:], zflim,color=col,linestyle='-')
+    axs[4].plot(thvpf_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
+    axs[4].plot(thvpf_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
     axs[4].axvline(0,color='gray',linestyle='dotted')
-    axs[4].set_xlabel(r"$\widetilde{\theta_v'}$")
-    axs[4].set_xlim((-2.5e-2,2.5e-2))
+    axs[4].set_xlabel(r"$\theta_{v_m}'$")
+    axs[4].set_xlim((-2.6e-2,2.6e-2))
     axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
-    axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='t=%.2f'%time[plttime_var[i]],color=col,linestyle='-')
+    axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='%.2f'%time[plttime_var[i]],color=colm,linestyle='-')
+    axs[5].plot(qlpf_dry_time  [plttime_var[i],:], zflim, label=' ',color=cold,linestyle='-')
     axs[5].axvline(0,color='gray',linestyle='dotted')
-    axs[5].set_xlabel(r"$\widetilde{q_l'}$")
-    axs[5].set_xlim((0,9e-6))
+    axs[5].set_xlabel(r"$q_{l_m}'$")
+    axs[5].set_xlim((-9e-6,9e-6))
     axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
 axs[0].set_ylabel('z [m]')
-axs[5].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
+handles, labels = axs[5].get_legend_handles_labels()
+handm = handles[::2];  labsm = labels[::2]
+handd = handles[1::2]; labsd = labels[1::2]
+handles = np.concatenate((handm,handd))
+labels  = np.concatenate((labsm,labsd))
+axs[5].legend(handles, labels, loc='best',bbox_to_anchor=(1,1),
+              ncol=2,title='moist  time [hr]   dry')
+plt.savefig(sp+'/vars_meso_moist_evo.pdf', bbox_inches='tight')
 
 #%% Plot profiles of small-scale-filtered variables in time
 tpltmin = 12.
