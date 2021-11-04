@@ -114,6 +114,9 @@ wthlvpp_dry_time = np.load(lp+'/wthlvpp_dry_time.npy')
 thvpf_moist_time = thlvpf_moist_time + 7*thl_av_time*qlpf_moist_time
 thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
+# Mean ql (we don't have this from stats3d)
+ql_av_1d = ds1['ql'][:,izmin:izmax]
+
 # Reconstruct mean flux divergence (approximately, i.e. ignoring rho)
 wthl_av = ds1['wthlt'][:,izmin:izmax]
 wqt_av = ds1['wqtt'][:,izmin:izmax]
@@ -134,56 +137,88 @@ Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
 tpltmin = 6.
 tpltmax = 16.
 dit = 1.0 # Rounds to closest multiple of dt in time
-dtav = 1.0
+dtav = 1.0 # Around each plotted time step
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+idtav  = int(round(dtav/2/(time[1]-time[0])))
+idtav1 = int(round(dtav/2/(time1d[1]-time1d[0])*3600))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 
 fig,axs = plt.subplots(ncols=6,sharey=True,figsize=(12,5))
 for i in range(len(plttime_var)):
+    ti = time[plttime_var[i]]
+    
     colm = plt.cm.Blues(i/len(plttime_var))
     cold = plt.cm.Reds(i/len(plttime_var))
+    colc = plt.cm.Greys(i/len(plttime_var))
     
-    axs[0].plot(qtpf_moist_time[plttime_var[i],:], zflim, color=colm,linestyle='-')
-    axs[0].plot(qtpf_dry_time  [plttime_var[i],:], zflim, color=cold,linestyle='-')
+    it1d = np.argmin(abs(ti-time1d/3600))
+    
+    ql_avi = np.mean(ql_av_1d[it1d-idtav1:it1d+idtav1],axis=0)
+    z_cb = zflim[ql_avi>0][0]
+    
+    z_ib = zflim[np.argmin(np.mean(wthlv_av[it1d-idtav1:it1d+idtav1],axis=0))]
+    
+    z_ct = zflim[ql_avi>0][-10]
+    
+    axs[0].plot(np.mean(qtpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, color=colm,linestyle='-')
+    axs[0].plot(np.mean(qtpf_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, color=cold,linestyle='-')
     axs[0].axvline(0,color='gray',linestyle='dotted')
+    axs[0].axhline(z_cb,color=colc,linestyle='-',alpha=0.5)
+    axs[0].axhline(z_ib,color=colc,linestyle='-')
+    axs[0].axhline(z_ct,color=colc,linestyle='-')
     axs[0].set_xlabel(r"$q_{t_m}'$")
     axs[0].set_xlim((-6e-4,6e-4))
     axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[1].plot(thlvpf_moist_time[plttime_var[i],:], zflim, color=colm,linestyle='-')
-    axs[1].plot(thlvpf_dry_time  [plttime_var[i],:], zflim, color=cold,linestyle='-')
+    axs[1].plot(np.mean(thlvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, color=colm,linestyle='-')
+    axs[1].plot(np.mean(thlvpf_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, color=cold,linestyle='-')
     axs[1].axvline(0,color='gray',linestyle='dotted')
+    axs[1].axhline(z_cb,color=colc,linestyle='-')
+    axs[1].axhline(z_ib,color=colc,linestyle='-')
+    axs[1].axhline(z_ct,color=colc,linestyle='-')
     axs[1].set_xlabel(r"$\theta_{lv_m}'$")
     axs[1].set_xlim((-4e-2,4e-2))
     axs[1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
-    axs[2].plot(wff_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
-    axs[2].plot(wff_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
+    axs[2].plot(np.mean(wff_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=colm,linestyle='-')
+    axs[2].plot(np.mean(wff_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=cold,linestyle='-')
     axs[2].axvline(0,color='gray',linestyle='dotted')
+    axs[2].axhline(z_cb,color=colc,linestyle='-')
+    axs[2].axhline(z_ib,color=colc,linestyle='-')
+    axs[2].axhline(z_ct,color=colc,linestyle='-')
     axs[2].set_xlabel(r"$w_m'$")
     axs[2].set_xlim((-1.7e-2,1.7e-2))
     axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[3].plot(thlpf_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
-    axs[3].plot(thlpf_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
+    axs[3].plot(np.mean(thlpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=colm,linestyle='-')
+    axs[3].plot(np.mean(thlpf_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=cold,linestyle='-')
     axs[3].axvline(0,color='gray',linestyle='dotted')
+    axs[3].axhline(z_cb,color=colc,linestyle='-')
+    axs[3].axhline(z_ib,color=colc,linestyle='-')
+    axs[3].axhline(z_ct,color=colc,linestyle='-')
     axs[3].set_xlabel(r"$\theta_{l_m}'$")
     axs[3].set_xlim((-1.2e-1,1.2e-1))
     axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-    axs[4].plot(thvpf_moist_time[plttime_var[i],:], zflim,color=colm,linestyle='-')
-    axs[4].plot(thvpf_dry_time  [plttime_var[i],:], zflim,color=cold,linestyle='-')
+    axs[4].plot(np.mean(thvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=colm,linestyle='-')
+    axs[4].plot(np.mean(thvpf_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,color=cold,linestyle='-')
     axs[4].axvline(0,color='gray',linestyle='dotted')
+    axs[4].axhline(z_cb,color=colc,linestyle='-')
+    axs[4].axhline(z_ib,color=colc,linestyle='-')
+    axs[4].axhline(z_ct,color=colc,linestyle='-')
     axs[4].set_xlabel(r"$\theta_{v_m}'$")
     axs[4].set_xlim((-2.6e-2,2.6e-2))
     axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
-    axs[5].plot(qlpf_moist_time[plttime_var[i],:], zflim, label='%.2f'%time[plttime_var[i]],color=colm,linestyle='-')
-    axs[5].plot(qlpf_dry_time  [plttime_var[i],:], zflim, label=' ',color=cold,linestyle='-')
+    axs[5].plot(np.mean(qlpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, label='%.2f'%ti,color=colm,linestyle='-')
+    axs[5].plot(np.mean(qlpf_dry_time  [plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim, label=' ',color=cold,linestyle='-')
     axs[5].axvline(0,color='gray',linestyle='dotted')
+    axs[5].axhline(z_cb,color=colc,linestyle='-')
+    axs[5].axhline(z_ib,color=colc,linestyle='-')
+    axs[5].axhline(z_ct,color=colc,linestyle='-')
     axs[5].set_xlabel(r"$q_{l_m}'$")
     axs[5].set_xlim((-9e-6,9e-6))
     axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
