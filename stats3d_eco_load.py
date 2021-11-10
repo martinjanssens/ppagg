@@ -640,15 +640,17 @@ qtpfmn_prod_dry_wtg = np.mean(qtpf_prod_dry_wtg_time[itpltmin:itpltmax,:],axis=0
 
 # w plot
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
-axs[0].plot(wffmn_moist, zflim, c='midnightblue')
-axs[0].plot(wffmn_moist_wtg, zflim[1:-1], c='darkseagreen')
+axs[0].plot(wffmn_moist, zflim, c='black')
+axs[0].plot(wffmn_moist_wtg, zflim[1:-1], c='black',linestyle='--')
 # axs[0].plot(wffmn_moist_mod, zflim[1:-1], c='maroon')
 axs[0].set_xlabel(r"$\widetilde{w'}$ [m/s], moist region")
+axs[0].set_title(r"Moist")
 
 axs[1].plot(wffmn_dry, zflim, c='midnightblue', label=r"Ground truth $\widetilde{w'}'$")
 axs[1].plot(wffmn_dry_wtg, zflim[1:-1], c='darkseagreen', label=r"WTG model")
 # axs[1].plot(wffmn_dry_mod, zflim[1:-1], c='maroon', label=r"Full loop model")
 axs[1].set_xlabel(r"$\widetilde{w'}$ [m/s], dry region")
+axs[1].set_title(r"Dry")
 
 axs[0].set_ylabel(r'Height [m]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
@@ -874,9 +876,8 @@ terms1 = [r"$\left(w'\theta_v'\right)_m$",
 colors = ['black',
           'maroon',
           'peru',
-          'darkkhaki',
-          'darkseagreen',
-          'midnightblue',
+          'olive',
+          'seagreen',
           ]
 
 alpha = 0.6
