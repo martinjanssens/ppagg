@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -40,7 +40,7 @@ if parseFlag:
     store = args.store
 
 else:
-    lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+    lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -71,8 +71,8 @@ wfls = ilp[:,3]
 #%% Dry/moist regions
 
 if not parseFlag:
-    itmin = 0#23
-    itmax = 1
+    itmin = 23
+    itmax = 24
     di    = 1
     izmin = 0
     izmax = 80
