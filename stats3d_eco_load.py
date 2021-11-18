@@ -535,7 +535,7 @@ axs[1].set_xlabel(r"Contribution to $\frac{\partial\theta_{lv}'''}{\partial t}$"
 axs[0].set_ylabel(r'Height [m]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
-#%% Average thlvpp budget contributions over time dimension
+#%% Average wthlvpf budget contributions over time dimension
 tpltmin = 10.
 tpltmax = 16.
 
@@ -599,7 +599,7 @@ plt.show()
 
 #%% WTG-based model of moisture variance production
 
-tpltmin = 12.
+tpltmin = 10.
 tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -611,9 +611,22 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 wffmn_moist = np.mean(wff_moist_time[itpltmin:itpltmax],axis=0)
 wffmn_dry = np.mean(wff_dry_time[itpltmin:itpltmax],axis=0)
 
-# w model with actual thlvpf_vdiv
-wff_moist_wtg = -thlvpf_vdiv_moist_time/Gamma_thlv
-wff_dry_wtg = -thlvpf_vdiv_dry_time/Gamma_thlv
+# w model with actual thlvpf_vdiv (including budget residual)
+thlvpf_budg_moist = (-thlvpf_prod_moist_time[:,1:-1] - thlvpf_vdiv_moist_time[:,1:-1]
+                      -thlvpf_hdiv_moist_time[:,1:-1] - thlvpf_subs_moist_time[:,1:-1]
+                      +thlvpf_diff_moist_time)
+thlvpf_resi_moist = thlvpf_tend_moist_time[:,1:-1] -  thlvpf_budg_moist
+thlvpf_vdiv_moist = thlvpf_vdiv_moist_time[:,1:-1] - thlvpf_resi_moist
+
+thlvpf_budg_dry = (-thlvpf_prod_dry_time[:,1:-1] - thlvpf_vdiv_dry_time[:,1:-1]
+                      -thlvpf_hdiv_dry_time[:,1:-1] - thlvpf_subs_dry_time[:,1:-1]
+                      +thlvpf_diff_dry_time)
+thlvpf_resi_dry = thlvpf_tend_dry_time[:,1:-1] -  thlvpf_budg_dry
+thlvpf_vdiv_dry = thlvpf_vdiv_dry_time[:,1:-1] - thlvpf_resi_dry
+
+
+wff_moist_wtg = -thlvpf_vdiv_moist/Gamma_thlv[:,1:-1]
+wff_dry_wtg = -thlvpf_vdiv_dry/Gamma_thlv[:,1:-1]
 
 wffmn_moist_wtg = np.mean(wff_moist_wtg[itpltmin:itpltmax,:],axis=0)
 wffmn_dry_wtg = np.mean(wff_dry_wtg[itpltmin:itpltmax,:],axis=0)
@@ -625,6 +638,20 @@ wff_dry_mod = -qtpf_prod_dry_time/Gamma_qt
 wffmn_moist_mod = np.mean(wff_moist_mod[itpltmin:itpltmax,:],axis=0)
 wffmn_dry_mod = np.mean(wff_dry_mod[itpltmin:itpltmax,:],axis=0)
 
+# w model with thlpf_vdiv
+thlpf_vdiv_moist_time = thlvpf_vdiv_moist_time - 0.608*thl_av_time[:,1:-1]*qtpf_vdiv_moist_time
+thlpf_vdiv_dry_time = thlvpf_vdiv_dry_time - 0.608*thl_av_time[:,1:-1]*qtpf_vdiv_dry_time
+
+Gamma_thl = (thl_av_time[:,1:] - thl_av_time[:,:-1])/dzh
+Gamma_thl_f = (Gamma_thl[:,1:] + Gamma_thl[:,:-1])*0.5
+
+wff_moist_thl = -thlpf_vdiv_moist_time/Gamma_thl_f
+wff_dry_thl = -thlpf_vdiv_dry_time/Gamma_thl_f
+
+wffmn_moist_thl = np.mean(wff_moist_thl[itpltmin:itpltmax,:],axis=0)
+wffmn_dry_thl = np.mean(wff_dry_thl[itpltmin:itpltmax,:],axis=0)
+
+
 # Moisture variance production
 qtpfmn_prod_moist_wex = np.mean(qtpf_prod_moist_wex_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0)
@@ -632,43 +659,68 @@ qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0
 qtpfmn_prod_moist = np.mean(-qtpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry = np.mean(-qtpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
 
-qtpf_prod_moist_wtg_time = wff_moist_wtg*Gamma_qt
-qtpf_prod_dry_wtg_time = wff_dry_wtg*Gamma_qt
+qtpf_prod_moist_wtg_time = wff_moist_wtg*Gamma_qt[:,1:-1]
+qtpf_prod_dry_wtg_time = wff_dry_wtg*Gamma_qt[:,1:-1]
 
 qtpfmn_prod_moist_wtg = np.mean(qtpf_prod_moist_wtg_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry_wtg = np.mean(qtpf_prod_dry_wtg_time[itpltmin:itpltmax,:],axis=0)
 
+qtpf_prod_moist_thl_time = wff_moist_thl*Gamma_qt
+qtpf_prod_dry_thl_time = wff_dry_thl*Gamma_qt
+
+qtpfmn_prod_moist_thl = np.mean(qtpf_prod_moist_thl_time[itpltmin:itpltmax,:],axis=0)
+qtpfmn_prod_dry_thl = np.mean(qtpf_prod_dry_thl_time[itpltmin:itpltmax,:],axis=0)
+
+
 # w plot
-fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
-axs[0].plot(wffmn_moist, zflim, c='black')
-axs[0].plot(wffmn_moist_wtg, zflim[1:-1], c='black',linestyle='--')
-# axs[0].plot(wffmn_moist_mod, zflim[1:-1], c='maroon')
-axs[0].set_xlabel(r"$\widetilde{w'}$ [m/s], moist region")
-axs[0].set_title(r"Moist")
+fig,axs = plt.subplots(nrows=2,ncols=2,sharey=True,figsize=(10,10))
+axs[0,0].plot(wffmn_moist, zflim, c='black')
+axs[0,0].plot(wffmn_moist_wtg, zflim[2:-2], c='black',linestyle='--')
+axs[0,0].plot(wffmn_moist_thl, zflim[1:-1], c='black',linestyle=':')
+# axs[0,0].plot(wffmn_moist_mod, zflim[1:-1], c='black',linestyle='-.')
+axs[0,0].axvline(0,color='gray',linestyle='dotted')
+axs[0,0].set_xlim((-0.012,0.012))
+axs[0,0].set_xlabel(r"$w_m'$ [m/s]")
+axs[0,0].set_title(r"Moist")
+axs[0,0].annotate('a)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+axs[0,0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-axs[1].plot(wffmn_dry, zflim, c='midnightblue', label=r"Ground truth $\widetilde{w'}'$")
-axs[1].plot(wffmn_dry_wtg, zflim[1:-1], c='darkseagreen', label=r"WTG model")
-# axs[1].plot(wffmn_dry_mod, zflim[1:-1], c='maroon', label=r"Full loop model")
-axs[1].set_xlabel(r"$\widetilde{w'}$ [m/s], dry region")
-axs[1].set_title(r"Dry")
+axs[0,1].plot(wffmn_dry, zflim, c='black', label=r"Ground truth")
+axs[0,1].plot(wffmn_dry_wtg, zflim[2:-2], c='black',linestyle='--', label=r"$\theta_{lv}$-based WTG model")
+axs[0,1].plot(wffmn_dry_thl, zflim[1:-1], c='black',linestyle=':',label=r"$\theta_{l}$-based WTG model")
+# axs[0,0].plot(wffmn_dry_mod, zflim[1:-1], c='black',linestyle='-.')
+axs[0,1].axvline(0,color='gray',linestyle='dotted')
+axs[0,1].set_xlim((-0.012,0.012))
+axs[0,1].set_xlabel(r"$w_m'$ [m/s]")
+axs[0,1].set_title(r"Dry")
+axs[0,1].annotate('b)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+axs[0,1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-axs[0].set_ylabel(r'Height [m]')
-axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+axs[0,0].set_ylabel(r'Height [m]')
+axs[0,1].legend(loc='upper left',bbox_to_anchor=(1,1))
 
 # Moisture variance production plot
-fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
-axs[0].plot(qtpfmn_prod_moist_wex, zflim[1:-1], c='darkseagreen',linestyle='-')
-axs[0].plot(qtpfmn_prod_moist_wtg, zflim[1:-1], c='darkseagreen',linestyle='--')
-# axs[0].plot(qtpfmn_prod_moist, zflim[1:-1], c='darkseagreen',linestyle='dotted')
-axs[0].set_xlabel(r"$\widetilde{w'}\frac{\partial\overline{q_t}}{\partial z}$ [kg/kg/s], moist region")
+axs[1,0].plot(qtpfmn_prod_moist_wex, zflim[1:-1], c='black')
+axs[1,0].plot(qtpfmn_prod_moist_wtg, zflim[2:-2], c='black',linestyle='--')
+axs[1,0].plot(qtpfmn_prod_moist_thl, zflim[1:-1], c='black',linestyle=':')
+axs[1,0].axvline(0,color='gray',linestyle='dotted')
+axs[1,0].set_xlim((-8e-8,8e-8))
+axs[1,0].set_xlabel(r"$w_m'\Gamma_{q_t}$ [kg/kg/s]")
+axs[1,0].annotate('c)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+axs[1,0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-axs[1].plot(qtpfmn_prod_dry_wex, zflim[1:-1], c='darkseagreen',linestyle='-', label=r"Ground truth")
-axs[1].plot(qtpfmn_prod_dry_wtg, zflim[1:-1], c='darkseagreen',linestyle='--', label=r"WTG model")
-# axs[1].plot(qtpfmn_prod_dry, zflim[1:-1], c='darkseagreen',linestyle='dotted', label=r"Full loop model")
-axs[1].set_xlabel(r"$\widetilde{w'}\frac{\partial\overline{q_t}}{\partial z}$ [kg/kg/s], dry region")
+axs[1,1].plot(qtpfmn_prod_dry_wex, zflim[1:-1], c='black')
+axs[1,1].plot(qtpfmn_prod_dry_wtg, zflim[2:-2], c='black',linestyle='--')
+axs[1,1].plot(qtpfmn_prod_dry_thl, zflim[1:-1], c='black',linestyle=':')
+axs[1,1].axvline(0,color='gray',linestyle='dotted')
+axs[1,1].set_xlim((-8e-8,8e-8))
+axs[1,1].set_xlabel(r"$w_m'\Gamma_{q_t}$ [kg/kg/s]")
+axs[1,1].annotate('d)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+axs[1,1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
-axs[0].set_ylabel(r'Height [m]')
-axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+axs[1,0].set_ylabel(r'Height [m]')
+
+plt.savefig(sp+'/wpf_qtpfprod_wtg.pdf',bbox_inches='tight')
 
 
 #%% Vertically integrated statistics
@@ -989,6 +1041,58 @@ axs[1,1].legend(bbox_to_anchor=(1,1),loc='upper left')
 
 plt.savefig(sp+'/thv_wthv_decomposition.pdf',bbox_inches='tight')
 
+
+#%% Flux scale decomposition
+
+# Time to average over
+tpltmin = 14.
+tpltmax = 16.
+
+labs = [r"$(w'\theta_{lv}')_m$",
+        r"$(w_m'\theta_{lv_m}')_m$",
+        r"$(w_m'\theta_{lv_s}')_m + (w_s'\theta_{lv_m}')_m$",
+        r"$(w_s'\theta_{lv_s}')_m$"
+        ]
+
+col = ['maroon',
+       'indianred',
+       'darksalmon',
+       'papayawhip'
+       ]
+
+alpha = 1
+lw = 2
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+wthlvpfmn_moist = np.mean(wthlvpf_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_dry = np.mean(wthlvpf_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_moist = np.mean(wthlvpf_l_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_l_dry = np.mean(wthlvpf_l_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_moist = np.mean(wthlvpf_c_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_c_dry = np.mean(wthlvpf_c_dry_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_moist = np.mean(wthlvpf_r_moist_time[itpltmin:itpltmax,:],axis=0)
+wthlvpfmn_r_dry = np.mean(wthlvpf_r_dry_time[itpltmin:itpltmax,:],axis=0)
+
+fig,axs = plt.subplots(nrows=1,ncols=2,sharey=True,figsize=(10,5))
+axs[0].plot(wthlvpfmn_moist,zflim,alpha=alpha,lw=lw,c=col[0])
+axs[0].plot(wthlvpfmn_l_moist,zflim,alpha=alpha,lw=lw,c=col[1])
+axs[0].plot(wthlvpfmn_c_moist,zflim,alpha=alpha,lw=lw,c=col[2])
+axs[0].plot(wthlvpfmn_r_moist,zflim,alpha=alpha,lw=lw,c=col[3])
+axs[0].set_ylabel('z [m]')
+axs[0].set_xlabel(r"$(w'\theta_{lv}')_m$ [Km/s]")
+axs[0].set_xlim((-0.045,0.015))
+
+axs[1].plot(wthlvpfmn_dry,zflim,alpha=alpha,lw=lw,c=col[0],label=labs[0])
+axs[1].plot(wthlvpfmn_l_dry,zflim,alpha=alpha,lw=lw,c=col[1],label=labs[1])
+axs[1].plot(wthlvpfmn_c_dry,zflim,alpha=alpha,lw=lw,c=col[2],label=labs[2])
+axs[1].plot(wthlvpfmn_r_dry,zflim,alpha=alpha,lw=lw,c=col[3],label=labs[3])
+axs[1].set_xlabel(r"$(w'\theta_{lv}')_m$ [Km/s]")
+axs[1].set_xlim((-0.045,0.015))
+axs[1].legend(bbox_to_anchor=(1,1),loc='upper left')
+
+plt.savefig(sp+'/wthvm_scale_decomposition.pdf',bbox_inches='tight')
 
 #%% Fluxes (no sgs yet)
 
