@@ -8,13 +8,13 @@ Created on Tue Oct  5 16:54:04 2021
 
 import numpy as np
 
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_to12hr',
-       '/scratch-shared/janssens/bomex100_e12/ppagg_from12hr']
-savePath = '/scratch-shared/janssens/bomex100_e12/ppagg_merged'
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_ep_to12hr',
+       '/scratch-shared/janssens/bomex100_e12/ppagg_ep_from12hr']
+savePath = '/scratch-shared/janssens/bomex100_e12/ppagg_ep_merged'
 
 fnames = ['time',
           'plttime',
-	      'zf',
+	  'zf',
           'qtpf_moist_time',
           'qtpf_dry_time',
           'qtpf_prod_moist_time',
@@ -53,6 +53,20 @@ fnames = ['time',
           'thlvpp_subs_dry_time',
           'thlvpp_diff_moist_time',
           'thlvpp_diff_dry_time',    
+          'wthlvpf_prod_moist_time',
+          'wthlvpf_prod_dry_time',
+          'wthlvpf_vdiv_moist_time',
+          'wthlvpf_vdiv_dry_time',
+          'wthlvpf_hdiv_moist_time',
+          'wthlvpf_hdiv_dry_time',
+          'wthlvpf_subs_moist_time',
+          'wthlvpf_subs_dry_time',
+          'wthlvpf_buoy_moist_time',
+          'wthlvpf_buoy_dry_time',
+          'wthlvpf_pres_moist_time',
+          'wthlvpf_pres_dry_time',
+          'wthlvpf_diff_moist_time',
+          'wthlvpf_diff_dry_time',
           'thl_av_time',
           'thlv_av_time',
           'qt_av_time',    
@@ -91,8 +105,8 @@ def process(fname, lps, savePath):
     arrs_in = []
     for i in range(len(lps)):
         arrs_in.append(np.load(lps[i]+'/'+fname+'.npy'))
-        if fname == 'plttime' and i>0:
-            arrs_in[i] += arrs_in[i-1][-1]+1
+#        if fname == 'plttime' and i>0:
+#            arrs_in[i] += arrs_in[i-1][-1]+1
     arr_out = np.concatenate(arrs_in,axis=0) # along time dimension
     if fname == 'zf':
         arr_out = arrs_in[0] # Assumes vertical grid stays the same over restart

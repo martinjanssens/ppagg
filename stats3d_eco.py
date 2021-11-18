@@ -26,7 +26,9 @@ if parseFlag:
     parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
     parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
     parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
-    parser.add_argument("--store", action="store_true", default=False, help="Process only fielddump")
+    parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
+    parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
+    parser.add_argument("--e12", action="store_true", default=False, help="3D e12 data is available")
 
     args = parser.parse_args()
 
@@ -38,7 +40,8 @@ if parseFlag:
     izmax = args.izmax
     klp = args.klp
     store = args.store
-
+    pflag = args.pres
+    eflag = args.e12
 else:
     lp = '/scratch-shared/janssens/bomex200_e12'
 
@@ -77,6 +80,8 @@ if not parseFlag:
     izmin = 0
     izmax = 80
     store = False
+    pflag = False
+    eflag = True
     klp = 4
 
 plttime = np.arange(itmin, itmax, di)
@@ -125,6 +130,21 @@ thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
 qlpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 qlpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+
+wthlvpf_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-3))
+wthlvpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-3))
+wthlvpf_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_buoy_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_buoy_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_pres_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_pres_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+wthlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-5))
+wthlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-5))
 
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
 qt_av_time = np.zeros((plttime.size,izmax-izmin))
@@ -186,7 +206,10 @@ for i in range(len(plttime)):
     qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
     u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
-    # e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+    if eflag:
+        e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+    if pflag:
+        pp = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
 
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
@@ -202,15 +225,20 @@ for i in range(len(plttime)):
     presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
     presf  = (presh[1:]+presh[:-1])*0.5
     exnf   = (presf/1e5)**(Rd/cp)
-    thv_av = (thl_av[:-1] + (Lv/cp)*ql_av[:-1]/exnf)*(1.+(Rv/Rd-1)*qt_av[:-1] -Rv/Rd*ql_av[:-1])
+    thv    = ((thlp[:-1,:,:] + (Lv/cp)*qlp[:-1,:,:]/exnf[:,np.newaxis,np.newaxis])
+              *(1.+(Rv/Rd-1)*qt[:-1,:,:] -Rv/Rd*qlp[:-1,:,:]))
+    thv_av = np.mean(thv,axis=(1,2))
     
     # Eddy diffusivities
-    # dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
-    # _,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
-    # ekh_av = np.mean(ekhp,axis=(1,2))
-    # ekhp = ekhp - ekh_av[:,np.newaxis,np.newaxis]
-    # del e12
-    # del dthvdz
+    if eflag:
+        dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
+        ekmp,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
+        ekm_av = np.mean(ekmp,axis=(1,2))
+        ekh_av = np.mean(ekhp,axis=(1,2))
+        ekmp = ekmp - ekm_av[:,np.newaxis,np.newaxis]
+        ekhp = ekhp - ekh_av[:,np.newaxis,np.newaxis]
+        del e12
+        del dthvdz
     
     # Define thlv
     thlvp = thlp + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
@@ -419,18 +447,25 @@ for i in range(len(plttime)):
 
     qtpf_prod_moist_wex_time[i,:] = qtpf_prod_wex_moist
     qtpf_prod_dry_wex_time[i,:] = qtpf_prod_wex_dry
-
+    
+    # wthlv:
+    # Doesn't matter if you use wfp instead of wfp+wff, neither in *_av nor *f
+    # Doesn't matter if you use filtered wthlvpf_prod to calculate *_av instead of full wthlvpf_prod
+    wthlvpf_prod = lowPass(wfp**2,circ_mask)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis]
+    wthlvp_prod_av = np.mean((wfp**2)[1:-1]*Gamma_thlv_f[:,np.newaxis,np.newaxis],axis=(1,2))
+    wthlvpf_prod_moist_time[i,:] = mean_mask(wthlvpf_prod, mask_moist) - wthlvp_prod_av
+    wthlvpf_prod_dry_time[i,:] = mean_mask(wthlvpf_prod, mask_dry) - wthlvp_prod_av
+    
+    del wthlvpf_prod
+    gc.collect()
     
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
     # thlv
-    div_wthlv_r = ddzwx_2nd(whp, thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*qtpp,
-                            dzh, rhobf=rhobfi)
-    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, 
-                                     thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
-                                     dzh, rhobf=rhobfi),axis=(1,2))
+    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzh, rhobf=rhobfi)
+    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzh, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
-    div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous flux
+    div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous p-scale flux
 
     # Moist/dry and large/small scale
     div_wthlv_rf_moist = mean_mask(div_wthlv_rf, mask_moist)
@@ -442,6 +477,26 @@ for i in range(len(plttime)):
     thlvpf_vdiv_dry_time[i,:] = div_wthlv_rf_dry - div_wthlv_av
     thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist
     thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry
+    
+    # wthlvp
+    # Valid approximations that allow bypassing high-pass filtering the div-terms:
+    #  - lowPass(wfp[1:-1,:,:]*div_wthlv_r) \approx lowPass(wfp[1:-1,:,:]*div_wthlv)
+    #  - lowPass(thlvpp[1:-2,:,:]*div_ww_r) \approx lowPass(thlvpp[1:-2,:,:]*div_ww)
+    # Though this introduces small errors
+    wdiv_wthlvf_r = lowPass(wfp[1:-1,:,:]*div_wthlv_r,circ_mask)
+    # wdiv_wthlv_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
+    wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
+
+    div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
+    div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels zflim[1:-2]
+    
+    thlvpdiv_wwf_r = lowPass(thlvpp[1:-2,:,:]*div_ww_r,circ_mask)
+    thlvpdiv_ww_av = np.mean(thlvpp[1:-2,:,:]*div_ww_r,axis=(1,2))
+    
+    wthlvpf_vdiv_moist_time[i,:] = (mean_mask(wdiv_wthlvf_r[:-1,:,:]+thlvpdiv_wwf_r, mask_moist) - 
+                               (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
+    wthlvpf_vdiv_dry_time[i,:] = (mean_mask(wdiv_wthlvf_r[:-1,:,:]+thlvpdiv_wwf_r, mask_dry) - 
+                               (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
     
     # qt
     div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)
@@ -467,6 +522,9 @@ for i in range(len(plttime)):
 
     del div_wthlv_rf
     del div_wthlv_rp    
+    del wdiv_wthlvf_r
+    del div_ww_r
+    del thlvpdiv_wwf_r
     del div_wqt_r
     del div_wqt_rf
     del div_wql
@@ -495,7 +553,7 @@ for i in range(len(plttime)):
     # Horizontal advection
 
     # Horizontal thlv advection
-    div_uhthlvp = ddxhuha_2nd(u, v, thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dx, dy)
+    div_uhthlvp = ddxhuha_2nd(u, v, thlvpf+thlvpp, dx, dy)
     div_uhthlvpf = lowPass(div_uhthlvp, circ_mask)
     
     # moist/dry and large/small scale
@@ -509,6 +567,26 @@ for i in range(len(plttime)):
     thlvpp_hdiv_moist_time[i,:] = div_uhthlvpp_moist[1:-1]
     thlvpp_hdiv_dry_time[i,:] = div_uhthlvpp_dry[1:-1]
     
+    # wthlv
+    # Valid approximations that allow bypassing high-pass filtering the div-terms:
+    #  - lowPass(wfp*ddxhuha_2nd(u,v,thlvpp)) \approx lowPass(wfp*ddxhuha_2nd(u,v,thlvpf+thlvpp))
+    #  - lowPass(thlvpp*ddxhuhw_2nd(u,v,whp)) \approx lowPass(thlvpp*ddxhuhw_2nd(u,v,whf+whp))
+    
+    wdiv_uhthlvp = wfp*ddxhuha_2nd(u, v, thlvpp, dx, dy)
+    wdiv_uhthlvpf = lowPass(wdiv_uhthlvp, circ_mask)
+    wdiv_uhthlvp_av = np.mean(wdiv_uhthlvpf, axis=(1,2))
+
+    thlvpdiv_uhwp = ddxhuhw_2nd(u, v, whp, dx, dy) # half level 1 and up
+    thlvpdiv_uhwp = (thlvpdiv_uhwp[1:,:,:] + thlvpdiv_uhwp[:-1,:,:]) * 0.5 # Interpolated to zflim[1:-1]
+    thlvpdiv_uhwp = thlvpp[1:-1,:,:]*thlvpdiv_uhwp
+    thlvpdiv_uhwpf = lowPass(thlvpdiv_uhwp, circ_mask)
+    thlvpdiv_uhwp_av = np.mean(thlvpdiv_uhwp, axis=(1,2))
+
+    wthlvpf_hdiv_moist_time[i,:] = (mean_mask(wdiv_uhthlvpf[1:-1,:,:] + thlvpdiv_uhwpf, mask_moist) -
+                                   (wdiv_uhthlvp_av[1:-1] + thlvpdiv_uhwp_av))
+    wthlvpf_hdiv_dry_time[i,:] = (mean_mask(wdiv_uhthlvpf[1:-1,:,:] + thlvpdiv_uhwpf, mask_dry) -
+                                 (wdiv_uhthlvp_av[1:-1] + thlvpdiv_uhwp_av))
+
     # Horizontal moisture advection
     # intra-scale contribution largest, but entire term kept for now
     div_uhqtp = lowPass(ddxhuha_2nd(u, v, qtpf+qtpp, dx, dy), circ_mask)
@@ -520,13 +598,16 @@ for i in range(len(plttime)):
     
     del div_uhthlvp
     del div_uhthlvpf
+    del wdiv_uhthlvp
+    del wdiv_uhthlvpf
+    del thlvpdiv_uhwp
+    del thlvpdiv_uhwpf
     del div_uhqtp
-    del u
-    del v
     gc.collect()
 
     # Subsidence warming
-    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp), dzh)
+    # Defined from half level 1 on, used from full level 0 on (upwinding)
+    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlvpf+thlvpp, dzh)
     wsubdthlvpdzf = lowPass(wsubdthlvpdz, circ_mask)
     
     # moist/dry and large/small
@@ -535,10 +616,22 @@ for i in range(len(plttime)):
     wsubdthlvpdzp_moist = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_moist)
     wsubdthlvpdzp_dry = mean_mask(wsubdthlvpdz - wsubdthlvpdzf, mask_dry)
     
+    # Write from full level 1 on, to match other terms
     thlvpf_subs_moist_time[i,:] = wsubdthlvpdzf_moist[1:]
     thlvpf_subs_dry_time[i,:] = wsubdthlvpdzf_dry[1:]
     thlvpp_subs_moist_time[i,:] = wsubdthlvpdzp_moist[1:]
     thlvpp_subs_dry_time[i,:] = wsubdthlvpdzp_dry[1:]
+    
+    # wthlv 
+    wwsubdthlvppdz = wfp[:-1,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
+    wwsubdthlvppdz_av = np.mean(wwsubdthlvppdz,axis=(1,2))
+    wwsubdthlvppdzf = lowPass(wwsubdthlvppdz, circ_mask)
+    
+    wwsubdthlvppdzf_moist = mean_mask(wwsubdthlvppdzf, mask_moist)
+    wwsubdthlvppdzf_dry = mean_mask(wwsubdthlvppdzf, mask_dry)
+    
+    wthlvpf_subs_moist_time[i,:] = wwsubdthlvppdzf_moist[1:] - wwsubdthlvppdz_av[1:]
+    wthlvpf_subs_dry_time[i,:] = wwsubdthlvppdzf_dry[1:] - wwsubdthlvppdz_av[1:]
     
     # Subsidence drying
     wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzh),circ_mask)
@@ -550,38 +643,98 @@ for i in range(len(plttime)):
     
     del wsubdthlvpdz
     del wsubdthlvpdzf
+    del wwsubdthlvppdz
+    del wwsubdthlvppdzf
     del wsubdqtpdzf
     gc.collect()
+    
+    # Buoyancy tendency in wthlvpf budget
+    wthlvp_buoy = (thlvpp[:-1]*grav*(thv-thv_av[:,np.newaxis,np.newaxis])/thv_av[:,np.newaxis,np.newaxis])[1:,:,:]
+    wthlvp_buoy_av = np.mean(wthlvp_buoy,axis=(1,2))
+    wthlvp_buoy = lowPass(wthlvp_buoy, circ_mask)
+    wthlvpf_buoy_moist_time[i,:] = mean_mask(wthlvp_buoy, mask_moist) - wthlvp_buoy_av
+    wthlvpf_buoy_dry_time[i,:] = mean_mask(wthlvp_buoy, mask_dry) - wthlvp_buoy_av
 
+    del wthlvp_buoy
+    gc.collect()
+    
     # SFS diffusion
-    # Heat
-    # diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], 
-    #                       thlpf+thlpp+0.608*thl_av[:,np.newaxis,np.newaxis]*(qtpf+qtpp),
-    #                       dx, dy, zf, rhobfi, rhobhi) +
-    #               diffzeka(ekhp, thl_av[:,np.newaxis,np.newaxis]*(1+0.608*qt_av[:,np.newaxis,np.newaxis]),
-    #                        dzh, rhobfi, rhobhi))
-    # diff_thlvpf = lowPass(diff_thlvp, circ_mask)
-    
-    # # moist/dry and large/small
-    # diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
-    # diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
-    # diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
-    # diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
+    if eflag:
+        # Heat
+        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi) +
+                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi))
+        diff_thlvpf = lowPass(diff_thlvp, circ_mask)
 
-    # thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist
-    # thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry
-    # thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist
-    # thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry
-    
-    # # Moisture
-    # diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
-    #                     diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
-    #                     circ_mask)
-    # diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
-    # diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
+        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi),axis=(1,2))                      
 
-    # qtpf_diff_moist_time[i,:] = diff_qtpf_moist
-    # qtpf_diff_dry_time[i,:] = diff_qtpf_dry
+        # moist/dry and large/small
+        diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
+        diff_thlvpf_dry = mean_mask(diff_thlvpf, mask_dry)
+        diff_thlvpp_moist = mean_mask(diff_thlvp - diff_thlvpf, mask_moist)
+        diff_thlvpp_dry = mean_mask(diff_thlvp - diff_thlvpf, mask_dry)
+
+        thlvpf_diff_moist_time[i,:] = diff_thlvpf_moist - diff_thlvp_av
+        thlvpf_diff_dry_time[i,:] = diff_thlvpf_dry - diff_thlvp_av
+        thlvpp_diff_moist_time[i,:] = diff_thlvpp_moist - diff_thlvp_av
+        thlvpp_diff_dry_time[i,:] = diff_thlvpp_dry - diff_thlvp_av
+        
+        # wthlv
+        # Valid approximations that allow bypassing high-pass filtering the diff-terms:
+        # - lowPass(wpp*diff_thlvp) \approx lowPass(wpp*(diff_thlvp-lowPass(diff_thlvp)))
+        # - lowPass(thlvpp*diff_wp) \approx lowPass(thlvpp*(diff_wpp-lowPass(diff_wpp)))
+        
+        # Do not need to account for diff_thlvp_av or diff_wp_av
+        wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
+        wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
+
+        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,zf,rhobfi,rhobhi)
+        thlvpdiffw = thlvpp[2:-3]*(thlvpdiffw[1:,:,:] + thlvpdiffw[:-1,:,:])/2. # At zflim[2:-3]
+        thlvpdiffwf = lowPass(thlvpdiffw, circ_mask)
+        thlvpdiffw_av = np.mean(thlvpdiffw, axis=(1,2))
+
+        wthlvpf_diff_moist_time[i,:] = (mean_mask(wdiff_thlvpf[:-1,:,:] + thlvpdiffwf, mask_moist) - 
+                                        (wdiff_thlv_av[:-1] + thlvpdiffw_av))
+
+        wthlvpf_diff_dry_time[i,:] = (mean_mask(wdiff_thlvpf[:-1,:,:] + thlvpdiffwf, mask_dry) - 
+                                      (wdiff_thlv_av[:-1] + thlvpdiffw_av))
+
+        # Moisture
+        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
+                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
+                            circ_mask)
+        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi), axis=(1,2))
+        
+        diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
+        diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
+
+        qtpf_diff_moist_time[i,:] = diff_qtpf_moist - diff_qtp_av
+        qtpf_diff_dry_time[i,:] = diff_qtpf_dry - diff_qtp_av
+
+        del diff_thlvp
+        del diff_thlvpf
+        del wdiff_thlvpf
+        del thlvpdiffw
+        del thlvpdiffwf
+        del diff_qtpf
+        gc.collect()
+    
+    # Pressure fluctuation gradient (in wthlvp budget)
+    if pflag:
+        thlvppgrad = (pp[1:,:,:] - pp[:-1,:,:])/dzh # At half levels (as it appears in w eq)
+        thlvppgrad = (thlvppgrad[1:,:,:] + thlvppgrad[:-1,:,:])*0.5 # Move to full levels
+        thlvppgrad = thlvpp[1:-1,:,:]*thlvppgrad
+        thlvppgrad_av = np.mean(thlvppgrad,axis=(1,2))
+        thlvppgrad = lowPass(thlvppgrad, circ_mask)
+
+        thlvppgradf_moist = mean_mask(thlvppgrad, mask_moist)
+        thlvppgradf_dry = mean_mask(thlvppgrad, mask_dry)
+
+        wthlvpf_pres_moist_time[i,:] = thlvppgradf_moist - thlvppgrad_av
+        wthlvpf_pres_dry_time[i,:] = thlvppgradf_dry - thlvppgrad_av
+
+        del thlvppgrad
+        gc.collect()
+
 if store:
     np.save(lp+'/time.npy',time[plttime])
     np.save(lp+'/plttime.npy',plttime)
@@ -631,6 +784,21 @@ if store:
     np.save(lp+'/qlpf_vdiv_moist_time.npy',qlpf_vdiv_moist_time)
     np.save(lp+'/qlpf_vdiv_dry_time.npy',qlpf_vdiv_dry_time)
     
+    np.save(lp+'/wthlvpf_prod_moist_time',wthlvpf_prod_moist_time)
+    np.save(lp+'/wthlvpf_prod_dry_time',wthlvpf_prod_dry_time)
+    np.save(lp+'/wthlvpf_vdiv_moist_time',wthlvpf_vdiv_moist_time)
+    np.save(lp+'/wthlvpf_vdiv_dry_time',wthlvpf_vdiv_dry_time)
+    np.save(lp+'/wthlvpf_hdiv_moist_time',wthlvpf_hdiv_moist_time)
+    np.save(lp+'/wthlvpf_hdiv_dry_time',wthlvpf_hdiv_dry_time)
+    np.save(lp+'/wthlvpf_buoy_moist_time',wthlvpf_buoy_moist_time)
+    np.save(lp+'/wthlvpf_buoy_dry_time',wthlvpf_buoy_dry_time)
+    np.save(lp+'/wthlvpf_pres_moist_time',wthlvpf_pres_moist_time)
+    np.save(lp+'/wthlvpf_pres_dry_time',wthlvpf_pres_dry_time)
+    np.save(lp+'/wthlvpf_subs_moist_time',wthlvpf_subs_moist_time)
+    np.save(lp+'/wthlvpf_subs_dry_time',wthlvpf_subs_dry_time)
+    np.save(lp+'/wthlvpf_diff_moist_time',wthlvpf_diff_moist_time)
+    np.save(lp+'/wthlvpf_diff_dry_time',wthlvpf_diff_dry_time)
+
     np.save(lp+'/thl_av_time.npy',thl_av_time)
     np.save(lp+'/thlv_av_time.npy',thlv_av_time)
     np.save(lp+'/qt_av_time.npy',qt_av_time)
