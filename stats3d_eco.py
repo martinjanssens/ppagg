@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -40,7 +40,7 @@ if parseFlag:
     store = args.store
 
 else:
-    lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+    lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -71,8 +71,8 @@ wfls = ilp[:,3]
 #%% Dry/moist regions
 
 if not parseFlag:
-    itmin = 0#23
-    itmax = 1
+    itmin = 47
+    itmax = 48
     di    = 1
     izmin = 0
     izmax = 80
@@ -123,6 +123,9 @@ thlvpp_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpp_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
+qlpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
 qt_av_time = np.zeros((plttime.size,izmax-izmin))
 thlv_av_time = np.zeros((plttime.size,izmax-izmin))
@@ -143,11 +146,13 @@ wfp_dry_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
-
+wthlp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+wqtp_av_time = np.zeros((plttime.size,izmax-izmin))
 wqtpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqtpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+wqlp_av_time = np.zeros((plttime.size,izmax-izmin))
 wqlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvp_av_time = np.zeros((plttime.size,izmax-izmin))
@@ -321,12 +326,15 @@ for i in range(len(plttime)):
     wqtpf = lowPass((wff+wfp)*(qtpf+qtpp), circ_mask)
     wqlpf = lowPass((wff+wfp)*(qlpf+qlpp), circ_mask)
 
+    wthlp_av = np.mean((wff+wfp)*(thlpf+thlpp),axis=(1,2))
     wthlpf_moist = mean_mask(wthlpf, mask_moist)
     wthlpf_dry = mean_mask(wthlpf, mask_dry)
-    
+
+    wqtp_av = np.mean((wff+wfp)*(qtpf+qtpp),axis=(1,2))    
     wqtpf_moist = mean_mask(wqtpf, mask_moist)
     wqtpf_dry = mean_mask(wqtpf, mask_dry)
     
+    wqlp_av = np.mean((wff+wfp)*(qlpf+qlpp),axis=(1,2))
     wqlpf_moist = mean_mask(wqlpf, mask_moist)
     wqlpf_dry = mean_mask(wqlpf, mask_dry)
 
@@ -350,12 +358,15 @@ for i in range(len(plttime)):
     wthlvpf_r_moist_time[i,:] = mean_mask(wthlvpf_r, mask_moist)
     wthlvpf_r_dry_time[i,:] = mean_mask(wthlvpf_r, mask_dry)
     
+    wthlp_av_time[i,:] = wthlp_av
     wthlpf_moist_time[i,:] = wthlpf_moist
     wthlpf_dry_time[i,:] = wthlpf_dry
     
+    wqtp_av_time[i,:] = wqtp_av
     wqtpf_moist_time[i,:] = wqtpf_moist
     wqtpf_dry_time[i,:] = wqtpf_dry
     
+    wqlp_av_time[i,:] = wqlp_av
     wqlpf_moist_time[i,:] = wqlpf_moist
     wqlpf_dry_time[i,:] = wqlpf_dry
     
@@ -431,7 +442,7 @@ for i in range(len(plttime)):
     thlvpf_vdiv_dry_time[i,:] = div_wthlv_rf_dry - div_wthlv_av
     thlvpp_vdiv_moist_time[i,:] = div_wthlv_rp_moist
     thlvpp_vdiv_dry_time[i,:] = div_wthlv_rp_dry
-        
+    
     # qt
     div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)
     div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzh, rhobf=rhobfi),axis=(1,2))
@@ -442,11 +453,24 @@ for i in range(len(plttime)):
     
     qtpf_vdiv_moist_time[i,:] = div_wqt_rf_moist - div_wqt_av
     qtpf_vdiv_dry_time[i,:] = div_wqt_rf_dry - div_wqt_av
+    
+    # ql
+    div_wql = ddzwx_2nd(whp, qlpf+qlpp, dzh, rhobf=rhobfi)
+    div_wql_av = np.mean(div_wql,axis=(1,2))
+    div_wqlf = lowPass(div_wql, circ_mask)
+    
+    div_wqlf_moist = mean_mask(div_wqlf,mask_moist)
+    div_wqlf_dry = mean_mask(div_wqlf,mask_dry)
+    
+    qlpf_vdiv_moist_time[i,:] = div_wqlf_moist - div_wql_av
+    qlpf_vdiv_dry_time[i,:] = div_wqlf_dry - div_wql_av
 
     del div_wthlv_rf
     del div_wthlv_rp    
     del div_wqt_r
     del div_wqt_rf
+    del div_wql
+    del div_wqlf
     gc.collect()
 
     # Moisture instability term model (WTG for thlv and qtpf model for flux anomaly div)
@@ -604,6 +628,9 @@ if store:
     np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
     np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
     
+    np.save(lp+'/qlpf_vdiv_moist_time.npy',qlpf_vdiv_moist_time)
+    np.save(lp+'/qlpf_vdiv_dry_time.npy',qlpf_vdiv_dry_time)
+    
     np.save(lp+'/thl_av_time.npy',thl_av_time)
     np.save(lp+'/thlv_av_time.npy',thlv_av_time)
     np.save(lp+'/qt_av_time.npy',qt_av_time)
@@ -622,12 +649,15 @@ if store:
     np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
     np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
     
+    np.save(lp+'/wthlp_av_time.npy',wthlp_av_time)
     np.save(lp+'/wthlpf_moist_time.npy',wthlpf_moist_time)
     np.save(lp+'/wthlpf_dry_time.npy',wthlpf_dry_time)
     
+    np.save(lp+'/wqtp_av_time.npy',wqtp_av_time)
     np.save(lp+'/wqtpf_moist_time.npy',wqtpf_moist_time)
     np.save(lp+'/wqtpf_dry_time.npy',wqtpf_dry_time)
     
+    np.save(lp+'/wqlp_av_time.npy',wqlp_av_time)
     np.save(lp+'/wqlpf_moist_time.npy',wqlpf_moist_time)
     np.save(lp+'/wqlpf_dry_time.npy',wqlpf_dry_time)
     

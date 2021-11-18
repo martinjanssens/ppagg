@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 
 # Constants
 cp = 1004.
-Rd = 287.05
+Rd = 287.04
 Rv = 461.5
-Lv = 2.5e6
+Lv = 2.53e6
 grav = 9.81
 
 
