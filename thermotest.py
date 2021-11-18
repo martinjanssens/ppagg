@@ -12,8 +12,8 @@ from thermofunctions import *
 # Python version of the thermodynamic calculations in DALES
 
 # Inputs
-itmin = 23
-itmax = 24
+itmin = 47
+itmax = 48
 di    = 1
 izmin = 0
 izmax = 80
@@ -52,11 +52,21 @@ for i in range(len(plttime)):
     
     # 3D fields
     qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
-    # wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
+    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
     thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
     ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
     # u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     # v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
+    
+    # thlv
+    thlv = thl + (rv/rd-1)*qt
+    
+    # Moist/dry definition
+    twp = np.trapz(rhobfi[:,np.newaxis,np.newaxis]*qt[:,:,:],zflim,axis=0)
+    twp = lowPass(twp, circ_mask)
+    mask_moist = np.zeros(twp.shape)
+    mask_moist[twp - np.mean(twp) > 0] = 1
+    mask_dry = 1 - mask_moist
     
     # Compute T
     presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
@@ -90,6 +100,9 @@ for i in range(len(plttime)):
     thl_av = np.mean(thl,axis=(1,2))
     thlp = thl - thl_av[:,np.newaxis,np.newaxis]
     
+    thlv_av = np.mean(thl,axis=(1,2))
+    thlvp = thlv - thlv_av[:,np.newaxis,np.newaxis]
+    
     qt_av = np.mean(qt,axis=(1,2))
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
     
@@ -100,31 +113,79 @@ for i in range(len(plttime)):
     cmnan[cmnan==0.] = np.nan
     
     # a-verged over c-louds
-    thlac = np.nanmean(thl*cmnan,axis=(1,2))
-    qlac = np.nanmean(ql*cmnan,axis=(1,2))
-    qtac = np.nanmean(qt*cmnan,axis=(1,2))
-    qsac = np.nanmean(qs*cmnan[:-1,:,:],axis=(1,2))
+    thlca = np.nanmean(thl*cmnan,axis=(1,2))
+    thlvca = np.nanmean(thlv*cmnan,axis=(1,2))
+    qlca = np.nanmean(ql*cmnan,axis=(1,2))
+    qtca = np.nanmean(qt*cmnan,axis=(1,2))
+    qsca = np.nanmean(qs*cmnan[:-1,:,:],axis=(1,2))
     
-    # f-luctuation over c-louds
-    thlpc = cmnan*thl - thlac[:,np.newaxis,np.newaxis]
-    qlpc = cmnan*ql - qlac[:,np.newaxis,np.newaxis]
-    qtpc = cmnan*qt - qtac[:,np.newaxis,np.newaxis]
-    qspc = cmnan[:-1,:,:]*qs - qsac[:,np.newaxis,np.newaxis]
+    # p-erturbation from c-loud average
+    thlcp = cmnan*thl - thlca[:,np.newaxis,np.newaxis]
+    thlvcp = cmnan*thlv - thlvca[:,np.newaxis,np.newaxis]
+    qlcp = cmnan*ql - qlca[:,np.newaxis,np.newaxis]
+    qtcp = cmnan*qt - qtca[:,np.newaxis,np.newaxis]
+    qscp = cmnan[:-1,:,:]*qs - qsca[:,np.newaxis,np.newaxis]
     
-    # Decomposition of qlp in cloudy regions into contributions from qt and thl
-    qlpc_thl = -exnf[:,np.newaxis,np.newaxis]*qst/(rlv/cp*qst + 1)*thlpc[:-1,:,:]
-    qlpc_qt = 1/(rlv/cp*qst + 1)*qtpc[:-1,:,:]
-    
-    # And using xpc = xp*cmnan + x_av*(cf_av-1)/cf_av
-    qlpc_thl = qlpc_thl = -exnf[:,np.newaxis,np.newaxis]*qst/(rlv/cp*qst + 1)*((thlp*cmnan)[:-1,:,:] + (thl_av-thlac)[:-1,np.newaxis,np.newaxis])
-    qlpc_qt = qlpc_qt = 1/(rlv/cp*qst + 1)*((qtp*cmnan)[:-1,:,:] + (qt_av-qtac)[:-1,np.newaxis,np.newaxis])
+    # Decomposition of qlp in cloudy regions into contributions from qt and thl    
+    # Using:
+    # - qlcp = qtcp - qscp
+    # - qscp = qst*Tcp
+    # - thlcp = 1/exnf*(Tcp - rlv/cp*qlcp)
+    # - xcp = xp*cmnan + x_av - xac
+    qlcp_thl = -exnf[:,np.newaxis,np.newaxis]*qst/(rlv/cp*qst + 1)*((thlp*cmnan)[:-1,:,:] + (thl_av-thlca)[:-1,np.newaxis,np.newaxis])
+    qlcp_qt = 1/(rlv/cp*qst + 1)*((qtp*cmnan)[:-1,:,:] + (qt_av-qtca)[:-1,np.newaxis,np.newaxis])
 
-    # Moist/dry averaging, over the large/small scales AND clouds
-    twp = np.trapz(rhobfi[:,np.newaxis,np.newaxis]*qt[:,:,:],zflim,axis=0)
-    twp = lowPass(twp, circ_mask)
-    mask_moist = np.zeros(twp.shape)
-    mask_moist[twp - np.mean(twp) > 0] = 1
-    mask_dry = 1 - mask_moist
+    #  Perturbations from slab-average in cloudy cells
+    qlpc_mod = qlcp_thl + qlcp_qt - (ql_av + qlca)[:-1,np.newaxis,np.newaxis]
+    
+    plt.figure()
+    plt.plot(np.nanmean((cmnan*qlp)**2,axis=(1,2)),zflim)
+    plt.plot(np.nanmean(qlpc_mod**2,axis=(1,2)),zflim[:-1])
+    plt.plot(np.nanmean((qlpc_mod-qlcp_thl)**2,axis=(1,2)),zflim[:-1])
+    plt.plot(np.nanmean((qlpc_mod-qlcp_qt)**2,axis=(1,2)),zflim[:-1])
+    plt.plot(np.nanmean((qlpc_mod+(ql_av + qlca)[:-1,np.newaxis,np.newaxis])**2,axis=(1,2)),zflim[:-1])
+
+    # Model in terms of thlv
+    qlcp_thlv = -exnf[:,np.newaxis,np.newaxis]*qst/(rlv/cp*qst + 1)*((thlvp*cmnan)[:-1,:,:] + (thlv_av-thlvca)[:-1,np.newaxis,np.newaxis])
+    qlcp_qt1 = (1+(rd/rv-1)*exnf[:,np.newaxis,np.newaxis]*qst)/(rlv/cp*qst + 1)*((qtp*cmnan)[:-1,:,:] + (qt_av-qtca)[:-1,np.newaxis,np.newaxis])
+    qlpc_mod1 = qlcp_thlv + qlcp_qt1 - (ql_av + qlca)[:-1,np.newaxis,np.newaxis]
+
+    plt.figure()
+    plt.plot(np.nanmean((cmnan*qlp)**2,axis=(1,2)),zflim)
+    plt.plot(np.nanmean(qlpc_mod1**2,axis=(1,2)),zflim[:-1])
+    plt.plot(np.nanmean((qlpc_mod-qlcp_thlv)**2,axis=(1,2)),zflim[:-1])
+    
+    for k in range(len(zflim)-1):
+        qlpc_mod1[k,np.isnan(qlpc_mod1[k,:,:])] = -ql_av[k]
+    
+    plt.figure()
+    plt.plot(mean_mask(cm*qlp,mask_moist),zflim)
+    plt.plot(mean_mask(qlpc_mod1,mask_moist),zflim[:-1])
+    # plt.plot(np.nanmean((qlpc_mod-qlcp_thlv)**2,axis=(1,2)),zflim[:-1])
+    ## This is still not working.
+    
+    # Mesoscale fluxes
+    wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
+    wh = wh[:-1,:,:]
+    
+    
+    wqlp = wf*qlp
+    wqlpc_mod = wf[:-1,:,:]*qlpc_mod1
+    wqlpc_qt1 = wf[:-1,:,:]*qlcp_qt1
+    
+    # Test
+    wqlpf = lowPass(wqlp,circ_mask)
+    wqlpf_moist = mean_mask(wqlpf,mask_moist)
+        
+    wqlpc_modf = lowPass(wqlpc_mod,circ_mask)
+    wqlpc_modf_moist = mean_mask(wqlpc_modf,mask_moist)
+    
+    wqlpc_qt1[np.isnan(wqlpc_qt1)] = 0.
+    wqlpc_qtf = lowPass(wqlpc_qt1,circ_mask)
+    wqlpc_qtf_moist = mean_mask(wqlpc_qtf,mask_moist)
+    
+
+    # Moist/dry averaging, over the large/small scales AND cloud
     
     mask_moist_cl = cm.copy()
     for k in range(len(zflim)):
