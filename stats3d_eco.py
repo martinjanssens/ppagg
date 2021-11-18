@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = False
+parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
