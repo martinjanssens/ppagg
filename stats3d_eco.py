@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -169,12 +169,21 @@ qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+
 wqtp_av_time = np.zeros((plttime.size,izmax-izmin))
 wqtpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqtpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+
 wqlp_av_time = np.zeros((plttime.size,izmax-izmin))
 wqlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wqlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_l_moist_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_l_dry_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_c_moist_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_c_dry_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_r_moist_time = np.zeros((plttime.size,izmax-izmin))
+wqlpf_r_dry_time = np.zeros((plttime.size,izmax-izmin))
+
 wthlvp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -376,15 +385,16 @@ for i in range(len(plttime)):
     wthlvpp_moist = mean_mask(wthlvpp, mask_moist)
     wthlvpp_dry = mean_mask(wthlvpp, mask_dry)
     
-    # Scale decompose wthlvf contributions FIXME need to make Galilean invariant
+    # Scale decompose wthlvf and wql contributions FIXME need to make Galilean invariant
     wthlvpf_l, wthlvpf_c, wthlvpf_r = scaleDecomposeFlux(wff , wfp, thlvpf, thlvpp, circ_mask)
+    wqlpf_l, wqlpf_c, wqlpf_r = scaleDecomposeFlux(wff , wfp, qlpf, qlpp, circ_mask)
     
-    wthlvpf_l_moist_time[i,:] = mean_mask(wthlvpf_l, mask_moist)
-    wthlvpf_l_dry_time[i,:] = mean_mask(wthlvpf_l, mask_dry)
-    wthlvpf_c_moist_time[i,:] = mean_mask(wthlvpf_c, mask_moist)
-    wthlvpf_c_dry_time[i,:] = mean_mask(wthlvpf_c, mask_dry)
-    wthlvpf_r_moist_time[i,:] = mean_mask(wthlvpf_r, mask_moist)
-    wthlvpf_r_dry_time[i,:] = mean_mask(wthlvpf_r, mask_dry)
+    wqlpf_l_moist_time[i,:] = mean_mask(wqlpf_l, mask_moist)
+    wqlpf_l_dry_time[i,:] = mean_mask(wqlpf_l, mask_dry)
+    wqlpf_c_moist_time[i,:] = mean_mask(wqlpf_c, mask_moist)
+    wqlpf_c_dry_time[i,:] = mean_mask(wqlpf_c, mask_dry)
+    wqlpf_r_moist_time[i,:] = mean_mask(wqlpf_r, mask_moist)
+    wqlpf_r_dry_time[i,:] = mean_mask(wqlpf_r, mask_dry)
     
     wthlp_av_time[i,:] = wthlp_av
     wthlpf_moist_time[i,:] = wthlpf_moist
@@ -407,7 +417,7 @@ for i in range(len(plttime)):
     
     del wthlpf
     del wqtpf
-    del wqlpf
+    del wqlpf, wqlpf_l, wqlpf_c, wqlpf_r
     del wthlvp
     del wthlvpp
     gc.collect()
@@ -828,6 +838,12 @@ if store:
     np.save(lp+'/wqlp_av_time.npy',wqlp_av_time)
     np.save(lp+'/wqlpf_moist_time.npy',wqlpf_moist_time)
     np.save(lp+'/wqlpf_dry_time.npy',wqlpf_dry_time)
+    np.save(lp+'/wqlpf_l_moist_time.npy',wqlpf_l_moist_time)
+    np.save(lp+'/wqlpf_l_dry_time.npy',wqlpf_l_dry_time)
+    np.save(lp+'/wqlpf_c_moist_time.npy',wqlpf_c_moist_time)
+    np.save(lp+'/wqlpf_c_dry_time.npy',wqlpf_c_dry_time)
+    np.save(lp+'/wqlpf_r_moist_time.npy',wqlpf_r_moist_time)
+    np.save(lp+'/wqlpf_r_dry_time.npy',wqlpf_r_dry_time)
     
     np.save(lp+'/wthlvp_av_time.npy',wthlvp_av_time)
     np.save(lp+'/wthlvpf_moist_time.npy',wthlvpf_moist_time)
