@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import os
 import netCDF4 as nc
 import seaborn as sns
-from functions import getRad, lowPass
+from functions import getRad, lowPass, mean_mask
 
 lp = '/scratch-shared/janssens/bomex200aswitch/a2'
 sp = lp+'/figs'
@@ -104,9 +104,9 @@ for j in range(len(tPlot)):
     
     if j > 1:
         axs[0,j].contour(twppf,levels=[0],extent=extent,origin='upper',
-                         linewidths=0.1,colors='black')
+                         linewidths=0.5,colors='black')
         axs[1,j].contour(twppf,levels=[0],extent=extent,origin='upper',
-                         linewidths=0.1,colors='white')
+                         linewidths=0.5,colors='white')
     
     axs[1,j].set_xlabel('x [km]')
     axs[0,j].set_title('t = %.1f hr'%tPlot[j])
@@ -128,4 +128,90 @@ for j in range(len(tPlot)):
 plt.savefig(sp+'/twp_cld_evo.pdf', bbox_inches='tight',dpi=300)
     
     
+#%% Plot time evolution of twp, for a number of simulations
 
+lps = ['/scratch-shared/janssens/bomex200aswitch/a2',
+       '/scratch-shared/janssens/bomex100',
+       '/scratch-shared/janssens/bomex200a5'
+       ]
+sp = lps[-1]+'/figs'
+
+labs = [r'$\Delta x = 200m$',
+         r'$\Delta x = 100m$',
+         r'$O(5)$ advection']
+ls = ['-','--','-.']
+
+klp = 4
+qlc = 1e-7
+
+tPlot = np.arange(6,16,0.25)
+
+alpha=0.5
+lw=2
+col_moist = plt.cm.RdYlBu(0.99)
+col_dry = plt.cm.RdYlBu(0)
+
+# fig,axs = plt.subplots(ncols=len(tPlot),nrows=len(lps),figsize=(3.5*len(tPlot),3.5*len(lps)),
+#                        sharex=True,sharey=True,squeeze=False)
+
+f1 = plt.figure(figsize=(5,10/3)); axs1 = plt.gca()
+
+for i in range(len(lps)):
+    ds = nc.Dataset(lps[i]+'/cape2d.001.nc')
+    
+    time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+    xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
+    xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
+    yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
+    yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
+    
+    extent = np.array([xf.min(), xf.max(), xf.min(), xf.max()])/1000
+    
+    circ_mask = np.zeros((xf.size,xf.size))
+    rad = getRad(circ_mask)
+    circ_mask[rad<=klp] = 1
+    
+    # for j in range(len(tPlot)):
+    #     it = np.argmin(abs(tPlot[j]-time))
+    #     twpp = np.ma.getdata(ds.variables['twp'][it,:,:])
+    #     twpp -= np.mean(twpp)
+    #     twppf = lowPass(twpp, circ_mask)
+        
+    #     sc1 = axs[i,j].imshow(twpp, extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
+        
+    #     if j > 1:
+    #         axs[i,j].contour(twppf,levels=[0],extent=extent,origin='upper',
+    #                          linewidths=0.5,colors='black')
+    #     if i == 0:
+    #         axs[0,j].set_title('t = %.1f hr'%tPlot[j])
+    #     if i == len(lps)-1:
+    #         axs[1,j].set_xlabel('x [km]')
+    #     if j == 0:
+    #         axs[i,j].set_ylabel('y [km]')
+    
+    #     if j == len(tPlot)-1:
+    #         pos1 = axs[1,j].get_position()
+    #         cbax1 = fig.add_axes([.92, pos1.ymin, 0.01, pos1.height])
+    #         cb1 = fig.colorbar(sc1, cax=cbax1)
+    #         cb1.ax.set_ylabel(r"$TWP'$ [kg/kg/m$^2$]", rotation=270, labelpad=15)
+    
+    twppf_moist = np.zeros(len(tPlot))
+    twppf_dry = np.zeros(len(tPlot))
+    for j in range(len(tPlot)):
+        it = np.argmin(abs(tPlot[j]-time))
+        twpp = np.ma.getdata(ds.variables['twp'][it,:,:])
+        twpp -= np.mean(twpp)
+        twppf = lowPass(twpp, circ_mask)
+        mask_moist = np.zeros(twppf.shape)
+        mask_moist[twppf > 0] = 1
+        mask_dry = 1 - mask_moist
+    
+        twppf_moist[j] = mean_mask(twppf, mask_moist)
+        twppf_dry[j] = mean_mask(twppf, mask_dry)
+    
+    axs1.plot(tPlot,twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
+    axs1.plot(tPlot,twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
+axs1.set_xlabel('Time [hr]')
+axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
+axs1.legend(loc='upper left',bbox_to_anchor=(1,1))
+plt.savefig(sp+'/twp_evo_num.pdf',bbox_inches='tight')

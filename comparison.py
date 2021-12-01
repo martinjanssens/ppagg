@@ -12,6 +12,7 @@ import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
+
 lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
         '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
 labs = [r'$\Delta x = 100m$',
