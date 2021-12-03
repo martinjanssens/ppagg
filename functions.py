@@ -352,4 +352,12 @@ def compute_spectrum(cloud_scalar,dx,cloud_scalar_2=None,sqrt=False):
     L = dx * N
     k1d = 2 * np.pi / L * np.arange(1, N // 2 + 1)
     
-    return k1d, psd_1d_rad  
+    return k1d, psd_1d_rad
+
+def tderive(var,time):
+    return ((var[1:,1:-1] - var[:-1,1:-1])
+           /(time[1:,np.newaxis] - time[:-1,np.newaxis])/3600)
+
+def zderivef(var,dzh):
+    ddz_var = ((var[:,1:] - var[:,:-1])/dzh)
+    return (ddz_var[:,1:] + ddz_var[:,:-1])*0.5

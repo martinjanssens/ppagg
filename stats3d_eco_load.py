@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 
 # Run specifics
-lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new'
 sp = lp+'/../figs'
 ds1= nc.Dataset(lp+'/../profiles.001.nc')
 ilp = np.loadtxt(lp+'/../lscale.inp.001')
@@ -155,6 +155,10 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 # Mean ql (we don't have this from stats3d)
 ql_av_1d = ds1['ql'][:,izmin:izmax]
 
+# Slopes of mean profiles
+Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
+Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
+
 # Tendencies of variables of interest
 def tderive(var,time):
     return ((var[1:,1:-1] - var[:-1,1:-1])
@@ -198,12 +202,14 @@ ddz_wthlv_av_time = (ddz_wthlv_av_time[:,1:] + ddz_wthlv_av_time[:,:-1])*0.5
 ddz_wqt_av_time = (ddz_wqt_av_time[:,1:] + ddz_wqt_av_time[:,:-1])*0.5
 
 # Subsidence
-# Slopes of mean profiles
-Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
-Gamma_qt = qtpf_prod_moist_wex_time/wff_moist_time[:,1:-1]
+Gamma_thlv_1d = (thlv_av_1d[:,1:] - thlv_av_1d[:,:-1])/dzh
+Gamma_thlv_1d = (Gamma_thlv_1d[:,1:] + Gamma_thlv_1d[:,:-1])/2.
 
-wfls_dthlvdz_av_time = wfls[izmin+1:izmax-1]*Gamma_thlv
-wfls_dqtdz_av_time = wfls[izmin+1:izmax-1]*Gamma_qt
+Gamma_qt_1d = (qt_av_1d[:,1:] - qt_av_1d[:,:-1])/dzh
+Gamma_qt_1d = (Gamma_qt_1d[:,1:] + Gamma_qt_1d[:,:-1])/2.
+
+wfls_dthlvdz_av_time = wfls[izmin+1:izmax-1]*Gamma_thlv_1d
+wfls_dqtdz_av_time = wfls[izmin+1:izmax-1]*Gamma_qt_1d
 
 # Large-scale forcing
 dqdt_ls = ilp[izmin:izmax,6]
@@ -212,7 +218,7 @@ dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 dtav = 1.0 # Around each plotted time step
 alpha = 0.5
@@ -371,8 +377,8 @@ axs[0].set_ylabel('z [m]')
 axs[3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 
 #%% Average budget contributions over time dimension
-tpltmin = 6.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -463,8 +469,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 plt.savefig(sp+'/qtpf_budget.pdf',bbox_inches='tight')
 
 #%% Average thlvpf budget contributions over time dimension
-tpltmin = 10.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 terms = ['Tendency',
          'Gradient production',
@@ -645,8 +651,8 @@ plt.show()
 
 #%% WTG-based model of moisture variance production
 
-tpltmin = 10.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -795,11 +801,27 @@ plt.savefig(sp+'/wpf_qtpfprod_wtg.pdf',bbox_inches='tight')
 
 #%% Vertically integrated statistics
 tpltmin = 6.
-tpltmax = 16.
-dit = 0.25 # Rounds to closest multiple of dt in time
+tpltmax = 24.
+dit = 0.5 # Rounds to closest multiple of dt in time
 dtav = 1.0 # Average around each plotted time step
 alpha = 0.5
 lw=2
+
+terms = ['Tendency',
+         'Gradient production',
+         'Vertical flux convergence',
+         'Horizontal flux convergence',
+         'Subsidence',
+         'SFS diffusion'
+         ]
+
+colors = ['black',
+          'cadetblue',
+          'lightsteelblue',
+          'olivedrab',
+          'sienna',
+          'goldenrod',
+          'lightgray']
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -978,8 +1000,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes and fluctuations of thv
 
 # Time to average over
-tpltmin = 10.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 terms0 = [r"$\theta_{v_m}'$",
           r"$\theta_{lv_m}'$",
@@ -1115,8 +1137,8 @@ plt.savefig(sp+'/thv_wthv_decomposition.pdf',bbox_inches='tight')
 #%% Flux scale decomposition
 
 # Time to average over
-tpltmin = 10.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 labs = [r"$(w'\theta_{lv}')_m$",
         r"$(w_m'\theta_{lv_m}')_m$",
@@ -1311,7 +1333,7 @@ plt.show()
 #%% Flux in time
 
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
@@ -1360,7 +1382,7 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 #%% Relation qtpf - wthlvpf_anom
 
 tpltmin = 6.
-tpltmax = 18.
+tpltmax = 24.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -1395,7 +1417,7 @@ plt.legend()
 
 #%% Mean profiles
 
-tpltmin = 0.
+tpltmin = 1.
 tpltmax = 24.
 dit = 8 # Rounds to closest multiple of dt in time
 fac=1e5 # Factor for plotting tendency magnitudes
@@ -1428,20 +1450,18 @@ for i in range(len(plttime_var)):
     
     imin = np.argmin(wthlvp_av_time[plttime_var[i],:])
     ilab = r"Inversion base" if i==0 else None
-    # wthlv_min = np.min(wthlvp_av_time[plttime_var[i],:])
-    # zmin_time = zf[imin]
-    
-    iqlbase = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][0]
-    qlbaselab = r"Cloud base" if i==0 else None
-    
-    iqltop = np.where(np.abs(qlpf_moist_time[plttime_var[i],:]) > 0)[0][-1]
-    if iqltop > izmax-3:
-        iqltop = izmax-3
-    qltoplab = r"Cloud top" if i==0 else None
 
     it1d = np.argmin(np.abs(time[plttime_var[i]]-time1d/3600))
     itmin = np.argmin(np.abs(time1d - (time1d[it1d]-tav*3600)))
     itmax = np.argmin(np.abs(time1d - (time1d[it1d]+tav*3600)))
+    
+    iqlbase = np.where(np.abs(ql_av_1d[it1d,:]) > 0)[0][0]
+    qlbaselab = r"Cloud base" if i==0 else None
+    
+    iqltop = np.where(np.abs(ql_av_1d[it1d,:]) > 0)[0][-1]
+    if iqltop > izmax-3:
+        iqltop = izmax-3
+    qltoplab = r"Cloud top" if i==0 else None
     
     # Tendency, averaged over tav around the current time
     ddt_thlv_av = np.mean(ddt_thlv_av_time[itmin:itmax],axis=0)
@@ -1567,7 +1587,7 @@ axs[0,3].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 #%% Time-averaged, slab-averaged budget
 
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 10.
 
 terms = ['Tendency',
          'Vertical flux convergence',
