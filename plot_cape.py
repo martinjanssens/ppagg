@@ -130,21 +130,25 @@ plt.savefig(sp+'/twp_cld_evo.pdf', bbox_inches='tight',dpi=300)
     
 #%% Plot time evolution of twp, for a number of simulations
 
+# time 50m res:np.arange(600,115200,600)
+
 lps = ['/scratch-shared/janssens/bomex200aswitch/a2',
        '/scratch-shared/janssens/bomex100',
-       '/scratch-shared/janssens/bomex200a5'
+       '/scratch-shared/janssens/bomex50',
+        '/scratch-shared/janssens/bomex200a5',
        ]
 sp = lps[-1]+'/figs'
 
 labs = [r'$\Delta x = 200m$',
          r'$\Delta x = 100m$',
+         r'$\Delta x = 50m$',
          r'$O(5)$ advection']
-ls = ['-','--','-.']
+ls = ['-','--',':','-.']
 
 klp = 4
 qlc = 1e-7
 
-tPlot = np.arange(6,16,0.25)
+tPlot = np.arange(6,36,0.25)
 
 alpha=0.5
 lw=2
@@ -160,14 +164,14 @@ for i in range(len(lps)):
     ds = nc.Dataset(lps[i]+'/cape2d.001.nc')
     
     time  = np.ma.getdata(ds.variables['time'][:]) / 3600
-    xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
-    xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
-    yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
-    yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
+    # xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
+    # xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
+    # yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
+    # yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
     
-    extent = np.array([xf.min(), xf.max(), xf.min(), xf.max()])/1000
-    
-    circ_mask = np.zeros((xf.size,xf.size))
+    # extent = np.array([xf.min(), xf.max(), xf.min(), xf.max()])/1000
+    sz = ds.dimensions['xt'].size
+    circ_mask = np.zeros((sz,sz))
     rad = getRad(circ_mask)
     circ_mask[rad<=klp] = 1
     
