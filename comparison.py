@@ -11,12 +11,13 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
+from functions import tderive, zderivef
 
-
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg_merged',
-        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged']
+lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
+       '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
 labs = [r'$\Delta x = 100m$',
         r'$\Delta x = 200m$']
+sp = lps[-1]+'/../figs'
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
 #        '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg']
@@ -35,14 +36,12 @@ for i in range(len(lps)):
     ld.append(pp3d_out)
     lp = lps[i]
     
-    ds = nc.Dataset(lp+'/../fielddump.001.nc')
     ds1= nc.Dataset(lp+'/../profiles.001.nc')
-    ds0= nc.Dataset(lp+'/../tmser.001.nc')
     ilp = np.loadtxt(lp+'/../lscale.inp.001')
     
     # time  = np.ma.getdata(ds.variables['time'][:]) / 3600
     ld[i]['time'] = np.load(lp+'/time.npy')
-    ld[i]['zf']    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
+    ld[i]['zf']   = ilp[:,0]
     
     ld[i]['time1d'] = np.ma.getdata(ds1.variables['time'][:])
     ld[i]['rhobf'] = np.ma.getdata(ds1.variables['rhobf'][:])
@@ -135,14 +134,151 @@ for i in range(len(lps)):
     ld[i]['wthlvpf_anom_moist_time'] = ld[i]['wthlvpf_moist_time'] - ld[i]['wthlvp_av_time']
     ld[i]['wthlvpf_anom_dry_time'] = ld[i]['wthlvpf_dry_time'] - ld[i]['wthlvp_av_time']
 
+    ld[i]['Gamma_qt_av_time'] = zderivef(ld[i]['qt_av_time'],dzh)
+    ld[i]['Gamma_thlv_av_time'] = zderivef(ld[i]['thlv_av_time'],dzh)
+    ld[i]['Gamrat_av_time'] = ld[i]['Gamma_qt_av_time']/ld[i]['Gamma_thlv_av_time']
+    ld[i]['Gamrat_av_time'][np.abs(ld[i]['Gamrat_av_time'])>0.03] = np.nan
+    ## Reconstruct slab-mean budget terms
+    ## FIXME Not working yet, would need support for time1d vs time and handling different time dimension sizes in restart and original
+    # thl_av_1d = ds1['thl'][:,ld[i]['izmin']:ld[i]['izmax']]
+    # qt_av_1d = ds1['qt'][:,ld[i]['izmin']:ld[i]['izmax']]
+    # thlv_av_1d = thl_av_1d*(1 + 0.608*qt_av_1d)
+    
+    # # Tendencies
+    # ld[i]['ddt_thlv_av_time'] = tderive(thlv_av_1d, ld[i]['time1d']/3600)
+    # ld[i]['ddt_qt_av_time'] = tderive(qt_av_1d, ld[i]['time1d']/3600)
+    
+    # # Flux divergence (approximately, i.e. ignoring rho)
+    # ld[i]['wthl_av_time'] = ds1['wthlt'][:,ld[i]['izmin']:ld[i]['izmax']]
+    # ld[i]['wqt_av_time'] = ds1['wqtt'][:,ld[i]['izmin']:ld[i]['izmax']]
+    # ld[i]['wthlv_av_time'] = ld[i]['wthl_av_time'] + 0.608*thl_av_1d*ld[i]['wqt_av_time']
+    
+    # ld[i]['ddz_wthlv_av_time'] = zderivef(ld[i]['wthlv_av_time'],dzh)
+    # ld[i]['ddz_wqt_av_time'] = zderivef(ld[i]['wqt_av_time'],dzh)
+
+#%% Function for plotting chosen variable comparison
+
+def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
+                    sharex=True,alpha=0.75,lw=2):
+    ndt = int((tpltmax-tpltmin)/dit)
+    nvar = len(pltvars)
+
+    fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(2.5*nvar,3*ndt+0.25),
+                           sharex=sharex,sharey=True,squeeze=False)
+    col_av = 'k'
+    col_moist = plt.cm.RdYlBu(0.99)
+    col_dry = plt.cm.RdYlBu(0)
+    lns= []; lbs = []
+    for l in range(len(lps)):
+    
+        itpltmin = np.where(ld[l]['time'][ld[l]['plttime']]>=tpltmin)[0][0]
+        itpltmax = np.where(ld[l]['time'][ld[l]['plttime']]<tpltmax)[0][-1]+1
+        idtplt = int(round(dit/(ld[l]['time'][ld[l]['plttime'][1]]-ld[l]['time'][ld[l]['plttime'][0]])))
+        plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+        
+        pltvars_moist = []
+        pltvars_dry = []
+        pltvars_av = []
+        for p in range(nvar):
+            if '_av' in pltvars[p]:
+                pltvars_av.append(ld[l][pltvars[p]+'_time'])
+            else:
+                pltvars_moist.append(ld[l][pltvars[p]+'_moist_time'])
+                pltvars_dry.append(ld[l][pltvars[p]+'_dry_time'])
+        
+        for i in range(len(plttime_var)):
+            
+            ti = ld[l]['time'][plttime_var[i]]
+            itmn_min = np.where(ld[l]['time'][ld[l]['plttime']] >= ti-tav)[0][0]
+            itmn_max = np.where(ld[l]['time'][ld[l]['plttime']] <= ti+tav)[0][-1]
+            
+            for p in range(nvar):
+                if '_av' in pltvars[p]:
+                    
+                    pltvar_av_mn = np.mean(ld[l][pltvars[p]+'_time'][itmn_min:itmn_max,:],axis=0)
+                    
+                    if len(ld[l]['zflim']) != len(pltvar_av_mn):
+                        zplt = ld[l]['zflim'][1:-1]
+                    else:
+                        zplt = ld[l]['zflim']
+                    
+                    lab = labs[l]+', slab-averaged'
+                    ln = axs[i,p].plot(pltvar_av_mn, zplt, 
+                                  color=col_av, linestyle=lines[l],
+                                  alpha=alpha, lw=lw)
+                    if i == 0:
+                        lns.append(ln[0])
+                        lbs.append(lab)
+                    # axs[i,p].set_xlim((-0.05,0.05))
+                else:
+                    pltvar_moist_mn = np.mean(ld[l][pltvars[p]+'_moist_time'][itmn_min:itmn_max,:],axis=0)
+                    pltvar_dry_mn = np.mean(ld[l][pltvars[p]+'_dry_time'][itmn_min:itmn_max,:],axis=0)
+                
+                    if len(ld[l]['zflim']) != len(pltvar_moist_mn):
+                        zplt = ld[l]['zflim'][1:-1]
+                    else:
+                        zplt = ld[l]['zflim']
+                    
+                    # Ugly but works if you start with moist/dry var:
+                    labm = labs[l]+', moist'
+                    labd = labs[l]+', dry'
+                    lnm = axs[i,p].plot(pltvar_moist_mn, zplt, 
+                                  color=col_moist, linestyle=lines[l],
+                                  alpha=alpha, lw=lw)
+                    lnd = axs[i,p].plot(pltvar_dry_mn, zplt, 
+                                  color=col_dry, linestyle=lines[l], 
+                                  alpha=alpha, lw=lw)
+                    if i == 0 and p == 0:
+                        lns.append(lnm[0])
+                        lns.append(lnd[0])
+                        lbs.append(labm)
+                        lbs.append(labd)
+    
+        for i in range(len(plttime_var)):
+            axs[i,0].set_ylabel('Height [m]')
+            for p in range(nvar):
+                axs[i,p].set_title('%.0f'%(ld[l]['time'][plttime_var[i]]-tav)+'-'+
+                                   '%.0f hr'%(ld[l]['time'][plttime_var[i]]+tav))
+    
+    for p in range(nvar):
+        axs[-1,p].set_xlabel(varlab[p])
+    # axs[-1,-1].legend(loc='best',bbox_to_anchor=(1,-0.25),ncol=2)
+    fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.075),ncol=2)
+
 #%% Plot variables
 
 # Minus 'moist_time' or 'dry_time'
-pltvars = ['qtpf','wthlvpf_anom', 'wff']
-varlab = [r"$\widetilde{q_t'}$", 
-          r"$\widetilde{w'\theta_{lv}'}-\overline{w'\theta_{lv}'}$", 
-          r"$\widetilde{w'}$",]
+pltvars = ['qtpf','wthlvpf_anom', 'Gamrat_av','qtpf_prod_wex']
+varlab = [r"${q_{t_m}'}$ [kg/kg]", 
+          r"$F_{{\theta_{lv}'}_m}$ [K m/s]", 
+          r"$\Gamma_{q_t}/\Gamma_{\theta_{lv}}$ [kg/kg/K]",
+          r"$w_m'\Gamma_{q_t}$ [kg/kg/s]"]
 
+# pltvars = ['qtpf_prod_wex','qtpf_vdiv', 'qtpf_hdiv']
+# varlab = [r"Gradient production", 
+#           r"Vertical transport",
+#           r"Horizontal transport"]
+
+# pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
+# varlab = [r"Gradient production", 
+#           r"Vertical transport",
+#           r"Horizontal transport"]
+
+# pltvars = ['thlvpp']
+# varlab = [r"$\theta_{lv}'''$"]
+
+lines = ['-','--']
+
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
+
+
+plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
+plt.savefig(sp+'/comparison_vars.pdf',bbox_inches='tight')
+
+#%% qtpf important budget terms
 pltvars = ['qtpf_prod_wex','qtpf_vdiv', 'qtpf_hdiv']
 varlab = [r"Gradient production", 
           r"Vertical transport",
@@ -153,62 +289,30 @@ varlab = [r"Gradient production",
 #           r"Vertical transport",
 #           r"Horizontal transport"]
 
-pltvars = ['thlvpp']
-varlab = [r"$\theta_{lv}'''$"]
+lines = ['-','--']
+
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
+
+plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines)
+plt.savefig(sp+'/comparison_qtpf.pdf',bbox_inches='tight')
+
+#%% Fluxes
+pltvars = ['wthlvpf_r','wqlpf','wqtpf']
+varlab = [r"$\left(w_s'\theta_{lv_s}'\right)$",
+          r"$\left(w_s'q_l'\right)$",
+          r"$\left(w_s'q_t'\right)$",]
 
 lines = ['-','--']
 
-tpltmin = 12.5
-tpltmax = 14.5
-dit = 1.0 # Rounds to closest multiple of dt in time
-tav = 0.5 # Averaging time centred around current time
-ndt = int((tpltmax-tpltmin)/dit)
-nvar = len(pltvars)
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
 
-fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(4*nvar,3*ndt+0.25),
-                       sharex=True,sharey=True,squeeze=False)
-
-col_moist = plt.cm.RdYlBu(0.99)
-col_dry = plt.cm.RdYlBu(0)
-for l in range(len(lps)):
-
-    itpltmin = np.where(ld[l]['time'][ld[l]['plttime']]>=tpltmin)[0][0]
-    itpltmax = np.where(ld[l]['time'][ld[l]['plttime']]<tpltmax)[0][-1]+1
-    idtplt = int(round(dit/(ld[l]['time'][ld[l]['plttime'][1]]-ld[l]['time'][ld[l]['plttime'][0]])))
-    plttime_var = np.arange(itpltmin,itpltmax,idtplt)
-    
-    pltvars_moist = []
-    pltvars_dry = []
-    for p in range(nvar):
-        pltvars_moist.append(ld[l][pltvars[p]+'_moist_time'])
-        pltvars_dry.append(ld[l][pltvars[p]+'_dry_time'])
-    
-    for i in range(len(plttime_var)):
-        
-        ti = ld[l]['time'][plttime_var[i]]
-        itav_min = np.where(ld[l]['time'][ld[l]['plttime']] >= ti-tav)[0][0]
-        itav_max = np.where(ld[l]['time'][ld[l]['plttime']] <= ti+tav)[0][-1]
-        
-        for p in range(nvar):
-            pltvar_moist_av = np.mean(pltvars_moist[p][itav_min:itav_max,:],axis=0)
-            pltvar_dry_av = np.mean(pltvars_dry[p][itav_min:itav_max,:],axis=0)
-            
-            if len(ld[l]['zflim']) != len(pltvar_moist_av):
-                zplt = ld[l]['zflim'][1:-1]
-            else:
-                zplt = ld[l]['zflim']
-            
-            axs[i,p].plot(pltvar_moist_av, zplt, color=col_moist, linestyle=lines[l], label=labs[l]+', moist')
-            axs[i,p].plot(pltvar_dry_av, zplt, color=col_dry, linestyle=lines[l], label=labs[l]+', dry')
-
-    for i in range(len(plttime_var)):
-        axs[i,0].set_ylabel('Height [m]')
-        for p in range(nvar):
-            axs[i,p].set_title('%.1f hr'%ld[l]['time'][plttime_var[i]])
-
-for p in range(nvar):
-    axs[-1,p].set_xlabel(varlab[p])
-axs[-1,-1].legend(loc='best',bbox_to_anchor=(1,-0.25),ncol=2)
+plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
 
 #%%
 plt.plot(np.mean(wff_moist_time[35:39,:],axis=0),zflim)
