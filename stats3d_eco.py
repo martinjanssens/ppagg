@@ -15,7 +15,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = False
+parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -202,6 +202,8 @@ rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
 for i in range(len(plttime)):
+    print('Processing time step', plttime[i]+1, '/', len(plttime))
+    
     it1d = np.argmin(np.abs(time1d/3600 - time[plttime[i]]))
     
     # 1D fields
@@ -388,6 +390,13 @@ for i in range(len(plttime)):
     # Scale decompose wthlvf and wql contributions FIXME need to make Galilean invariant
     wthlvpf_l, wthlvpf_c, wthlvpf_r = scaleDecomposeFlux(wff , wfp, thlvpf, thlvpp, circ_mask)
     wqlpf_l, wqlpf_c, wqlpf_r = scaleDecomposeFlux(wff , wfp, qlpf, qlpp, circ_mask)
+    
+    wthlvpf_l_moist_time[i,:] = mean_mask(wthlvpf_l, mask_moist)
+    wthlvpf_l_dry_time[i,:] = mean_mask(wthlvpf_l, mask_dry)
+    wthlvpf_c_moist_time[i,:] = mean_mask(wthlvpf_c, mask_moist)
+    wthlvpf_c_dry_time[i,:] = mean_mask(wthlvpf_c, mask_dry)
+    wthlvpf_r_moist_time[i,:] = mean_mask(wthlvpf_r, mask_moist)
+    wthlvpf_r_dry_time[i,:] = mean_mask(wthlvpf_r, mask_dry)
     
     wqlpf_l_moist_time[i,:] = mean_mask(wqlpf_l, mask_moist)
     wqlpf_l_dry_time[i,:] = mean_mask(wqlpf_l, mask_dry)
