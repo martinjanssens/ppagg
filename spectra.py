@@ -14,17 +14,34 @@ from skimage.measure import block_reduce
 import gc
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
+import argparse
 
-# Run specifics
-itmin = 63#23
-itmax = 67
-di    = 1
-izmin = 39
-izmax = 40
+parseFlag = False
 
-klp = 4
+if parseFlag:
+    parser = argparse.ArgumentParser(description="Compute spectra of selected variables from DALES 3D fields")
+    parser.add_argument("--dir", metavar="DIR", type=str, default=".", help="Directory to load/store data from/to")
+    parser.add_argument("--itmin", metavar="N", type=int, default=0, help="First time index")
+    parser.add_argument("--itmax", metavar="N", type=int, default=-1, help="Last time index")
+    parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
+    parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
+    parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
+    parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
+    parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
 
-lp = '/scratch-shared/janssens/bomex100_e12'
+    args = parser.parse_args()
+
+    lp = args.dir
+    itmin = args.itmin
+    itmax = args.itmax
+    di = args.dt
+    izmin = args.izmin
+    izmax = args.izmax
+    klp = args.klp
+    store = args.store
+else:
+    lp = '/scratch-shared/janssens/bomex100_e12'
+
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
@@ -38,8 +55,6 @@ rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
 
 dx = xf[1] - xf[0]
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
-
-plttime = np.arange(itmin, itmax, di)
 
 def plot_spectrum(k1d, spec, lab, plttime):
     fig = plt.figure(); ax = plt.gca()
@@ -62,9 +77,20 @@ def plot_spectrum(k1d, spec, lab, plttime):
     plt.show()
 
 #%% Compute spectra at a given height
+if not parseFlag:
+    # Run specifics
+    itmin = 0#23
+    itmax = 96
+    di    = 1
+    izmin = 39
+    izmax = 40
+    klp = 4
+    store=False
 
+plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
 N = xf.size; N2 = N//2
+
 spec_qt = np.zeros((len(plttime),len(zflim),N2))
 spec_thl = np.zeros((len(plttime),len(zflim),N2))
 spec_thlv = np.zeros((len(plttime),len(zflim),N2))
@@ -74,6 +100,7 @@ spec_wqt = np.zeros((len(plttime),len(zflim),N2))
 spec_wthl = np.zeros((len(plttime),len(zflim),N2))
 spec_wthlv = np.zeros((len(plttime),len(zflim),N2))
 
+c = 0
 for i in range(len(plttime)):
     
     # 3D fields
@@ -96,6 +123,8 @@ for i in range(len(plttime)):
     del wh
     
     for iz in range(len(zflim)):
+        print('Computing spectra at time step', i, '/', len(plttime),
+              ', height', iz/len(zflim), 'total', c,'/',len(zflim)*len(plttime))
         k1d,spec_qt[i,iz,:] = compute_spectrum(qt[iz,:,:], dx)
         k1d,spec_thl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx)
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
@@ -110,7 +139,22 @@ for i in range(len(plttime)):
         # k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx,sqrt=True)
         # k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx,sqrt=True)
         
+        c += 1
+        
     gc.collect()
+if store:
+    np.save(lp+'/time_spec.npy',time[plttime])
+    np.save(lp+'/plttime_spec.npy',plttime)
+    np.save(lp+'/zf_spec.npy',zflim)
+    
+    np.save(lp+'/spec_qt.npy',spec_qt)
+    np.save(lp+'/spec_thl.npy',spec_thl)
+    np.save(lp+'/spec_thlv.npy',spec_thlv)
+    np.save(lp+'/spec_w.npy',spec_w)
+    np.save(lp+'/spec_ql.npy',spec_ql)
+    np.save(lp+'/spec_wqt.npy',spec_wqt)
+    np.save(lp+'/spec_wthl.npy',spec_wthl)
+    np.save(lp+'/spec_wthlv.npy',spec_wthlv)
 
 #%% Average over time
 itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
