@@ -8,15 +8,12 @@ Created on Tue Sep 14 16:23:26 2021
 
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import netCDF4 as nc
-from skimage.measure import block_reduce
 import gc
-sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 import argparse
 
-parseFlag = False
+parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Compute spectra of selected variables from DALES 3D fields")
@@ -26,6 +23,7 @@ if parseFlag:
     parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
     parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
     parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
+    parser.add_argument("--dz", metavar="N", type=int, default=1, help="Height isampling interval")
     parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
     parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
 
@@ -34,13 +32,14 @@ if parseFlag:
     lp = args.dir
     itmin = args.itmin
     itmax = args.itmax
-    di = args.dt
+    dti = args.dt
     izmin = args.izmin
     izmax = args.izmax
+    dzi = args.dz
     klp = args.klp
     store = args.store
 else:
-    lp = '/scratch-shared/janssens/bomex100_e12'
+    lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
 ds1= nc.Dataset(lp+'/profiles.001.nc')
@@ -56,39 +55,20 @@ rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
 dx = xf[1] - xf[0]
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
-def plot_spectrum(k1d, spec, lab, plttime):
-    fig = plt.figure(); ax = plt.gca()
-    for i in range(len(plttime)):
-        col = plt.cm.cubehelix(i/len(plttime))
-        ax.loglog(k1d,spec[i,izpl,:],c=col,label='t=%.2f'%time[plttime[i]])
-    # ax.set_ylim((1e-4,1e2))
-    ax.set_ylabel(lab)
-    ax.set_xlabel(r"Wavenumber [1/m]")
-    ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
-    
-    ax2 = ax.twiny()
-    fig.subplots_adjust(bottom=0.22)
-    ax2.xaxis.set_ticks_position('bottom')
-    ax2.xaxis.set_label_position('bottom')
-    ax2.spines['bottom'].set_position(('axes',-0.22))
-    ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
-    ax2.set_xscale('log')
-    ax2.set_xlabel('Wavelength [m]')
-    plt.show()
-
 #%% Compute spectra at a given height
 if not parseFlag:
     # Run specifics
-    itmin = 0#23
+    itmin = 95#23
     itmax = 96
-    di    = 1
-    izmin = 39
-    izmax = 40
+    dti   = 1
+    izmin = 0
+    izmax = 80
+    dzi   = 4
     klp = 4
-    store=False
+    store=True
 
-plttime = np.arange(itmin, itmax, di)
-zflim = zf[izmin:izmax]
+plttime = np.arange(itmin, itmax, dti)
+zflim = zf[izmin:izmax:dzi]
 N = xf.size; N2 = N//2
 
 spec_qt = np.zeros((len(plttime),len(zflim),N2))
@@ -99,6 +79,7 @@ spec_ql = np.zeros((len(plttime),len(zflim),N2))
 spec_wqt = np.zeros((len(plttime),len(zflim),N2))
 spec_wthl = np.zeros((len(plttime),len(zflim),N2))
 spec_wthlv = np.zeros((len(plttime),len(zflim),N2))
+spec_wql = np.zeros((len(plttime),len(zflim),N2))
 
 c = 0
 for i in range(len(plttime)):
@@ -114,17 +95,18 @@ for i in range(len(plttime)):
     thl_av = np.mean(thl,axis=(1,2))
     thlv = thl + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
 
-    thl = thl - thl_av
-    thlv = thlv - np.mean(thlv,axis=(1,2))
-    qt = qt - np.mean(qt,axis=(1,2))
-    ql = ql - np.mean(qt,axis=(1,2))
+    thl = thl - thl_av[:,np.newaxis,np.newaxis]
+    thlv = thlv - np.mean(thlv,axis=(1,2))[:,np.newaxis,np.newaxis]
+    qt = qt - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
+    ql = ql - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
     
     wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
     del wh
     
     for iz in range(len(zflim)):
-        print('Computing spectra at time step', i, '/', len(plttime),
-              ', height', iz/len(zflim), 'total', c,'/',len(zflim)*len(plttime))
+        if c%10 == 0:
+            print('Computing spectra at time step', i+1, '/', len(plttime),
+                  ', height', iz+1,'/',len(zflim), 'total', c+1,'/',len(zflim)*len(plttime))
         k1d,spec_qt[i,iz,:] = compute_spectrum(qt[iz,:,:], dx)
         k1d,spec_thl[i,iz,:] = compute_spectrum(thl[iz,:,:], dx)
         k1d,spec_thlv[i,iz,:] = compute_spectrum(thlv[iz,:,:], dx)
@@ -134,7 +116,9 @@ for i in range(len(plttime)):
         k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, qt[iz,:,:])
         k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thl[iz,:,:])
         k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, thlv[iz,:,:])
+        k1d,spec_wql[i,iz,:] = compute_spectrum(wf[iz,:,:], dx, ql[iz,:,:])
         
+        # These are not co-spectra, even if they are probably more accurate
         # k1d,spec_wqt[i,iz,:] = compute_spectrum(wf[iz,:,:]*qt[iz,:,:], dx,sqrt=True)
         # k1d,spec_wthl[i,iz,:] = compute_spectrum(wf[iz,:,:]*thl[iz,:,:], dx,sqrt=True)
         # k1d,spec_wthlv[i,iz,:] = compute_spectrum(wf[iz,:,:]*thlv[iz,:,:], dx,sqrt=True)
@@ -143,9 +127,10 @@ for i in range(len(plttime)):
         
     gc.collect()
 if store:
-    np.save(lp+'/time_spec.npy',time[plttime])
+    np.save(lp+'/time_spec.npy',time)
     np.save(lp+'/plttime_spec.npy',plttime)
     np.save(lp+'/zf_spec.npy',zflim)
+    np.save(lp+'/k1d.npy',k1d)
     
     np.save(lp+'/spec_qt.npy',spec_qt)
     np.save(lp+'/spec_thl.npy',spec_thl)
@@ -155,130 +140,5 @@ if store:
     np.save(lp+'/spec_wqt.npy',spec_wqt)
     np.save(lp+'/spec_wthl.npy',spec_wthl)
     np.save(lp+'/spec_wthlv.npy',spec_wthlv)
-
-#%% Average over time
-itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
-
-spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
-spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
-spec_thlv_mn = block_reduce(spec_thlv,(itav,1,1),func=np.mean)
-spec_w_mn = block_reduce(spec_w,(itav,1,1),func=np.mean)
-spec_ql_mn = block_reduce(spec_ql,(itav,1,1),func=np.mean)
-
-spec_wqt_mn = block_reduce(spec_wqt,(itav,1,1),func=np.mean)
-spec_wthl_mn = block_reduce(spec_wthl,(itav,1,1),func=np.mean)
-spec_wthlv_mn = block_reduce(spec_wthlv,(itav,1,1),func=np.mean)
-
-plttime_mn = plttime[::itav]
-
-#%% Plot
-izpl = 0
-
-# Variances
-plot_spectrum(k1d, spec_qt_mn, r"$k\widehat{q}_t'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thl_mn, r"$k\widehat{\theta}_l'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thlv_mn, r"$k\widehat{\theta}_{lv}'^2$", plttime_mn)
-plot_spectrum(k1d, spec_w_mn, r"$k\widehat{w}'^2$", plttime_mn)
-plot_spectrum(k1d, spec_ql_mn, r"$k\widehat{q_l}'^2$", plttime_mn)
-
-# Fluxes
-plot_spectrum(k1d, spec_wqt_mn, r"$k\widehat{wq}_t'$", plttime_mn)
-plot_spectrum(k1d, spec_wthl_mn, r"$k\widehat{w\theta}_l'$", plttime_mn)
-plot_spectrum(k1d, spec_wthlv_mn, r"$k\widehat{w\theta}_{lv}'$", plttime_mn)
-
-#%% Plot in same spectrum FIXME is not yet implemented
-
-fig = plt.figure(); ax = plt.gca()
-ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"$w\theta_{lv}$")
-ax.loglog(k1d,spec_wthlv_t_mn[-1,izpl,:],label=r"$w\theta_{lv}'$")
-ax.loglog(k1d,spec_wthlv_r_mn[-1,izpl,:],label=r"$w'''\theta_{lv}'''$")
-# ax.set_ylim((1e-4,1e2))
-ax.set_ylabel(r"$k\widehat{w\theta}_{lv}'$")
-ax.set_xlabel(r"Wavenumber [1/m]")
-ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
-
-ax2 = ax.twiny()
-fig.subplots_adjust(bottom=0.22)
-ax2.xaxis.set_ticks_position('bottom')
-ax2.xaxis.set_label_position('bottom')
-ax2.spines['bottom'].set_position(('axes',-0.22))
-ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
-ax2.set_xscale('log')
-ax2.set_xlabel('Wavelength [m]')
-plt.show()
-
-#%% wthlv scale decomposition (run cells above first)
-klp = 4
-
-spec_wthlv_l = np.zeros((len(plttime),len(zflim),N2))
-spec_wthlv_c = np.zeros((len(plttime),len(zflim),N2))
-spec_wthlv_r = np.zeros((len(plttime),len(zflim),N2))
-
-# Mask for low-[ass filtering
-circ_mask = np.zeros((xf.size,xf.size))
-rad = getRad(circ_mask)
-circ_mask[rad<=klp] = 1
-
-for i in range(len(plttime)):
+    np.save(lp+'/spec_wql.npy',spec_wql)
     
-    # 3D fields
-    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
-    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
-    thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
-    
-    thl_av = np.mean(thl,axis=(1,2))
-    thlv = thl + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
-    thlv = thlv - np.mean(thlv,axis=(1,2))
-    
-    wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
-    del wh
-
-    # Low-pass filter (and identify high-pass filtered remainder)    
-    wff = lowPass(wf, circ_mask)
-    wfp = wf - wff
-    del wf
-                
-    thlvf = lowPass(thlv, circ_mask)
-    thlvp = thlv - thlvf
-    del thlv
-    
-    gc.collect()
-    
-    for iz in range(len(zflim)):
-        # k1d,spec_wthlv_l[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvf[iz,:,:], dx)
-        # k1d,spec_wthlv_c[i,iz,:] = compute_spectrum(wff[iz,:,:]*thlvp[iz,:,:]+
-        #                                             wfp[iz,:,:]*thlvf[iz,:,:], dx)
-        # k1d,spec_wthlv_r[i,iz,:] = compute_spectrum(wfp[iz,:,:]*thlvp[iz,:,:], dx)
-
-        k1d,spec_wthlv_l[i,iz,:] = compute_spectrum(wff[iz,:,:], dx,thlvf[iz,:,:])
-        k1d,spec_wthlv_c[i,iz,:] = compute_spectrum(wff[iz,:,:], dx, thlvp[iz,:,:])
-        _,spec_wthlv_c2 = compute_spectrum(wfp[iz,:,:], dx, thlvf[iz,:,:])
-        spec_wthlv_c[i,iz,:] += spec_wthlv_c2
-        k1d,spec_wthlv_r[i,iz,:] = compute_spectrum(wfp[iz,:,:], dx, thlvp[iz,:,:])
-
-
-spec_wthlv_l_mn = block_reduce(spec_wthlv_l,(itav,1,1),func=np.mean)
-spec_wthlv_c_mn = block_reduce(spec_wthlv_c,(itav,1,1),func=np.mean)
-spec_wthlv_r_mn = block_reduce(spec_wthlv_r,(itav,1,1),func=np.mean)
-sumtest = spec_wthlv_l_mn + spec_wthlv_c_mn + spec_wthlv_r_mn
-
-fig = plt.figure(); ax = plt.gca()
-ax.loglog(k1d,spec_wthlv_mn[-1,izpl,:],label=r"$w'\theta_{lv}'$")
-ax.loglog(k1d,spec_wthlv_l_mn[-1,izpl,:],label=r"$\widetilde{w'}\widetilde{\theta_{lv}'}$")
-ax.loglog(k1d,spec_wthlv_c_mn[-1,izpl,:],label=r"$\widetilde{w'}\theta_{lv}'''+w'''\widetilde{\theta_{lv}'}$")
-ax.loglog(k1d,spec_wthlv_r_mn[-1,izpl,:],label=r"$w'''\theta_{lv}'''$")
-# ax.loglog(k1d,sumtest[-1,izpl,:],label=r"sum")
-# ax.set_ylim((1e-4,1e2))
-ax.set_ylabel(r"$k\widehat{w\theta}_{lv}'$")
-ax.set_xlabel(r"Wavenumber [1/m]")
-ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
-
-ax2 = ax.twiny()
-fig.subplots_adjust(bottom=0.22)
-ax2.xaxis.set_ticks_position('bottom')
-ax2.xaxis.set_label_position('bottom')
-ax2.spines['bottom'].set_position(('axes',-0.22))
-ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
-ax2.set_xscale('log')
-ax2.set_xlabel('Wavelength [m]')
-plt.show()
