@@ -42,15 +42,11 @@ else:
     lp = '/scratch-shared/janssens/bomex200_e12'
 
 ds = nc.Dataset(lp+'/fielddump.001.nc')
-ds1= nc.Dataset(lp+'/profiles.001.nc')
 ilp = np.loadtxt(lp+'/lscale.inp.001')
 
 time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
 zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
-
-time1d = np.ma.getdata(ds1.variables['time'][:])
-rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
 
 dx = xf[1] - xf[0]
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
@@ -85,10 +81,11 @@ c = 0
 for i in range(len(plttime)):
     
     # 3D fields
-    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
-    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
-    thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
-    ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
+    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax:dzi,:,:])
+    whm = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax:dzi,:,:])
+    whp = np.ma.getdata(ds.variables['w'][plttime[i],izmin+1:izmax+1:dzi,:,:])
+    thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax:dzi,:,:])
+    ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax:dzi,:,:])
     # u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     # v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
     
@@ -100,8 +97,9 @@ for i in range(len(plttime)):
     qt = qt - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
     ql = ql - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
     
-    wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
-    del wh
+    wf = (whm + whp)*0.5
+    del whm, whp
+    gc.collect()
     
     for iz in range(len(zflim)):
         if c%10 == 0:
@@ -125,7 +123,7 @@ for i in range(len(plttime)):
         
         c += 1
         
-    gc.collect()
+    
 if store:
     np.save(lp+'/time_spec.npy',time)
     np.save(lp+'/plttime_spec.npy',plttime)
