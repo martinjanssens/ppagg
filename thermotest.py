@@ -12,7 +12,7 @@ from thermofunctions import *
 # Python version of the thermodynamic calculations in DALES
 
 # Inputs
-itmin = 47
+itmin = 63
 itmax = 64
 di    = 1
 izmin = 0
@@ -44,8 +44,8 @@ rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
 Ms = np.zeros((len(plttime),zflim.size))
-qtdiff = np.zeros((len(plttime),zflim.size))
-thlvdiff = np.zeros((len(plttime),zflim.size))
+wqt_mf = np.zeros((len(plttime),zflim.size))
+wthlv_mf = np.zeros((len(plttime),zflim.size))
 wqt_av_time = np.zeros((len(plttime),zflim.size))
 wthlv_av_time = np.zeros((len(plttime),zflim.size))
 for i in range(len(plttime)):
@@ -114,6 +114,7 @@ for i in range(len(plttime)):
     
     qt_av = np.mean(qt,axis=(1,2))
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
+    qtpf = lowPass(qtp,circ_mask)
     
     T_av = np.mean(T,axis=(1,2))
     
@@ -133,17 +134,36 @@ for i in range(len(plttime)):
     qtca = np.nanmean(qt*cmnan,axis=(1,2))
     qsca = np.nanmean(qs*cmnan[:-1,:,:],axis=(1,2))
     
+    # Slab-Average
     # a-veraged over c-loud c-ores
     wcca = np.nanmean(wf*cmcore,axis=(1,2))
     qtcca = np.nanmean(qt*cmcore,axis=(1,2))
     thlvcca = np.nanmean(thlv*cmcore,axis=(1,2))
+    
+    # Mass flux
     Ms[i,:] = wcca*cf_core
-    qtdiff[i,:] = qtcca-qt_av
-    thlvdiff[i,:] = thlvcca - thlv_av
+    wqt_mf[i,:] = wcca*cf_core*(qtcca-qt_av)
+    wthlv_mf[i,:] = wcca*cf_core*(thlvcca - thlv_av)
 
     wqt_av_time[i,:] = np.mean(wf*qtp,axis=(1,2))
     wthlv_av_time[i,:] = np.mean(wf*thlvp,axis=(1,2))
-        
+
+    # Moist
+    cmc_moist = cmcore.copy()
+    cmc_moist[:,mask_moist==0.] = np.nan
+    cfc_moist = np.nansum(cmc_moist,axis=(1,2))/np.sum(mask_moist)
+    wcc_moist = np.nanmean(wf*cmc_moist,axis=(1,2))
+    qtcc_moist = np.nanmean(qt*cmc_moist,axis=(1,2))
+    thlvcc_moist = np.nanmean(thlv*cmc_moist,axis=(1,2))
+    qt_moist = mean_mask(qt,mask_moist)
+    thlv_moist = mean_mask(thlv,mask_moist)
+    Ms_moist = wcc_moist*cfc_moist
+    wqt_mf_moist = Ms_moist*(qtcc_moist - qt_moist)
+    wthlv_mf_moist = Ms_moist*(thlvcc_moist - thlv_moist)    
+    
+    wqt_moist = mean_mask(wf*qtp,mask_moist)
+    wthlv_moist = mean_mask(wf*thlvp,mask_moist)
+    
     # # p-erturbation from c-loud average
     # thlcp = cmnan*thl - thlca[:,np.newaxis,np.newaxis]
     # thlvcp = cmnan*thlv - thlvca[:,np.newaxis,np.newaxis]

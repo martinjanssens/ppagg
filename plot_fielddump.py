@@ -18,8 +18,8 @@ from thermofunctions import qsatur, rlv, rd, rv, cp
 
 lp = '/scratch-shared/janssens/bomex200_e12'
 sp = lp+'/figs'
-itmin = 59
-itmax = 60
+itmin = 63
+itmax = 64
 di    = 1
 izmin = 0
 izmax = 80
@@ -83,6 +83,9 @@ for i in range(len(plttime)):
     wff = lowPass(wf, circ_mask)
     wfp = wf - wff
     
+    up = u - np.mean(u,axis=(1,2))[:,np.newaxis,np.newaxis]
+    upf = lowPass(up, circ_mask)
+    
     qt_av = np.mean(qt,axis=(1,2))
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
     qtpf = lowPass(qtp, circ_mask)
@@ -137,7 +140,7 @@ for i in range(len(plttime)):
     plt.savefig(sp+'/ql_w_twppf.pdf',bbox_inches='tight',dpi=300)
     plt.show()
     
-
+    # Flux origins
     extent=[xf.min()/1000,xf.max()/1000,zflim[0],zflim[-1]-1]
     ix = 380
     iz = 37
@@ -174,4 +177,44 @@ for i in range(len(plttime)):
     axs[0].legend(bbox_to_anchor=(1,1),loc='upper left',ncol=2)
 
     plt.savefig(sp+'/structure.pdf',bbox_inches='tight',dpi=300)
+    plt.show()
+    
+    # Conceptual figure
+    extent=[xf.min()/1000,xf.max()/1000,zflim[0],zflim[-1]]
+    ix = 372
+    iz0 = 15
+    iz1 = 37
+    # fig,axs = plt.subplots(figsize=(10,4),nrows=1)
+    fig = plt.figure(figsize=(10,4)); axs = plt.gca()
+    sc0 = axs.imshow(np.flipud(qt[:,ix,:]),
+                            extent=extent,
+                            aspect='auto',cmap='RdYlBu',
+                            vmin=0.01,vmax=0.018)
+    pos = axs.get_position()
+    cbax0=fig.add_axes([.92, pos.ymin, 0.007, pos.height])
+    cb0 = fig.colorbar(sc0, cax=cbax0)
+    cb0.ax.set_ylabel(r"$q_t$ [kg/kg]", rotation=270, labelpad=15)
+
+    sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+    cbax1=fig.add_axes([1.02, pos.ymin, 0.007, pos.height])
+    norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
+    sm.set_array([])
+    cb1 = fig.colorbar(sm, cax=cbax1)
+    cb1.ax.set_ylabel(r"$q_{t_m}'$ [kg/kg]", rotation=270, labelpad=15)
+    cb1.locator = ticker.MaxNLocator(nbins=6)
+    cb1.update_ticks()
+    axs.contour(ql[:,ix,:],levels=[1e-7],extent=extent,origin='lower',linewidths=0.5,colors='black')
+    xfstr = np.linspace(xf[0],xf[-1],len(xf))/1000
+    [X,Y] = np.meshgrid(xfstr,zflim)
+    speed = np.sqrt((upf[:,ix,:]/1000)**2+wff[:,ix,:]**2)
+    lws = 3*speed/np.max(speed)
+    st = axs.streamplot(X,Y,upf[:,ix,:]/1000,wff[:,ix,:],linewidth=lws, density=1,color='gray')
+    axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+    axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+    
+    axs.set_xlabel('x [km]')
+    axs.set_ylabel('z [m]')
+    axs.set_xlim(extent[0:2])
+    plt.savefig(sp+'/concept.pdf',bbox_inches='tight',dpi=300)
     plt.show()
