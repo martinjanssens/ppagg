@@ -134,21 +134,26 @@ plt.savefig(sp+'/twp_cld_evo.pdf', bbox_inches='tight',dpi=300)
 
 lps = ['/scratch-shared/janssens/bomex200aswitch/a2',
        '/scratch-shared/janssens/bomex100',
-       '/scratch-shared/janssens/bomex50',
+        '/scratch-shared/janssens/bomex50',
         '/scratch-shared/janssens/bomex200a5',
        ]
 sp = lps[-1]+'/figs'
 
 labs = [r'$\Delta x = 200m$',
          r'$\Delta x = 100m$',
-         r'$\Delta x = 50m$',
+          r'$\Delta x = 50m$',
          r'$O(5)$ advection']
 ls = ['-','--',':','-.']
 
+tmin = 6.
+tmax = [36., 
+        24.,
+        36.,
+        36.,
+        36.]
+
 klp = 4
 qlc = 1e-7
-
-tPlot = np.arange(6,36,0.25)
 
 alpha=0.5
 lw=2
@@ -168,6 +173,11 @@ for i in range(len(lps)):
     # xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
     # yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
     # yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
+    
+    itpltmin = np.where(time>=tmin)[0][0]
+    itpltmax = np.where(time<tmax[i])[0][-1]+1
+    plttime_var = np.arange(itpltmin,itpltmax,1)
+
     
     # extent = np.array([xf.min(), xf.max(), xf.min(), xf.max()])/1000
     sz = ds.dimensions['xt'].size
@@ -199,11 +209,10 @@ for i in range(len(lps)):
     #         cb1 = fig.colorbar(sc1, cax=cbax1)
     #         cb1.ax.set_ylabel(r"$TWP'$ [kg/kg/m$^2$]", rotation=270, labelpad=15)
     
-    twppf_moist = np.zeros(len(tPlot))
-    twppf_dry = np.zeros(len(tPlot))
-    for j in range(len(tPlot)):
-        it = np.argmin(abs(tPlot[j]-time))
-        twpp = np.ma.getdata(ds.variables['twp'][it,:,:])
+    twppf_moist = np.zeros(len(plttime_var))
+    twppf_dry = np.zeros(len(plttime_var))
+    for j in range(len(plttime_var)):
+        twpp = np.ma.getdata(ds.variables['twp'][plttime_var[j],:,:])
         twpp -= np.mean(twpp)
         twppf = lowPass(twpp, circ_mask)
         mask_moist = np.zeros(twppf.shape)
@@ -213,8 +222,8 @@ for i in range(len(lps)):
         twppf_moist[j] = mean_mask(twppf, mask_moist)
         twppf_dry[j] = mean_mask(twppf, mask_dry)
     
-    axs1.plot(tPlot,twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
-    axs1.plot(tPlot,twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
+    axs1.plot(time[plttime_var],twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
+    axs1.plot(time[plttime_var],twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
 axs1.set_xlabel('Time [hr]')
 axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
 axs1.legend(loc='upper left',bbox_to_anchor=(1,1))

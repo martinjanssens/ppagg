@@ -13,7 +13,7 @@ import gc
 from functions import *
 import argparse
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex100_e12'
 
 time = np.load(lp+'/time_spec.npy')
 plttime = np.load(lp+'/plttime_spec.npy')
@@ -68,7 +68,7 @@ spec_wql_mn = block_reduce(spec_wql,(itav,1,1),func=np.mean)
 plttime_mn = plttime[::itav]
 
 #%% Plot
-izpl = 3
+izpl = 9
 
 # Variances
 plot_spectrum(k1d, spec_qt_mn, r"$k\widehat{q}_t'^2$", plttime_mn)
