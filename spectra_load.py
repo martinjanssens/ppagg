@@ -12,6 +12,7 @@ from skimage.measure import block_reduce
 import gc
 from functions import *
 import argparse
+from matplotlib.patches import FancyArrowPatch
 
 lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
        '/scratch-shared/janssens/bomex200_from100_12hr/spectra']
@@ -122,6 +123,7 @@ tplt = 12.
 tav = 1. # Hours after tplt
 zplt = 1500.
 klp = 4
+kar = 255
 
 pltvars = ['spec_qt',
            'spec_thlv',
@@ -137,6 +139,7 @@ iz = np.argmin(np.abs(ld[i]['zf'] - zplt))
 fig,axs = plt.subplots(nrows=len(pltvars),ncols=1,figsize=(5,len(pltvars)*4+0.4),sharex=True)
 
 lns = []; lbs = []
+are = np.zeros(len(pltvars))
 for i in range(len(lps)):
     
     itpltmin = np.argmin(np.abs(ld[i]['time'][ld[i]['plttime']] - tplt))
@@ -145,10 +148,13 @@ for i in range(len(lps)):
     
     k1d_plt = ld[i]['k1d']
     
+    
     for j in range(len(pltvars)):
+        
         spec_plt = np.mean(ld[i][pltvars[j]][itpltmin:itpltmax,iz], axis=0)
         
         ln = axs[j].loglog(k1d_plt[::2],spec_plt[::2],c='k',linestyle=lines[i], dashes=dashes[i])
+        
         if i == 0:
             axs[j].set_ylabel(varlab[j])
             axs[j].axvline(k1d_plt[klp],c='Gray')
@@ -159,8 +165,18 @@ for i in range(len(lps)):
         if j == 0:
             lns.append(ln[0])
             lbs.append(labs[i])
+        if i > 0:
+            # axs[j].axvline(k1d_plt[kar],spec_plt[kar],are[j],c='Gray')
+            # print(are[j])
+            # print((k1d_plt[kar],spec_plt[kar]), (k1d_plt[kar],are[j]))
+            ar = FancyArrowPatch(posA=(k1d_plt[kar],spec_plt[kar]), 
+                                 posB=(k1d_plt[kar],are[j]),
+                                 arrowstyle='<|-|>', color='0.5',
+                                 mutation_scale=10,linestyle=lines[i])
+            axs[j].add_artist(ar)
+        are[j] = spec_plt[kar]
 fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.3),ncol=len(lps))    
-
+plt.savefig(sps[-1]+'/spectra_comparison.pdf', bbox_inches='tight')
 
 #%% Plot in same spectrum FIXME is not yet implemented
 
