@@ -13,25 +13,22 @@ import gc
 from functions import *
 import argparse
 
-lp = '/scratch-shared/janssens/bomex100_e12'
+lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
+       '/scratch-shared/janssens/bomex200_from100_12hr/spectra']
+labs = [r'$\Delta x = 100m$',
+        r'$\Delta x = 200m$']
 
-time = np.load(lp+'/time_spec.npy')
-plttime = np.load(lp+'/plttime_spec.npy')
-zf = np.load(lp+'/zf_spec.npy')
-k1d = np.load(lp+'/k1d.npy')
+def _add_twinx(fig, ax, offset=0.22):
+    ax2 = ax.twiny()
+    fig.subplots_adjust(bottom=offset)
+    ax2.xaxis.set_ticks_position('bottom')
+    ax2.xaxis.set_label_position('bottom')
+    ax2.spines['bottom'].set_position(('axes',-offset))
+    ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
+    ax2.set_xscale('log')
+    ax2.set_xlabel('Wavelength [m]')
 
-spec_qt = np.load(lp+'/spec_qt.npy')
-spec_thl = np.load(lp+'/spec_thl.npy')
-spec_thlv = np.load(lp+'/spec_thlv.npy')
-spec_w = np.load(lp+'/spec_w.npy')
-spec_ql = np.load(lp+'/spec_ql.npy')
-
-spec_wqt = np.load(lp+'/spec_wqt.npy')
-spec_wthl = np.load(lp+'/spec_wthl.npy')
-spec_wthlv = np.load(lp+'/spec_wthlv.npy')
-spec_wql = np.load(lp+'/spec_wql.npy')
-
-def plot_spectrum(k1d, spec, lab, plttime):
+def plot_spectrum(k1d, spec, lab, plttime, time):
     fig = plt.figure(); ax = plt.gca()
     for i in range(len(plttime)):
         col = plt.cm.cubehelix(i/len(plttime))
@@ -41,47 +38,129 @@ def plot_spectrum(k1d, spec, lab, plttime):
     ax.set_xlabel(r"Wavenumber [1/m]")
     ax.legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime)//13+1)
     
-    ax2 = ax.twiny()
-    fig.subplots_adjust(bottom=0.22)
-    ax2.xaxis.set_ticks_position('bottom')
-    ax2.xaxis.set_label_position('bottom')
-    ax2.spines['bottom'].set_position(('axes',-0.22))
-    ax2.set_xlim((2*np.pi/ax.get_xlim()[0],2*np.pi/ax.get_xlim()[1]))
-    ax2.set_xscale('log')
-    ax2.set_xlabel('Wavelength [m]')
-    plt.show()
+    _add_twinx(fig, ax)
+    
+# Loading loop
+ld = []
+sps = []
+for i in range(len(lps)):
+    spec_out = {}
+    ld.append(spec_out)
+    lp = lps[i]
+    sps.append(lp+'/figs')
+    
+    ld[i]['time'] = np.load(lp+'/time_spec.npy')
+    ld[i]['plttime'] = np.load(lp+'/plttime_spec.npy')
+    ld[i]['zf'] = np.load(lp+'/zf_spec.npy')
+    ld[i]['k1d'] = np.load(lp+'/k1d.npy')
 
-#%% Average over time
+    ld[i]['spec_qt'] = np.load(lp+'/spec_qt.npy')
+    ld[i]['spec_thl'] = np.load(lp+'/spec_thl.npy')
+    ld[i]['spec_thlv'] = np.load(lp+'/spec_thlv.npy')
+    ld[i]['spec_w'] = np.load(lp+'/spec_w.npy')
+    ld[i]['spec_ql'] = np.load(lp+'/spec_ql.npy')
+
+    ld[i]['spec_wqt'] = np.load(lp+'/spec_wqt.npy')
+    ld[i]['spec_wthl'] = np.load(lp+'/spec_wthl.npy')
+    ld[i]['spec_wthlv'] = np.load(lp+'/spec_wthlv.npy')
+    ld[i]['spec_wql'] = np.load(lp+'/spec_wql.npy')
+
+#%% Plot time evolution of spectra per loaded run 
+
 itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
+izpl = 9 # (Closests) height to plot spectra at
 
-spec_qt_mn = block_reduce(spec_qt,(itav,1,1),func=np.mean)
-spec_thl_mn = block_reduce(spec_thl,(itav,1,1),func=np.mean)
-spec_thlv_mn = block_reduce(spec_thlv,(itav,1,1),func=np.mean)
-spec_w_mn = block_reduce(spec_w,(itav,1,1),func=np.mean)
-spec_ql_mn = block_reduce(spec_ql,(itav,1,1),func=np.mean)
+for i in range(len(lps)):
+    
+    #Average over time
+    spec_qt_mn = block_reduce(ld[i]['spec_qt'],(itav,1,1),func=np.mean)
+    spec_thl_mn = block_reduce(ld[i]['spec_thl'],(itav,1,1),func=np.mean)
+    spec_thlv_mn = block_reduce(ld[i]['spec_thlv'],(itav,1,1),func=np.mean)
+    spec_w_mn = block_reduce(ld[i]['spec_w'],(itav,1,1),func=np.mean)
+    spec_ql_mn = block_reduce(ld[i]['spec_ql'],(itav,1,1),func=np.mean)
+    
+    spec_wqt_mn = block_reduce(ld[i]['spec_wqt'],(itav,1,1),func=np.mean)
+    spec_wthl_mn = block_reduce(ld[i]['spec_wthl'],(itav,1,1),func=np.mean)
+    spec_wthlv_mn = block_reduce(ld[i]['spec_wthlv'],(itav,1,1),func=np.mean)
+    spec_wql_mn = block_reduce(ld[i]['spec_wql'],(itav,1,1),func=np.mean)
+    
+    plttime_mn = ld[i]['plttime'][::itav]
+    
+    # Plotting
+    # Variances
+    plot_spectrum(ld[i]['k1d'], spec_qt_mn, r"$k\widehat{q}_t'^2$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_qt.pdf', bbox_inches='tight')
 
-spec_wqt_mn = block_reduce(spec_wqt,(itav,1,1),func=np.mean)
-spec_wthl_mn = block_reduce(spec_wthl,(itav,1,1),func=np.mean)
-spec_wthlv_mn = block_reduce(spec_wthlv,(itav,1,1),func=np.mean)
-spec_wql_mn = block_reduce(spec_wql,(itav,1,1),func=np.mean)
+    plot_spectrum(ld[i]['k1d'], spec_thl_mn, r"$k\widehat{\theta}_l'^2$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_thl.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_thlv_mn, r"$k\widehat{\theta}_{lv}'^2$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_thlv.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_w_mn, r"$k\widehat{w}'^2$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_w.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_ql_mn, r"$k\widehat{q_l}'^2$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_ql.pdf', bbox_inches='tight')
+    
+    # Fluxes
+    plot_spectrum(ld[i]['k1d'], spec_wqt_mn, r"$k\widehat{wq}_t'$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_wqt.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_wthl_mn, r"$k\widehat{w\theta}_l'$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_wthl.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_wthlv_mn, r"$k\widehat{w\theta}_{lv}'$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_wthlv.pdf', bbox_inches='tight')
+    
+    plot_spectrum(ld[i]['k1d'], spec_wql_mn, r"$k\widehat{wq}_{l}'$", plttime_mn, ld[i]['time'])
+    plt.savefig(sps[i]+'/spec_wql.pdf', bbox_inches='tight')
 
-plttime_mn = plttime[::itav]
+#%% Plot two runs  at same time
 
-#%% Plot
-izpl = 9
+tplt = 12.
+tav = 1. # Hours after tplt
+zplt = 1500.
+klp = 4
 
-# Variances
-plot_spectrum(k1d, spec_qt_mn, r"$k\widehat{q}_t'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thl_mn, r"$k\widehat{\theta}_l'^2$", plttime_mn)
-plot_spectrum(k1d, spec_thlv_mn, r"$k\widehat{\theta}_{lv}'^2$", plttime_mn)
-plot_spectrum(k1d, spec_w_mn, r"$k\widehat{w}'^2$", plttime_mn)
-plot_spectrum(k1d, spec_ql_mn, r"$k\widehat{q_l}'^2$", plttime_mn)
+pltvars = ['spec_qt',
+           'spec_thlv',
+           'spec_w']
+varlab = [r"$k\widehat{q}_t'^2$",
+          r"$k\widehat{\theta}_{lv}'^2$",
+          r"$k\widehat{w}'^2$"]
+lines = ['-','--']
+dashes=[(1,0),(3,6)]
 
-# Fluxes
-plot_spectrum(k1d, spec_wqt_mn, r"$k\widehat{wq}_t'$", plttime_mn)
-plot_spectrum(k1d, spec_wthl_mn, r"$k\widehat{w\theta}_l'$", plttime_mn)
-plot_spectrum(k1d, spec_wthlv_mn, r"$k\widehat{w\theta}_{lv}'$", plttime_mn)
-plot_spectrum(k1d, spec_wql_mn, r"$k\widehat{wq}_{l}'$", plttime_mn)
+iz = np.argmin(np.abs(ld[i]['zf'] - zplt))
+
+fig,axs = plt.subplots(nrows=len(pltvars),ncols=1,figsize=(5,len(pltvars)*4+0.4),sharex=True)
+
+lns = []; lbs = []
+for i in range(len(lps)):
+    
+    itpltmin = np.argmin(np.abs(ld[i]['time'][ld[i]['plttime']] - tplt))
+    itpltmax = np.argmin(np.abs(ld[i]['time'][ld[i]['plttime']] - (tplt + tav)))
+    itplt = ld[i]['plttime'][itpltmin:itpltmax]
+    
+    k1d_plt = ld[i]['k1d']
+    
+    for j in range(len(pltvars)):
+        spec_plt = np.mean(ld[i][pltvars[j]][itpltmin:itpltmax,iz], axis=0)
+        
+        ln = axs[j].loglog(k1d_plt[::2],spec_plt[::2],c='k',linestyle=lines[i], dashes=dashes[i])
+        if i == 0:
+            axs[j].set_ylabel(varlab[j])
+            axs[j].axvline(k1d_plt[klp],c='Gray')
+            if j == len(pltvars)-1:
+                axs[j].set_xlabel(r"Wavenumber [1/m]")
+                _add_twinx(fig, axs[j], offset=0.4)
+                axs[j].annotate(r'$k_m$', (0.25,-0.15),xycoords='axes fraction')        
+        if j == 0:
+            lns.append(ln[0])
+            lbs.append(labs[i])
+fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.3),ncol=len(lps))    
+
 
 #%% Plot in same spectrum FIXME is not yet implemented
 

@@ -258,7 +258,7 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
     for p in range(nvar):
         axs[-1,p].set_xlabel(varlab[p])
     # axs[-1,-1].legend(loc='best',bbox_to_anchor=(1,-0.25),ncol=2)
-    fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.075),ncol=2)
+    fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.075),ncol=len(lps))
 
 #%% Plot variables
 
