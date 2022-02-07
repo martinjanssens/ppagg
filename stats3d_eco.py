@@ -13,9 +13,10 @@ import gc
 import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
+from dataloader import DataLoaderDALES
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
@@ -45,31 +46,40 @@ if parseFlag:
 else:
     lp = '/scratch-shared/janssens/bomex200_e12'
 
-ds = nc.Dataset(lp+'/fielddump.001.nc')
-ds1= nc.Dataset(lp+'/profiles.001.nc')
-ds0= nc.Dataset(lp+'/tmser.001.nc')
-ilp = np.loadtxt(lp+'/lscale.inp.001')
+dl = DataLoaderDALES(lp)
+time = dl.time
+zf = dl.zf
+zh = dl.zh
+xf = dl.xf
+xh = dl.xh
+yf = dl.yf
+yh = dl.yh
+time1d = dl.time1d
+rhobf = dl.rhobf
+rhobh = dl.rhobh
+wfls = dl.wfls
 
-time  = np.ma.getdata(ds.variables['time'][:]) / 3600
-zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
-zh    = np.ma.getdata(ds.variables['zm'][:]) # Cell edges (h in mhh)
-xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
-xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
-yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
-yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
-
-time1d = np.ma.getdata(ds1.variables['time'][:])
-rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
-rhobh = np.ma.getdata(ds1.variables['rhobh'][:])
+#ds = nc.Dataset(lp+'/fielddump.001.nc')
+#ds1= nc.Dataset(lp+'/profiles.001.nc')
+#ilp = np.loadtxt(lp+'/lscale.inp.001')
+#
+#time  = np.ma.getdata(ds.variables['time'][:]) / 3600
+#zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
+#zh    = np.ma.getdata(ds.variables['zm'][:]) # Cell edges (h in mhh)
+#xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
+#xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
+#yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
+#yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
+#
+#time1d = np.ma.getdata(ds1.variables['time'][:])
+#rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
+#rhobh = np.ma.getdata(ds1.variables['rhobh'][:])
 
 dx = np.diff(xf)[0]
 dy = np.diff(yf)[0] # Assumes uniform horizontal spacing
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 delta = (dx*dy*np.diff(zh))**(1./3)
-
-# Larger-scale subsidence
-wfls = ilp[:,3]
 
 #%% Dry/moist regions
 
@@ -202,7 +212,7 @@ rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
 for i in range(len(plttime)):
-    print('Processing time step', plttime[i]+1, '/', len(plttime))
+    print('Processing time step', i+1, '/', len(plttime))
     
     it1d = np.argmin(np.abs(time1d/3600 - time[plttime[i]]))
     
@@ -211,16 +221,26 @@ for i in range(len(plttime)):
     rhobhi = rhobh[it1d,izmin:izmax]
     
     # 3D fields
-    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
-    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
-    thlp =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
-    qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
-    u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
-    v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
+    qt = dl.load_qt(plttime[i], izmin, izmax)
+    wh = dl.load_wh(plttime[i], izmin, izmax)
+    thlp = dl.load_thl(plttime[i], izmin, izmax)
+    qlp = dl.load_ql(plttime[i], izmin, izmax)
+    u = dl.load_u(plttime[i], izmin, izmax)
+    v = dl.load_v(plttime[i], izmin, izmax)
     if eflag:
-        e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+        e12 = dl.load_e12(plttime[i], izmin, izmax)
     if pflag:
-        pp = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
+        pp = dl.load_p(plttime[i], izmin, izmax)
+#    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
+#    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
+#    thlp =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
+#    qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
+#    u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
+#    v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
+#    if eflag:
+#        e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
+#    if pflag:
+#        pp = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
 
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
@@ -233,7 +253,8 @@ for i in range(len(plttime)):
     thlv_av_time[i,:] = thlv_av
     
     # -> need presf for thv_av, taken from nearest 1d data time and half-level
-    presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
+    presh  = dl.load_presh(it1d, izmin, izmax)
+    # presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
     presf  = (presh[1:]+presh[:-1])*0.5
     exnf   = (presf/1e5)**(Rd/cp)
     thv    = ((thlp[:-1,:,:] + (Lv/cp)*qlp[:-1,:,:]/exnf[:,np.newaxis,np.newaxis])
