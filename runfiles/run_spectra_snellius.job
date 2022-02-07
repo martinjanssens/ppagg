@@ -9,6 +9,7 @@ source ~/.bashrc
 conda activate ppaggenv
 
 SPECTRA=~/scripts/pp3d/spectra.py
+MOD=dales
 DIR=`pwd`
 ITMIN=0
 ITMAX=-1
@@ -19,4 +20,4 @@ DZ=4
 KLP=4
 STORE=TRUE
 
-python $SPECTRA --dir $DIR --itmin $ITMIN --itmax $ITMAX --izmin $IZMIN --izmax $IZMAX --dz $DZ --klp $KLP --store
+python $SPECTRA --mod $MOD --dir $DIR --itmin $ITMIN --itmax $ITMAX --izmin $IZMIN --izmax $IZMAX --dz $DZ --klp $KLP --store

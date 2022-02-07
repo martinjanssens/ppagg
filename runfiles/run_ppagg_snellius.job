@@ -9,7 +9,7 @@ source ~/.bashrc
 conda activate ppaggenv
 
 STATS3D=~/scripts/pp3d/stats3d_eco.py
-MOD=`dales`
+MOD=dales
 DIR=`pwd`
 ITMIN=0
 ITMAX=-1

@@ -11,12 +11,14 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 import gc
 from functions import *
+from dataloader import DataLoaderDALES, DataLoaderMicroHH
 import argparse
 
 parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Compute spectra of selected variables from DALES 3D fields")
+    parser.add_argument("--mod", metavar="MOD", type=str, default="dales", help="LES model used. Options: 'dales' (default) and 'microhh'")
     parser.add_argument("--dir", metavar="DIR", type=str, default=".", help="Directory to load/store data from/to")
     parser.add_argument("--itmin", metavar="N", type=int, default=0, help="First time index")
     parser.add_argument("--itmax", metavar="N", type=int, default=-1, help="Last time index")
@@ -29,6 +31,7 @@ if parseFlag:
 
     args = parser.parse_args()
 
+    mod = args.mod
     lp = args.dir
     itmin = args.itmin
     itmax = args.itmax
@@ -39,30 +42,32 @@ if parseFlag:
     klp = args.klp
     store = args.store
 else:
-    lp = '/scratch-shared/janssens/bomex200_e12'
-
-ds = nc.Dataset(lp+'/fielddump.001.nc')
-ilp = np.loadtxt(lp+'/lscale.inp.001')
-
-time  = np.ma.getdata(ds.variables['time'][:]) / 3600
-xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
-zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
-
-dx = xf[1] - xf[0]
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
-
-#%% Compute spectra at a given height
-if not parseFlag:
-    # Run specifics
-    itmin = 95#23
-    itmax = 96
+    mod = 'microhh'
+    lp = '/scratch-shared/janssens/tmp.bomex/bomex_200m'
+    itmin = 96#23
+    itmax = 97
     dti   = 1
     izmin = 0
     izmax = 80
     dzi   = 4
     klp = 4
-    store=True
+    store=False
 
+if mod == 'dales':
+    dl = DataLoaderDALES(lp)
+elif mod == 'microhh':
+    dl = DataLoaderMicroHH(lp)
+else:
+    raise NotImplementedError("Model must be 'dales' or 'microhh")
+
+time  = dl.time
+xf    = dl.xf
+zf    = dl.zf
+
+dx = xf[1] - xf[0]
+dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+
+#%% Compute spectra at a given height
 plttime = np.arange(itmin, itmax, dti)
 zflim = zf[izmin:izmax:dzi]
 N = xf.size; N2 = N//2
@@ -81,13 +86,19 @@ c = 0
 for i in range(len(plttime)):
     
     # 3D fields
-    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax:dzi,:,:])
-    whm = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax:dzi,:,:])
-    whp = np.ma.getdata(ds.variables['w'][plttime[i],izmin+1:izmax+1:dzi,:,:])
-    thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax:dzi,:,:])
-    ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax:dzi,:,:])
-    # u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
-    # v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
+    qt  = dl.load_qt(plttime[i],izmin,izmax)
+    whm = dl.load_wh(plttime[i],izmin,izmax)
+    whp = dl.load_wh(plttime[i],izmin+1,izmax+1)
+    thl = dl.load_thl(plttime[i],izmin,izmax)
+    ql = dl.load_ql(plttime[i],izmin,izmax)
+    # u = dl.load_u(plttime[i],izmin,izmax)
+    # v = dl.load_v(plttime[i],izmin,izmax)
+    
+    qt = qt[::dzi,:,:]
+    whm = whm[::dzi,:,:]
+    whp = whp[::dzi,:,:]
+    thl = thl[::dzi,:,:]
+    ql = ql[::dzi,:,:]
     
     thl_av = np.mean(thl,axis=(1,2))
     thlv = thl + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
@@ -95,7 +106,7 @@ for i in range(len(plttime)):
     thl = thl - thl_av[:,np.newaxis,np.newaxis]
     thlv = thlv - np.mean(thlv,axis=(1,2))[:,np.newaxis,np.newaxis]
     qt = qt - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
-    ql = ql - np.mean(qt,axis=(1,2))[:,np.newaxis,np.newaxis]
+    ql = ql - np.mean(ql,axis=(1,2))[:,np.newaxis,np.newaxis]
     
     wf = (whm + whp)*0.5
     del whm, whp

@@ -16,7 +16,7 @@ from functions import *
 from dataloader import DataLoaderDALES, DataLoaderMicroHH
 import argparse
 
-parseFlag = False
+parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
@@ -46,9 +46,9 @@ if parseFlag:
     pflag = args.pres
     eflag = args.e12
 else:
-    # lp = '/scratch-shared/janssens/bomex200_e12'
     mod = 'microhh'
     lp = '/scratch-shared/janssens/tmp.bomex/bomex_200m'
+    # lp = '/scratch-shared/janssens/bomex200_e12'
     itmin = 47
     itmax = 48
     di    = 1
