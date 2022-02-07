@@ -117,4 +117,4 @@ class DataLoaderMicroHH:
 
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['phydroh'][it,izmin:izmax])
-~                                                                         
+

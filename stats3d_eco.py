@@ -13,13 +13,14 @@ import gc
 import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
-from dataloader import DataLoaderDALES
+from dataloader import DataLoaderDALES, DataLoaderMicroHH
 import argparse
 
 parseFlag = False
 
 if parseFlag:
-    parser = argparse.ArgumentParser(description="Merge cross-section and field dump DALES output from parallel runs")
+    parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
+    parser.add_argument("--mod", metavar="MOD", type=str, default="dales", help="LES model used. Options: 'dales' (default) and 'microhh'")
     parser.add_argument("--dir", metavar="DIR", type=str, default=".", help="Directory to load/store data from/to")
     parser.add_argument("--itmin", metavar="N", type=int, default=0, help="First time index")
     parser.add_argument("--itmax", metavar="N", type=int, default=-1, help="Last time index")
@@ -33,6 +34,7 @@ if parseFlag:
 
     args = parser.parse_args()
 
+    mod = args.mod
     lp = args.dir
     itmin = args.itmin
     itmax = args.itmax
@@ -44,9 +46,27 @@ if parseFlag:
     pflag = args.pres
     eflag = args.e12
 else:
-    lp = '/scratch-shared/janssens/bomex200_e12'
+    # lp = '/scratch-shared/janssens/bomex200_e12'
+    mod = 'microhh'
+    lp = '/scratch-shared/janssens/tmp.bomex/bomex_200m'
+    itmin = 47
+    itmax = 48
+    di    = 1
+    izmin = 0
+    izmax = 80
+    store = False
+    pflag = False
+    eflag = False
+    klp = 4
 
-dl = DataLoaderDALES(lp)
+#%% Dry/moist regions
+
+if mod == 'dales':
+    dl = DataLoaderDALES(lp)
+elif mod == 'microhh':
+    dl = DataLoaderMicroHH(lp)
+else:
+    raise NotImplementedError("Set --mod option to either 'dales' or 'microhh'")
 time = dl.time
 zf = dl.zf
 zh = dl.zh
@@ -59,40 +79,11 @@ rhobf = dl.rhobf
 rhobh = dl.rhobh
 wfls = dl.wfls
 
-#ds = nc.Dataset(lp+'/fielddump.001.nc')
-#ds1= nc.Dataset(lp+'/profiles.001.nc')
-#ilp = np.loadtxt(lp+'/lscale.inp.001')
-#
-#time  = np.ma.getdata(ds.variables['time'][:]) / 3600
-#zf    = np.ma.getdata(ds.variables['zt'][:]) # Cell centres (f in mhh)
-#zh    = np.ma.getdata(ds.variables['zm'][:]) # Cell edges (h in mhh)
-#xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
-#xh    = np.ma.getdata(ds.variables['xm'][:]) # Cell edges (h in mhh)
-#yf    = np.ma.getdata(ds.variables['yt'][:]) # Cell centres (f in mhh)
-#yh    = np.ma.getdata(ds.variables['ym'][:]) # Cell edges (h in mhh)
-#
-#time1d = np.ma.getdata(ds1.variables['time'][:])
-#rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
-#rhobh = np.ma.getdata(ds1.variables['rhobh'][:])
-
 dx = np.diff(xf)[0]
 dy = np.diff(yf)[0] # Assumes uniform horizontal spacing
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 delta = (dx*dy*np.diff(zh))**(1./3)
-
-#%% Dry/moist regions
-
-if not parseFlag:
-    itmin = 47
-    itmax = 48
-    di    = 1
-    izmin = 0
-    izmax = 80
-    store = False
-    pflag = False
-    eflag = True
-    klp = 4
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
