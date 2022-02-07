@@ -13,11 +13,17 @@ import gc
 from functions import *
 import argparse
 from matplotlib.patches import FancyArrowPatch
+from scipy.optimize import curve_fit
+
 
 lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
-       '/scratch-shared/janssens/bomex200_from100_12hr/spectra']
+       '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
+       '/scratch-shared/janssens/bomex100a5_from100_12hr/spectra',
+       '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra']
 labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$']
+        r'$\Delta x = 200m$',
+        r'$\Delta x = 100m$, a5',
+        r'$\Delta x = 200m$, fiso']
 
 def _add_twinx(fig, ax, offset=0.22):
     ax2 = ax.twiny()
@@ -69,7 +75,7 @@ for i in range(len(lps)):
 #%% Plot time evolution of spectra per loaded run 
 
 itav = 4 # number of time steps to average over -> len(plttime) MUST BE MULTIPLE OF THIS
-izpl = 9 # (Closests) height to plot spectra at
+izpl = 9 # (Closest) height to plot spectra at
 
 for i in range(len(lps)):
     
@@ -117,7 +123,7 @@ for i in range(len(lps)):
     plot_spectrum(ld[i]['k1d'], spec_wql_mn, r"$k\widehat{wq}_{l}'$", plttime_mn, ld[i]['time'])
     plt.savefig(sps[i]+'/spec_wql.pdf', bbox_inches='tight')
 
-#%% Plot two runs  at same time
+#%% Plot multiple runs  at same time
 
 tplt = 12.
 tav = 1. # Hours after tplt
@@ -131,8 +137,8 @@ pltvars = ['spec_qt',
 varlab = [r"$k\widehat{q}_t'^2$",
           r"$k\widehat{\theta}_{lv}'^2$",
           r"$k\widehat{w}'^2$"]
-lines = ['-','--']
-dashes=[(1,0),(3,6)]
+lines = ['-','--',':','-.']
+dashes=[(1,0),(3,6),(1,1),(2,2)]
 
 iz = np.argmin(np.abs(ld[i]['zf'] - zplt))
 
@@ -158,6 +164,9 @@ for i in range(len(lps)):
         if i == 0:
             axs[j].set_ylabel(varlab[j])
             axs[j].axvline(k1d_plt[klp],c='Gray')
+            
+            b0 = np.max(spec_plt)*1e-3
+            axs[j].loglog(k1d_plt[100:], b0 * k1d_plt[100:] ** (-5/3), c="Gray")
             if j == len(pltvars)-1:
                 axs[j].set_xlabel(r"Wavenumber [1/m]")
                 _add_twinx(fig, axs[j], offset=0.4)
@@ -175,7 +184,7 @@ for i in range(len(lps)):
                                  mutation_scale=10,linestyle=lines[i])
             axs[j].add_artist(ar)
         are[j] = spec_plt[kar]
-fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.3),ncol=len(lps))    
+fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.3),ncol=2)    
 plt.savefig(sps[-1]+'/spectra_comparison.pdf', bbox_inches='tight')
 
 #%% Plot in same spectrum FIXME is not yet implemented

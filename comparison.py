@@ -13,10 +13,16 @@ from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 from functions import tderive, zderivef
 
-lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
-       '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
+# lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
+#        '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
+       '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
+       '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
+       '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',]
 labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$']
+        r'$\Delta x = 200m$',
+        r'$\Delta x = 100m$, a5',
+        r'$\Delta x = 200m$, fiso']
 sp = lps[-1]+'/../figs'
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
@@ -282,7 +288,7 @@ varlab = [r"${q_{t_m}'}$ [kg/kg]",
 # pltvars = ['thlvpp']
 # varlab = [r"$\theta_{lv}'''$"]
 
-lines = ['-','--']
+lines = ['-','--',':','-.']
 
 tpltmin = 13
 tpltmax = 19

@@ -16,7 +16,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 from thermofunctions import qsatur, rlv, rd, rv, cp
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/bomex100_e12'
 sp = lp+'/figs'
 itmin = 63
 itmax = 64
@@ -63,6 +63,7 @@ for i in range(len(plttime)):
     wf = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
     thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
     ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
+    p = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
     
     # w  h-> f-levels
     wf = (wf[1:,:,:] + wf[:-1,:,:])*0.5

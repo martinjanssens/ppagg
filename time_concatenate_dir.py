@@ -4,10 +4,10 @@
 import numpy as np
 import os
 
-lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
-       '/scratch-shared/janssens/bomex200_from100_12hr/spectra']
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
+       '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg']
 ranges = [[0,48], [0,48]]
-savePath = '/scratch-shared/janssens/bomex200_from100_12hr/spectra_merged'
+savePath = '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged'
 
 def find_files(path):
     '''
