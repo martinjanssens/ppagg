@@ -16,14 +16,21 @@ from matplotlib.patches import FancyArrowPatch
 from scipy.optimize import curve_fit
 
 
-lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
-       '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
-       '/scratch-shared/janssens/bomex100a5_from100_12hr/spectra',
-       '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra']
-labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$',
-        r'$\Delta x = 100m$, a5',
-        r'$\Delta x = 200m$, fiso']
+# lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
+#        '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
+#        '/scratch-shared/janssens/bomex100a5_from100_12hr/spectra',
+#        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra']
+# labs = [r'$\Delta x = 100m$',
+#         r'$\Delta x = 200m$',
+#         r'$\Delta x = 100m$, a5',
+#         r'$\Delta x = 200m$, fiso']
+
+
+
+lps = ['/scratch-shared/janssens/bomex200_e12/spectra',
+       '/scratch-shared/janssens/tmp.bomex/bomex_200m/spectra']
+labs = [r'DALES, $\Delta x = 200m$',
+        r'MicroHH, $\Delta x = 200m$']
 
 def _add_twinx(fig, ax, offset=0.22):
     ax2 = ax.twiny()
@@ -125,7 +132,7 @@ for i in range(len(lps)):
 
 #%% Plot multiple runs  at same time
 
-tplt = 12.
+tplt = 8.
 tav = 1. # Hours after tplt
 zplt = 1500.
 klp = 4

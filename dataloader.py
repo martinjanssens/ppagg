@@ -31,7 +31,10 @@ class DataLoaderDALES:
         self.rhobf = np.ma.getdata(self.ds1.variables['rhobf'][:])
         self.rhobh = np.ma.getdata(self.ds1.variables['rhobh'][:])
 
+        self.zf_inp = self.ilp[:,0]
         self.wfls = self.ilp[:,3]
+        self.dqdt_ls = self.ilp[:,6]
+        self.dthldt_ls = self.ilp[:,7]
         print('Set paths to all datasets and extracted dimensions')
 
     def load_qt(self, it, izmin, izmax):
@@ -61,6 +64,33 @@ class DataLoaderDALES:
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['presh'][it,izmin:izmax])
 
+    def load_qtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['qt'][:,izmin:izmax])
+
+    def load_thlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thl'][:,izmin:izmax])
+
+    def load_qlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['ql'][:,izmin:izmax])
+
+    def load_wqtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqtt'][:,izmin:izmax])
+
+    def load_wthlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthlt'][:,izmin:izmax])
+
+    def load_wqtrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqtr'][:,izmin:izmax])
+
+    def load_wthlrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthlr'][:,izmin:izmax])
+
+    def load_wqlrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqlr'][:,izmin:izmax])
+
+    def load_wthvrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthvr'][:,izmin:izmax])
+
 class DataLoaderMicroHH:
 
     def __init__(self, load_path, case='bomex'):
@@ -88,7 +118,10 @@ class DataLoaderMicroHH:
         self.rhobf = np.ma.getdata(self.ds1['thermo']['rho'][:])
         self.rhobh = np.ma.getdata(self.ds1['thermo']['rhoh'][:])
 
+        self.zf_inp = np.ma.getdata(self.ilp['z'][:])
         self.wfls = np.ma.getdata(self.ilp['init']['w_ls'][:])
+        self.dqdt_ls = np.ma.getdata(self.ilp['init']['qt_ls'][:])
+        self.dthldt_ls = np.ma.getdata(self.ilp['init']['thl_ls'][:])
         print('Set paths to all datasets and extracted dimensions')
 
     def load_qt(self, it, izmin, izmax):
@@ -117,4 +150,33 @@ class DataLoaderMicroHH:
 
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['phydroh'][it,izmin:izmax])
+
+    def load_qtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['qt'][:,izmin:izmax])
+
+    def load_thlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thl'][:,izmin:izmax])
+
+    def load_qlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['ql'][:,izmin:izmax])
+
+    def load_wqtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['qt_flux'][:,izmin:izmax])
+
+    def load_wthlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thl_flux'][:,izmin:izmax])
+
+    def load_wqtrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['qt_w'][:,izmin:izmax])
+
+    def load_wthlrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thl_w'][:,izmin:izmax])
+
+    def load_wqlrav(self, izmin, izmax):
+        print('Warning: MicroHH does not output wql. Returning zeros...')
+        return np.zeros((len(self.time1d),izmax-izmin))
+
+    def load_wthvrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thv_w'][:,izmin:izmax])
+
 
