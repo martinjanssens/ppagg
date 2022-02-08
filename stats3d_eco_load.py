@@ -12,9 +12,10 @@ import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
 from dataloader import DataLoaderDALES, DataLoaderMicroHH
+from functions import vint
 
 # Run specifics
-lp = '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg'
+lp = '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg'
 sp = lp+'/../figs'
 mod = 'microhh'
 
@@ -223,7 +224,7 @@ dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 24.
 dit = 1.0 # Rounds to closest multiple of dt in time
 dtav = 1.0 # Around each plotted time step
 alpha = 0.5
@@ -442,8 +443,8 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
 #%% Average budget contributions over time dimension
-tpltmin = 6.
-tpltmax = 10.
+tpltmin = 20.
+tpltmax = 24.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -748,8 +749,8 @@ plt.show()
 
 #%% WTG-based model of moisture variance production
 
-tpltmin = 6.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -925,21 +926,7 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 idtav  = int(round(dtav/2/(time[1]-time[0])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
-
-
-def vint(field,rhob,z,plttime=plttime):
-    
-    if len(field.shape) == 3:
-        var = np.trapz(rhob[:,np.newaxis,np.newaxis]*field[:,:,:],z,axis=0)
-    elif len(field.shape) == 4:
-        var = np.trapz(rhob[np.newaxis,:,np.newaxis,np.newaxis]*
-                       field[plttime,:,:,:],z,axis=1)
-    elif len(field.shape) == 2:
-        var = np.trapz(rhob[np.newaxis,:]*field[plttime,:],z,axis=1)
-    elif len(field.shape) == 1:
-        var = np.trapz(rhob*field,z)
-    return var
-   
+  
 # 1D fields
 rhobfi = rhobf[0,izmin:izmax] # Won't really change much through time, so ok to take 0 value
 
@@ -1097,8 +1084,8 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 #%% Fluxes and fluctuations of thv
 
 # Time to average over
-tpltmin = 6.
-tpltmax = 12.
+tpltmin = 12.
+tpltmax = 24.
 
 terms0 = [r"$\theta_{v_m}'$",
           r"$\theta_{lv_m}'$",

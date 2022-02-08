@@ -11,18 +11,29 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
-from functions import tderive, zderivef
+from functions import tderive, zderivef, vint
+from dataloader import DataLoaderDALES, DataLoaderMicroHH
 
 # lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
 #        '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
-       '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
-       '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
-       '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',]
-labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$',
-        r'$\Delta x = 100m$, a5',
-        r'$\Delta x = 200m$, fiso']
+# lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
+#        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
+#        '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
+#        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',]
+# labs = [r'$\Delta x = 100m$',
+#         r'$\Delta x = 200m$',
+#         r'$\Delta x = 100m$, a5',
+#         r'$\Delta x = 200m$, fiso']
+
+lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
+       '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
+       '/scratch-shared/janssens/bomex100_e12/ppagg',
+       '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg']
+labs = [r'DALES, $\Delta x = 200m$',
+        r'MicroHH, $\Delta x = 200m$',
+        r'DALES, $\Delta x = 100m$',
+        r'MicroHH, $\Delta x = 100m$']
+mods = ['dales','microhh','dales','microhh']
 sp = lps[-1]+'/../figs'
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
@@ -41,21 +52,24 @@ for i in range(len(lps)):
     pp3d_out = {}
     ld.append(pp3d_out)
     lp = lps[i]
-    
-    ds1= nc.Dataset(lp+'/../profiles.001.nc')
-    ilp = np.loadtxt(lp+'/../lscale.inp.001')
+    mod = mods[i]
+
+    if mod == 'dales':
+        dl = DataLoaderDALES(lp+'/..')
+    elif mod == 'microhh':
+        dl = DataLoaderMicroHH(lp+'/..')
     
     # time  = np.ma.getdata(ds.variables['time'][:]) / 3600
     ld[i]['time'] = np.load(lp+'/time.npy')
-    ld[i]['zf']   = ilp[:,0]
+    ld[i]['zf']   = dl.zf_inp
     
-    ld[i]['time1d'] = np.ma.getdata(ds1.variables['time'][:])
-    ld[i]['rhobf'] = np.ma.getdata(ds1.variables['rhobf'][:])
+    ld[i]['time1d'] = dl.time1d
+    ld[i]['rhobf'] = dl.rhobf
     
     dzh = np.diff(ld[i]['zf'])[0] # FIXME only valid in lower part of domain
     
     # Larger-scale subsidence
-    ld[i]['wfls'] = ilp[:,3]
+    ld[i]['wfls'] = dl.wfls
     
     ld[i]['plttime'] = np.load(lp+'/plttime.npy')
     ld[i]['zflim'] = np.load(lp+'/zf.npy')
@@ -290,8 +304,8 @@ varlab = [r"${q_{t_m}'}$ [kg/kg]",
 
 lines = ['-','--',':','-.']
 
-tpltmin = 13
-tpltmax = 19
+tpltmin = 6
+tpltmax = 12
 dit = 2.0 # Rounds to closest multiple of dt in time
 tav = 1.0 # Averaging time centred around current time
 
@@ -334,6 +348,45 @@ dit = 2.0 # Rounds to closest multiple of dt in time
 tav = 1.0 # Averaging time centred around current time
 
 plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
+
+
+#%% Plot 1d comparison of vertically integrated mesoscale moisture fluctuation
+
+ls = ['-','--',':','-.']
+
+tmin = 6.
+tmax = [18.,
+        12.,
+        36.,
+        36.,
+        36.]
+
+alpha=0.5
+lw=2
+col_moist = plt.cm.RdYlBu(0.99)
+col_dry = plt.cm.RdYlBu(0)
+
+f1 = plt.figure(figsize=(5,10/3)); axs1 = plt.gca()
+for i in range(len(lps)):
+    time = ld[i]['time']
+    itpltmin = np.where(time>=tmin)[0][0]
+    itpltmax = np.where(time<tmax[i])[0][-1]+1
+    plttime_var = np.arange(itpltmin,itpltmax,1)
+    
+    zflim = ld[i]['zflim']
+    rhobfi = ld[i]['rhobf'][0,ld[i]['izmin']:ld[i]['izmax']]
+    qtpfmi = ld[i]['qtpf_moist_time']
+    qtpfdi = ld[i]['qtpf_dry_time']
+
+    twppf_moist = vint(qtpfmi,rhobfi,zflim,plttime_var)
+    twppf_dry = vint(qtpfdi,rhobfi,zflim,plttime_var)
+
+    axs1.plot(time[plttime_var],twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
+    axs1.plot(time[plttime_var],twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
+axs1.set_xlabel('Time [hr]')
+axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
+axs1.legend(loc='upper left',bbox_to_anchor=(1,1))
+plt.savefig(sp+'/twp_evo_num.pdf',bbox_inches='tight')
 
 #%%
 plt.plot(np.mean(wff_moist_time[35:39,:],axis=0),zflim)

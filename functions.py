@@ -361,3 +361,15 @@ def tderive(var,time):
 def zderivef(var,dzh):
     ddz_var = ((var[:,1:] - var[:,:-1])/dzh)
     return (ddz_var[:,1:] + ddz_var[:,:-1])*0.5
+
+def vint(field,rhob,z,plttime):
+    if len(field.shape) == 3:
+        var = np.trapz(rhob[:,np.newaxis,np.newaxis]*field[:,:,:],z,axis=0)
+    elif len(field.shape) == 4:
+        var = np.trapz(rhob[np.newaxis,:,np.newaxis,np.newaxis]*
+                       field[plttime,:,:,:],z,axis=1)
+    elif len(field.shape) == 2:
+        var = np.trapz(rhob[np.newaxis,:]*field[plttime,:],z,axis=1)
+    elif len(field.shape) == 1:
+        var = np.trapz(rhob*field,z)
+    return var
