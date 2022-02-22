@@ -16,24 +16,25 @@ from dataloader import DataLoaderDALES, DataLoaderMicroHH
 
 # lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
 #        '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
-# lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
-#        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
-#        '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
-#        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',]
-# labs = [r'$\Delta x = 100m$',
-#         r'$\Delta x = 200m$',
-#         r'$\Delta x = 100m$, a5',
-#         r'$\Delta x = 200m$, fiso']
-
-lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
-       '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
-       '/scratch-shared/janssens/bomex100_e12/ppagg',
-       '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg']
-labs = [r'DALES, $\Delta x = 200m$',
-        r'MicroHH, $\Delta x = 200m$',
-        r'DALES, $\Delta x = 100m$',
-        r'MicroHH, $\Delta x = 100m$']
-mods = ['dales','microhh','dales','microhh']
+lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
+        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
+        # '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged',]
+labs = [r'$\Delta x = 100m$',
+        r'$\Delta x = 200m$',
+        r'$\Delta x = 200m$, a5',
+        r'$\Delta x = 200m$, f200']
+mods = ['dales','dales','dales','dales']
+# lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
+       # '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
+       # '/scratch-shared/janssens/bomex100_e12/ppagg',
+       # '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg']
+# labs = [r'DALES, $\Delta x = 200m$',
+        # r'MicroHH, $\Delta x = 200m$',
+        # r'DALES, $\Delta x = 100m$',
+        # r'MicroHH, $\Delta x = 100m$']
+# mods = ['dales','microhh','dales','microhh']
 sp = lps[-1]+'/../figs'
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
@@ -232,8 +233,9 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
                     
                     pltvar_av_mn = np.mean(ld[l][pltvars[p]+'_time'][itmn_min:itmn_max,:],axis=0)
                     
-                    if len(ld[l]['zflim']) != len(pltvar_av_mn):
-                        zplt = ld[l]['zflim'][1:-1]
+                    diffz = len(ld[l]['zflim']) - len(pltvar_av_mn)
+                    if diffz != 0:
+                        zplt = ld[l]['zflim'][diffz//2:-diffz//2]
                     else:
                         zplt = ld[l]['zflim']
                     
@@ -248,9 +250,10 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
                 else:
                     pltvar_moist_mn = np.mean(ld[l][pltvars[p]+'_moist_time'][itmn_min:itmn_max,:],axis=0)
                     pltvar_dry_mn = np.mean(ld[l][pltvars[p]+'_dry_time'][itmn_min:itmn_max,:],axis=0)
-                
-                    if len(ld[l]['zflim']) != len(pltvar_moist_mn):
-                        zplt = ld[l]['zflim'][1:-1]
+                    
+                    diffz = len(ld[l]['zflim']) - len(pltvar_moist_mn)
+                    if diffz != 0:
+                        zplt = ld[l]['zflim'][diffz//2:-diffz//2]
                     else:
                         zplt = ld[l]['zflim']
                     
@@ -304,8 +307,8 @@ varlab = [r"${q_{t_m}'}$ [kg/kg]",
 
 lines = ['-','--',':','-.']
 
-tpltmin = 6
-tpltmax = 12
+tpltmin = 12
+tpltmax = 20
 dit = 2.0 # Rounds to closest multiple of dt in time
 tav = 1.0 # Averaging time centred around current time
 
@@ -324,12 +327,12 @@ varlab = [r"Gradient production",
 #           r"Vertical transport",
 #           r"Horizontal transport"]
 
-lines = ['-','--']
+lines = ['-','--',':','-.']
 
-tpltmin = 13
-tpltmax = 19
-dit = 2.0 # Rounds to closest multiple of dt in time
-tav = 1.0 # Averaging time centred around current time
+tpltmin = 6
+tpltmax = 24
+dit = 6.0 # Rounds to closest multiple of dt in time
+tav = 4.0 # Averaging time centred around current time
 
 plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines)
 plt.savefig(sp+'/comparison_qtpf.pdf',bbox_inches='tight')
@@ -340,7 +343,21 @@ varlab = [r"$\left(w_s'\theta_{lv_s}'\right)$",
           r"$\left(w_s'q_l'\right)$",
           r"$\left(w_s'q_t'\right)$",]
 
-lines = ['-','--']
+lines = ['-','--',':','-.']
+
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
+
+plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
+
+#%% wthlv budget
+pltvars = ['wthlvpf_prod','wthlvpf_vdiv','wthlvpf_diff']
+varlab =  [r"Gradient production", 
+          r"Vertical transport",
+          r"Horizontal transport"]
+lines = ['-','--',':','-.']
 
 tpltmin = 13
 tpltmax = 19

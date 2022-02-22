@@ -8,13 +8,8 @@ Created on Wed Nov  3 14:56:45 2021
 
 
 import numpy as np
-import pandas as pd
-import matplotlib as mpl
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
-import os
 import netCDF4 as nc
-import seaborn as sns
 from functions import getRad, lowPass, mean_mask
 
 lp = '/scratch-shared/janssens/bomex200aswitch/a2'
@@ -104,9 +99,9 @@ for j in range(len(tPlot)):
     
     if j > 1:
         axs[0,j].contour(twppf,levels=[0],extent=extent,origin='upper',
-                         linewidths=0.5,colors='black')
+                         linewidths=1,colors='black')
         axs[1,j].contour(twppf,levels=[0],extent=extent,origin='upper',
-                         linewidths=0.5,colors='white')
+                         linewidths=1,colors='white')
     
     axs[1,j].set_xlabel('x [km]')
     axs[0,j].set_title('t = %.1f hr'%tPlot[j])

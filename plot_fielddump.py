@@ -16,7 +16,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 from thermofunctions import qsatur, rlv, rd, rv, cp
 
-lp = '/scratch-shared/janssens/bomex100_e12'
+lp = '/scratch-shared/janssens/bomex200_e12'
 sp = lp+'/figs'
 itmin = 63
 itmax = 64
@@ -63,7 +63,8 @@ for i in range(len(plttime)):
     wf = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
     thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
     ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
-    p = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
+    if 'p' in ds.variables.keys():
+        p = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
     
     # w  h-> f-levels
     wf = (wf[1:,:,:] + wf[:-1,:,:])*0.5
@@ -195,22 +196,24 @@ for i in range(len(plttime)):
     cbax0=fig.add_axes([.92, pos.ymin, 0.007, pos.height])
     cb0 = fig.colorbar(sc0, cax=cbax0)
     cb0.ax.set_ylabel(r"$q_t$ [kg/kg]", rotation=270, labelpad=15)
-
-    sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+    
+    # sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+    sc1 = axs.contour(wqlpf[:-1,ix,:],extent=extent,origin='lower',linewidths=1,cmap='Blues',levels=np.linspace(0.0001,0.0002,6))
     cbax1=fig.add_axes([1.02, pos.ymin, 0.007, pos.height])
     norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
     sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
     sm.set_array([])
     cb1 = fig.colorbar(sm, cax=cbax1)
-    cb1.ax.set_ylabel(r"$q_{t_m}'$ [kg/kg]", rotation=270, labelpad=15)
+    cb1.ax.set_ylabel(r"${w'q_l'}_m$ [m/s kg/kg]", rotation=270, labelpad=15)
     cb1.locator = ticker.MaxNLocator(nbins=6)
     cb1.update_ticks()
-    axs.contour(ql[:,ix,:],levels=[1e-7],extent=extent,origin='lower',linewidths=0.5,colors='black')
+    axs.contour(ql[:,ix,:],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+    axs.contour(qtpf[:,ix,:],levels=[0.0004],extent=extent,origin='lower',linewidths=1,colors='black',linestyles='dashed')
     xfstr = np.linspace(xf[0],xf[-1],len(xf))/1000
     [X,Y] = np.meshgrid(xfstr,zflim)
     speed = np.sqrt((upf[:,ix,:]/1000)**2+wff[:,ix,:]**2)
-    lws = 3*speed/np.max(speed)
-    st = axs.streamplot(X,Y,upf[:,ix,:]/1000,wff[:,ix,:],linewidth=lws, density=1,color='gray')
+    lws = np.maximum(.75,3.*speed/np.max(speed))
+    st = axs.streamplot(X,Y,upf[:,ix,:]/1000,wff[:,ix,:],linewidth=lws, density=1,color='grey')
     axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
     axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
     
