@@ -117,7 +117,7 @@ def load_ppagg(dl, lp):
     ld['Gamma_qt_av_time'] = zderivef(ld['qt_av_time'],dzh)
     ld['Gamma_thlv_av_time'] = zderivef(ld['thlv_av_time'],dzh)
     ld['Gamrat_av_time'] = ld['Gamma_qt_av_time']/ld['Gamma_thlv_av_time']
-    ld['Gamrat_av_time'][np.abs(ld['Gamrat_av_time'])>0.03] = np.nan
+    ld['Gamrat_av_time'][np.abs(ld['Gamrat_av_time'])>0.03] = 0.0
     
     ## Reconstruct slab-mean budget terms
     ## FIXME Not working yet, would need support for time1d vs time and handling different time dimension sizes in restart and original

@@ -17,16 +17,20 @@ from dataloader import DataLoaderDALES, DataLoaderMicroHH
 
 # lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
 #        '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
-        '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
+lps = [ '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
         '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
-        # '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',
-        '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged',]
-labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$',
+        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex100_e12/ppagg',
+        # '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged',
+        ]
+labs = [r'$\Delta x = 200m$',
         r'$\Delta x = 200m$, a5',
-        r'$\Delta x = 200m$, f200']
+        r'$\Delta x = 200m$, fiso',
+        r'$\Delta x = 100m$',
+        ]
 mods = ['dales','dales','dales','dales']
+lines = ['-','-.',(0, (3, 2, 1, 2, 1, 2)),'--']
+
 # lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
        # '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
        # '/scratch-shared/janssens/bomex100_e12/ppagg',
@@ -36,7 +40,7 @@ mods = ['dales','dales','dales','dales']
         # r'DALES, $\Delta x = 100m$',
         # r'MicroHH, $\Delta x = 100m$']
 # mods = ['dales','microhh','dales','microhh']
-sp = lps[-1]+'/../figs'
+
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
 #        '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg']
@@ -47,6 +51,8 @@ sp = lps[-1]+'/../figs'
 #        '/scratch-shared/janssens/bomex200aswitch/a2_froma5_12hr/ppagg']
 # labs = [r'5th order advection',
 #         r'2nd order advection']
+
+sp = '/scratch-shared/janssens/bomex_comparisons'
 
 # Loading loop
 ld = []
@@ -69,7 +75,7 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
     ndt = int((tpltmax-tpltmin)/dit)
     nvar = len(pltvars)
 
-    fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(2.5*nvar,3*ndt+0.25),
+    fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(3.2*nvar,3*ndt+0.25),
                            sharex=sharex,sharey=True,squeeze=False)
     col_av = 'k'
     col_moist = plt.cm.RdYlBu(0.99)
@@ -175,10 +181,9 @@ varlab = [r"${q_{t_m}'}$ [kg/kg]",
 # pltvars = ['thlvpp']
 # varlab = [r"$\theta_{lv}'''$"]
 
-lines = ['-','--',':','-.']
 
-tpltmin = 12
-tpltmax = 20
+tpltmin = 13
+tpltmax = 19
 dit = 2.0 # Rounds to closest multiple of dt in time
 tav = 1.0 # Averaging time centred around current time
 
@@ -196,8 +201,6 @@ varlab = [r"Gradient production",
 # varlab = [r"Gradient production", 
 #           r"Vertical transport",
 #           r"Horizontal transport"]
-
-lines = ['-','--',':','-.']
 
 tpltmin = 6
 tpltmax = 24
@@ -227,7 +230,6 @@ pltvars = ['wthlvpf_prod','wthlvpf_vdiv','wthlvpf_diff']
 varlab =  [r"Gradient production", 
           r"Vertical transport",
           r"Horizontal transport"]
-lines = ['-','--',':','-.']
 
 tpltmin = 13
 tpltmax = 19

@@ -10,6 +10,7 @@ Created on Fri Feb 18 09:47:12 2022
 import numpy as np
 import netCDF4 as nc
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 from ppagg_io import load_ppagg
 from functions import getRad, lowPass, vint, mean_mask
 from dataloader import DataLoaderDALES, DataLoaderMicroHH
@@ -26,16 +27,17 @@ lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
 sp = '/scratch-shared/janssens/bomex_comparisons'
 
 labs = [
-        r'$\Delta x = 200m$',
-        r'$\Delta x = 200m$, a5',
-        r'$\Delta x = 200m$, fiso',
-        r'$\Delta x = 100m$',
-        r'$\Delta x = 50m$',
-        r'$\Delta x = 200m$',
-        r'$\Delta x = 100m$',
-        # r'$\Delta x = 50m$',
+        r'D1: $\Delta x = 200m$',
+        r'D2: $\Delta x = 200m$, a5',
+        r'D3: $\Delta x = 200m$, fiso',
+        r'D4: $\Delta x = 100m$',
+        r'D5: $\Delta x = 50m$',
+        r'M1: $\Delta x = 200m$',
+        r'M2: $\Delta x = 100m$',
+        #r'M3 - $\Delta x = 50m$',
         ]
-mods = ['dales',
+mods = [
+        'dales',
         'dales',
         'dales',
         'dales',
@@ -66,7 +68,8 @@ ls = ['-',
       ]
 
 tmin = 6.
-tmax = [18.,
+tmax = [
+        18.,
         36.,
         24.,
         36.,
@@ -80,8 +83,8 @@ klp = 4
 alpha=0.9
 lw=2
 
-col_moist_mhh = plt.cm.RdYlBu(0.8)
-col_dry_mhh = plt.cm.RdYlBu(0.2)
+col_moist_mhh = plt.cm.RdYlBu(0.7)
+col_dry_mhh = plt.cm.RdYlBu(0.3)
 col_moist_dal = plt.cm.RdYlBu(0.99)
 col_dry_dal = plt.cm.RdYlBu(0.01)
 
@@ -116,6 +119,13 @@ for i in range(len(lps)):
 
             twppf_moist[j] = mean_mask(twppf, mask_moist)
             twppf_dry[j] = mean_mask(twppf, mask_dry)
+        
+        [exp_moist,fac_moist], cov = curve_fit(lambda x, a, b: b * np.exp(x*a), 
+                                               time[plttime_var]*3600, 
+                                               twppf_moist,
+                                               p0=[1e-5,0])
+        tau = 1/exp_moist
+        
     elif src[i] == 'ppagg':
         if mods[i] == 'dales':
             dl = DataLoaderDALES(lp+'/..')
@@ -133,23 +143,50 @@ for i in range(len(lps)):
         qtpfmi = ld['qtpf_moist_time']
         qtpfdi = ld['qtpf_dry_time']
 
+        wthlvpf_moist_anom = ld['wthlvpf_anom_moist_time']
+        wthlvpf_dry_anom = ld['wthlvpf_anom_dry_time']
+        Gamrat = ld['Gamrat_av_time']
+
         twppf_moist = vint(qtpfmi,rhobfi,zflim,plttime_var)
         twppf_dry = vint(qtpfdi,rhobfi,zflim,plttime_var)
+        
+        # Time scale estimate
+        Gamratz = (Gamrat[:,1:] - Gamrat[:,:-1])/(zflim[1] - zflim[0])
+        wthlvpf_anomi_moist = -vint(wthlvpf_moist_anom[:,2:-1]*Gamratz,rhobfi[2:-1], zflim[2:-1], plttime=plttime_var)
+        wthlvpf_anomi_dry = -vint(wthlvpf_dry_anom[:,2:-1]*Gamratz,rhobfi[2:-1], zflim[2:-1], plttime=plttime_var)
 
+        coef = np.polyfit(np.concatenate((twppf_dry, twppf_moist)),
+                          np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)), 1)
+        tau = 1./coef[0]
+
+        # Plot for debugging
+        # qtpfi_mod = np.linspace(twppf_dry.min(),twppf_moist.max(),10)
+        # wthlvpf_anomi_mod = qtpfi_mod  / tau
+        # fs=14
+        # fig = plt.figure(); ax = plt.gca()
+        # ax.scatter(np.concatenate((twppf_dry, twppf_moist)),
+        #            np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)),c='k',s=0.5)
+        # ax.plot(qtpfi_mod,wthlvpf_anomi_mod,'k')
+        # ax.set_ylabel(r"$-\left\langle F_{{\theta_{lv}}_m'} \frac{\partial}{\partial z}\left(\frac{\Gamma_{q_t}}{\Gamma_{\theta_{lv}}}\right) \right\rangle$ [kg/$m^2$/s]", fontsize=fs)
+        # ax.set_xlabel(r"$\left\langle q_{t_m}'\right\rangle$ [kg/m$^2$]", fontsize=fs)
+        # ax.annotate(r"$\tau_{q_{t_m}'} =$ %.2f hr"%(tau/3600), (0.55,0.06), xycoords='axes fraction', fontsize=14)
+        # plt.show()
+        
     if mods[i] == 'dales':
         col_moist = col_moist_dal
         col_dry = col_dry_dal
     elif mods[i] == 'microhh':
         col_moist = col_moist_mhh
         col_dry = col_dry_mhh
-    axs1.plot(time[plttime_var],twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
+    axs1.plot(time[plttime_var],twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha)
     axs1.plot(time[plttime_var],twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
+    labs[i]=labs[i]+r", $\tau_{q_{t_m}'} =$ %.1f hr"%(tau/3600)
 axs1.set_xlabel('Time [hr]')
 axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
 lines = axs1.get_lines()
 dalind = [i for i in range(len(mods)) if mods[i] == 'dales']
 mhhind = [i for i in range(len(mods)) if mods[i] == 'microhh']
-leg1 = plt.legend([lines[2*i] for i in dalind],[labs[i] for i in dalind],title='DALES',bbox_to_anchor=(1,1),loc='upper left')
+leg1 = plt.legend([lines[2*i] for i in dalind],[labs[i] for i in dalind],title='DALES',bbox_to_anchor=(1,1.05),loc='upper left')
 leg2 = plt.legend([lines[2*i] for i in mhhind],[labs[i] for i in mhhind],title='MicroHH',bbox_to_anchor=(1,0.3),loc='upper left')
 axs1.add_artist(leg1)
 axs1.add_artist(leg2)

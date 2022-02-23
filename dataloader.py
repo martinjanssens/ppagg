@@ -90,6 +90,10 @@ class DataLoaderDALES:
 
     def load_wthvrav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['wthvr'][:,izmin:izmax])
+    
+    def load_w2tav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['w2r'][:,izmin:izmax] +
+                             self.ds1.variables['w2s'][:,izmin:izmax])
 
 class DataLoaderMicroHH:
 
@@ -178,5 +182,8 @@ class DataLoaderMicroHH:
 
     def load_wthvrav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['thv_w'][:,izmin:izmax])
+
+    def load_w2tav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['w_2'][:,izmin:izmax])
 
 
