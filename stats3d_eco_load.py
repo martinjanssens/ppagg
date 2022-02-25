@@ -1523,8 +1523,7 @@ wstar = (grav/thl0*(wthl0+0.608*thl0*wqt0)*500)**(1/3)
 # Calculate from data
 zwmax = 1500
 izwmax = np.where(zflim>zwmax)[0][0]
-w2 = np.ma.getdata(ds1['w2r'][itpltmin1d:itpltmax1d,:izwmax] + 
-                   ds1['w2s'][itpltmin1d:itpltmax1d,:izwmax])
+w2 = dl.load_w2tav(izmin, izmax)
 wstar = np.sqrt(np.mean(w2))
 
 # gammas
