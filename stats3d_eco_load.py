@@ -15,9 +15,9 @@ from dataloader import DataLoaderDALES, DataLoaderMicroHH
 from functions import vint
 
 # Run specifics
-lp = '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
 sp = lp+'/../figs'
-mod = 'microhh'
+mod = 'dales'
 
 if mod == 'dales':
     dl = DataLoaderDALES(lp+'/..')
@@ -273,13 +273,13 @@ for i in range(len(plttime_var)):
     axs[0].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[0].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[0].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[0].annotate('a)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[0].set_xlabel(r"$q_{t_m}'$ [kg/kg]")
         axs[0].set_xlim((-6e-4,6e-4))
         axs[0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-
-        add_twinx(axs[0], np.max(qt_av_1d), ax2offs, r"$q_{t_m}'/\max \overline{q_t}$")
+        qt2max = np.max(np.sqrt(dl.load_qt2av(izmin,izmax)[it1d]))
+        add_twinx(axs[0], qt2max, ax2offs, r"$q_{t_m}'/\max \overline{\sqrt{q_t'^2}}$")
 
     axs[1].plot(np.mean(qlpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,
                 color=colm,linestyle='-',alpha=alpha,lw=lw)
@@ -289,7 +289,7 @@ for i in range(len(plttime_var)):
     axs[1].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[1].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[1].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[1].annotate('b)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[1].set_xlabel(r"$q_{l_m}'$ [kg/kg]")
         axs[1].set_xlim((-9e-6,9e-6))
@@ -304,12 +304,13 @@ for i in range(len(plttime_var)):
     axs[2].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[2].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[2].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[2].annotate('c)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[2].set_xlabel(r"$w_m'$ [m/s]")
         axs[2].set_xlim((-1.7e-2,1.7e-2))
         axs[2].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-        add_twinx(axs[2], 0.45, ax2offs, r"$w_m'/\max \overline{\sqrt{w^2}}$")
+        w2max = np.max(np.sqrt(dl.load_w2tav(izmin,izmax)[it1d]))
+        add_twinx(axs[2], w2max, ax2offs, r"$w_m'/\max \overline{\sqrt{w^2}}$")
 
     axs[3].plot(np.mean(thlpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,
                 color=colm,linestyle='-',alpha=alpha,lw=lw)
@@ -319,13 +320,14 @@ for i in range(len(plttime_var)):
     axs[3].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[3].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[3].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[3].annotate('d)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[3].set_xlabel(r"$\theta_{l_m}'$ [K]")
         axs[3].set_xlim((-1.2e-1,1.2e-1))
         axs[3].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-        axs32 = add_twinx(axs[3], np.max(thl_av_1d), ax2offs, r"$\theta_{l_m}'/\max \overline{\theta_l}$", return_axs=True)
-        axs32.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+        thl2max = np.max(np.sqrt(dl.load_thl2av(izmin,izmax)[it1d]))
+        axs32 = add_twinx(axs[3], thl2max, ax2offs, r"$\theta_{l_m}'/\max \overline{\sqrt{\theta_l'^2}}$", return_axs=True)
+        # axs32.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
     axs[4].plot(np.mean(thvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,
                 color=colm,linestyle='-',alpha=alpha,lw=lw)
@@ -335,13 +337,14 @@ for i in range(len(plttime_var)):
     axs[4].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[4].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[4].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[4].annotate('e)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[4].set_xlabel(r"$\theta_{v_m}'$ [K]")
         axs[4].set_xlim((-2.6e-2,2.6e-2))
         axs[4].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-        axs42 = add_twinx(axs[4], np.max(thl_av_1d), ax2offs, r"$\theta_{v_m}'/\max \overline{\theta_{v}}$", return_axs=True)
-        axs42.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+        thv2max = np.max(np.sqrt(dl.load_thv2av(izmin,izmax)[it1d]))
+        axs42 = add_twinx(axs[4], thv2max, ax2offs, r"$\theta_{v_m}'/\max \overline{\sqrt{\theta_v'^2}}$", return_axs=True)
+        # axs42.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
     
     axs[5].plot(np.mean(thlvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,
                 label='%.2f'%ti,color=colm,linestyle='-',alpha=alpha,lw=lw)
@@ -356,8 +359,8 @@ for i in range(len(plttime_var)):
         axs[5].set_xlabel(r"$\theta_{lv_m}'$ [K]")
         axs[5].set_xlim((-4e-2,4e-2))
         axs[5].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
-        axs52 = add_twinx(axs[5], np.max(thl_av_1d), ax2offs, r"$\theta_{lv_m}'/\max \overline{\theta_{lv}}$", return_axs=True)
-        axs52.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
+        axs52 = add_twinx(axs[5], thv2max, ax2offs, r"$\theta_{lv_m}'/\max \overline{\sqrt{\theta_{lv}'^2}}$", return_axs=True)
+        # axs52.ticklabel_format(style='sci',axis='x',scilimits=(0,0))
 
 axs[0].set_ylabel('z [m]')
 axs[5].annotate(r"Cloud base",(4.5e-2,z_cb),annotation_clip=False)

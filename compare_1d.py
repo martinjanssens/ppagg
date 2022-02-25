@@ -86,7 +86,7 @@ for i in range(len(lps)):
     izs = np.argmin(abs(zmin-zt))
     ize = np.argmin(abs(zmax-zt))
     
-    load_func = getattr(dl, 'load_'+var)
+    load_func = getattr(dl, 'load_'+var+'av')
     pltvar = np.mean(load_func(izs,ize),axis=0)
 
     ax.plot(pltvar,zt[izs:ize],label=labs[i],color=col,linestyle=ls[i])
