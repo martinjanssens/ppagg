@@ -23,10 +23,10 @@ lps = [ '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
         '/scratch-shared/janssens/bomex100_e12/ppagg',
         # '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged',
         ]
-labs = [r'$\Delta x = 200m$',
-        r'$\Delta x = 200m$, a5',
-        r'$\Delta x = 200m$, fiso',
-        r'$\Delta x = 100m$',
+labs = [r'D1: $\Delta x = 200m$',
+        r'D2: $\Delta x = 200m$, a5',
+        r'D3: $\Delta x = 200m$, fiso',
+        r'D4: $\Delta x = 100m$',
         ]
 mods = ['dales','dales','dales','dales']
 lines = ['-','-.',(0, (3, 2, 1, 2, 1, 2)),'--']
@@ -115,7 +115,7 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
                     else:
                         zplt = ld[l]['zflim']
                     
-                    lab = labs[l]+', slab-averaged'
+                    lab = labs[l]+', slab-mean'
                     ln = axs[i,p].plot(pltvar_av_mn, zplt, 
                                   color=col_av, linestyle=lines[l],
                                   alpha=alpha, lw=lw)

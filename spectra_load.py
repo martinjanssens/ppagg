@@ -16,16 +16,27 @@ from matplotlib.patches import FancyArrowPatch
 from scipy.optimize import curve_fit
 
 
-lps = ['/scratch-shared/janssens/bomex100_e12/spectra',
+lps = [
         '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
         # '/scratch-shared/janssens/bomex100a5_from100_12hr/spectra',
-        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra',
-        '/scratch-shared/janssens/bomex200_f200_from100_12hr/spectra']
-labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$',
-        # r'$\Delta x = 100m$, a5',
-        r'$\Delta x = 200m$, fiso',
-        r'$\Delta x = 200m$, f200']
+        # '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra',
+        # '/scratch-shared/janssens/bomex200_f200_from100_12hr/spectra',
+        '/scratch-shared/janssens/bomex100_e12/spectra',
+        ]
+labs = [r'D1: $\Delta x = 200m$',
+        # r'D2: $\Delta x = 100m$, a5',
+        # r'D3: $\Delta x = 200m$, fiso',
+        # r'$\Delta x = 200m$, f200',
+        r'D4: $\Delta x = 100m$',
+        ]
+lines = ['-',
+         # '-.',
+         # (0, (3, 2, 1, 2, 1, 2)),
+         (0, (4,4))
+         ]
+# dashes=[(1,0),(3,6),(1,1),(2,2)]
+
+sp = '/scratch-shared/janssens/bomex_comparisons'
 
 # lps = ['/scratch-shared/janssens/bomex200_e12/spectra',
 #        '/scratch-shared/janssens/tmp.bomex/bomex_200m/spectra',
@@ -136,7 +147,7 @@ for i in range(len(lps)):
 
 #%% Plot multiple runs  at same time
 
-tplt = 13.
+tplt = 12.
 tav = 1. # Hours after tplt
 zplt = 1500.
 klp = 4
@@ -148,8 +159,7 @@ pltvars = ['spec_qt',
 varlab = [r"$k\widehat{q}_t'^2$",
           r"$k\widehat{\theta}_{lv}'^2$",
           r"$k\widehat{w}'^2$"]
-lines = ['-','--',':','-.']
-dashes=[(1,0),(3,6),(1,1),(2,2)]
+subplt = ['a)', 'b)', 'c)']
 
 iz = np.argmin(np.abs(ld[i]['zf'] - zplt))
 
@@ -170,14 +180,14 @@ for i in range(len(lps)):
         
         spec_plt = np.mean(ld[i][pltvars[j]][itpltmin:itpltmax,iz], axis=0)
         
-        ln = axs[j].loglog(k1d_plt[::2],spec_plt[::2],c='k',linestyle=lines[i], dashes=dashes[i])
+        ln = axs[j].loglog(k1d_plt[::2],spec_plt[::2],c='k',linestyle=lines[i])#, dashes=dashes[i])
         
         if i == 0:
             axs[j].set_ylabel(varlab[j])
             axs[j].axvline(k1d_plt[klp],c='Gray')
             
             b0 = np.max(spec_plt)*1e-3
-            axs[j].loglog(k1d_plt[100:], b0 * k1d_plt[100:] ** (-5/3), c="Gray")
+            # axs[j].loglog(k1d_plt[100:], b0 * k1d_plt[100:] ** (-5/3), c="Gray")
             if j == len(pltvars)-1:
                 axs[j].set_xlabel(r"Wavenumber [1/m]")
                 _add_twinx(fig, axs[j], offset=0.4)
@@ -190,13 +200,14 @@ for i in range(len(lps)):
             # print(are[j])
             # print((k1d_plt[kar],spec_plt[kar]), (k1d_plt[kar],are[j]))
             ar = FancyArrowPatch(posA=(k1d_plt[kar],spec_plt[kar]), 
-                                 posB=(k1d_plt[kar],are[j]),
-                                 arrowstyle='<|-|>', color='0.5',
-                                 mutation_scale=10,linestyle=lines[i])
+                                  posB=(k1d_plt[kar],are[j]),
+                                  arrowstyle='<|-|>', color='0.5',
+                                  mutation_scale=10,linestyle=lines[i])
             axs[j].add_artist(ar)
         are[j] = spec_plt[kar]
+        axs[j].annotate(subplt[j], (0.05,0.85), xycoords='axes fraction', fontsize=12)
 fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.3),ncol=2)    
-plt.savefig(sps[-1]+'/spectra_comparison.pdf', bbox_inches='tight')
+plt.savefig(sp+'/spectra_comparison.pdf', bbox_inches='tight')
 
 #%% Plot in same spectrum FIXME is not yet implemented
 

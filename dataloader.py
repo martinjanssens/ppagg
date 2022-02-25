@@ -15,22 +15,26 @@ class DataLoaderDALES:
     def __init__(self, load_path):
         print('Initialising dataloader...')
         self.lp = load_path
-        self.ds = nc.Dataset(self.lp+'/fielddump.001.nc')
+
+        try:
+            self.ds = nc.Dataset(self.lp+'/fielddump.001.nc')
+            self.time  = np.ma.getdata(self.ds.variables['time'][:]) / 3600
+            self.xf    = np.ma.getdata(self.ds.variables['xt'][:]) 
+            self.xh    = np.ma.getdata(self.ds.variables['xm'][:])
+            self.yf    = np.ma.getdata(self.ds.variables['yt'][:])
+            self.yh    = np.ma.getdata(self.ds.variables['ym'][:])
+        except:
+            print('Warning: No 3D fields loaded, load_ routines that rely on \
+                  these fields will fail.')
+
         self.ds1= nc.Dataset(self.lp+'/profiles.001.nc')
-        self.ilp = np.loadtxt(self.lp+'/lscale.inp.001')
-
-        self.time  = np.ma.getdata(self.ds.variables['time'][:]) / 3600
-        self.zf    = np.ma.getdata(self.ds.variables['zt'][:])
-        self.zh    = np.ma.getdata(self.ds.variables['zm'][:])
-        self.xf    = np.ma.getdata(self.ds.variables['xt'][:]) 
-        self.xh    = np.ma.getdata(self.ds.variables['xm'][:])
-        self.yf    = np.ma.getdata(self.ds.variables['yt'][:])
-        self.yh    = np.ma.getdata(self.ds.variables['ym'][:])
-
+        self.zf     = np.ma.getdata(self.ds1.variables['zt'][:])
+        self.zh     = np.ma.getdata(self.ds1.variables['zm'][:])        
         self.time1d = np.ma.getdata(self.ds1.variables['time'][:])
-        self.rhobf = np.ma.getdata(self.ds1.variables['rhobf'][:])
-        self.rhobh = np.ma.getdata(self.ds1.variables['rhobh'][:])
+        self.rhobf  = np.ma.getdata(self.ds1.variables['rhobf'][:])
+        self.rhobh  = np.ma.getdata(self.ds1.variables['rhobh'][:])
 
+        self.ilp = np.loadtxt(self.lp+'/lscale.inp.001')
         self.zf_inp = self.ilp[:,0]
         self.wfls = self.ilp[:,3]
         self.dqdt_ls = self.ilp[:,6]
@@ -94,34 +98,42 @@ class DataLoaderDALES:
     def load_w2tav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['w2r'][:,izmin:izmax] +
                              self.ds1.variables['w2s'][:,izmin:izmax])
+    
+    def load_diss(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['diss'][:,izmin:izmax])
 
 class DataLoaderMicroHH:
 
     def __init__(self, load_path, case='bomex'):
         print('Initialising dataloader...')
         self.lp = load_path
-        self.ds1 = nc.Dataset(self.lp+'/'+case+'.default.0000000.nc')
-        self.ilp = nc.Dataset(self.lp+'/'+case+'_input.nc')
-        self.dsqt = nc.Dataset(self.lp+'/qt.nc')
-        self.dsthl = nc.Dataset(self.lp+'/thl.nc')
-        self.dsql = nc.Dataset(self.lp+'/ql.nc')
-        self.dsw = nc.Dataset(self.lp+'/w.nc')
-        self.dsu = nc.Dataset(self.lp+'/u.nc')
-        self.dsv = nc.Dataset(self.lp+'/v.nc')
-        self.dsp = nc.Dataset(self.lp+'/p.nc')
+        
+        try:
+            self.dsqt = nc.Dataset(self.lp+'/qt.nc')
+            self.dsthl = nc.Dataset(self.lp+'/thl.nc')
+            self.dsql = nc.Dataset(self.lp+'/ql.nc')
+            self.dsw = nc.Dataset(self.lp+'/w.nc')
+            self.dsu = nc.Dataset(self.lp+'/u.nc')
+            self.dsv = nc.Dataset(self.lp+'/v.nc')
+            self.dsp = nc.Dataset(self.lp+'/p.nc')
+    
+            self.time  = np.ma.getdata(self.dsqt.variables['time'][:]) / 3600
+            self.xf    = np.ma.getdata(self.dsqt.variables['x'][:])
+            self.xh    = np.ma.getdata(self.dsu.variables['xh'][:])
+            self.yf    = np.ma.getdata(self.dsqt.variables['y'][:])
+            self.yh    = np.ma.getdata(self.dsv.variables['yh'][:])
+        except:
+            print('Warning: No 3D fields loaded, load_ routines that rely on \
+                  these fields will fail.')
 
-        self.time  = np.ma.getdata(self.dsqt.variables['time'][:]) / 3600
-        self.zf    = np.ma.getdata(self.dsqt.variables['z'][:])
-        self.zh    = np.ma.getdata(self.dsw.variables['zh'][:])
-        self.xf    = np.ma.getdata(self.dsqt.variables['x'][:])
-        self.xh    = np.ma.getdata(self.dsu.variables['xh'][:])
-        self.yf    = np.ma.getdata(self.dsqt.variables['y'][:])
-        self.yh    = np.ma.getdata(self.dsv.variables['yh'][:])
-
+        self.ds1    = nc.Dataset(self.lp+'/'+case+'.default.0000000.nc')
+        self.zf     = np.ma.getdata(self.ds1.variables['z'][:])
+        self.zh     = np.ma.getdata(self.ds1.variables['zh'][:])
         self.time1d = np.ma.getdata(self.ds1.variables['time'][:])
-        self.rhobf = np.ma.getdata(self.ds1['thermo']['rho'][:])
-        self.rhobh = np.ma.getdata(self.ds1['thermo']['rhoh'][:])
+        self.rhobf  = np.ma.getdata(self.ds1['thermo']['rho'][:])
+        self.rhobh  = np.ma.getdata(self.ds1['thermo']['rhoh'][:])
 
+        self.ilp = nc.Dataset(self.lp+'/'+case+'_input.nc')
         self.zf_inp = np.ma.getdata(self.ilp['z'][:])
         self.wfls = np.ma.getdata(self.ilp['init']['w_ls'][:])
         self.dqdt_ls = np.ma.getdata(self.ilp['init']['qt_ls'][:])
@@ -186,4 +198,5 @@ class DataLoaderMicroHH:
     def load_w2tav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['w_2'][:,izmin:izmax])
 
-
+    def load_diss(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['budget']['tke_diff'][:,izmin:izmax])
