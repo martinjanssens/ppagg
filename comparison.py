@@ -11,13 +11,36 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
-from functions import tderive, zderivef
+from functions import vint
+from ppagg_io import load_ppagg
+from dataloader import DataLoaderDALES, DataLoaderMicroHH
 
-lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
-       '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
-labs = [r'$\Delta x = 100m$',
-        r'$\Delta x = 200m$']
-sp = lps[-1]+'/../figs'
+# lps = ['/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex100_e12/ppagg_new',
+#        '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_from100/ppagg_merged']
+lps = [ '/scratch-shared/janssens/bomex200_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex100a5_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',
+        '/scratch-shared/janssens/bomex100_e12/ppagg',
+        # '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged',
+        ]
+labs = [r'D1: $\Delta x = 200m$',
+        r'D2: $\Delta x = 200m$, a5',
+        r'D3: $\Delta x = 200m$, fiso',
+        r'D4: $\Delta x = 100m$',
+        ]
+mods = ['dales','dales','dales','dales']
+lines = ['-','-.',(0, (3, 2, 1, 2, 1, 2)),'--']
+
+# lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
+       # '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
+       # '/scratch-shared/janssens/bomex100_e12/ppagg',
+       # '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg']
+# labs = [r'DALES, $\Delta x = 200m$',
+        # r'MicroHH, $\Delta x = 200m$',
+        # r'DALES, $\Delta x = 100m$',
+        # r'MicroHH, $\Delta x = 100m$']
+# mods = ['dales','microhh','dales','microhh']
+
 
 # lps = ['/scratch-shared/janssens/bomex200aswitch/a2/ppagg',
 #        '/scratch-shared/janssens/bomex200aswitch/a5_froma2_12hr/ppagg']
@@ -29,147 +52,21 @@ sp = lps[-1]+'/../figs'
 # labs = [r'5th order advection',
 #         r'2nd order advection']
 
+sp = '/scratch-shared/janssens/bomex_comparisons'
+
 # Loading loop
 ld = []
 for i in range(len(lps)):
-    pp3d_out = {}
-    ld.append(pp3d_out)
+    
     lp = lps[i]
-    
-    ds1= nc.Dataset(lp+'/../profiles.001.nc')
-    ilp = np.loadtxt(lp+'/../lscale.inp.001')
-    
-    # time  = np.ma.getdata(ds.variables['time'][:]) / 3600
-    ld[i]['time'] = np.load(lp+'/time.npy')
-    ld[i]['zf']   = ilp[:,0]
-    
-    ld[i]['time1d'] = np.ma.getdata(ds1.variables['time'][:])
-    ld[i]['rhobf'] = np.ma.getdata(ds1.variables['rhobf'][:])
-    
-    dzh = np.diff(ld[i]['zf'])[0] # FIXME only valid in lower part of domain
-    
-    # Larger-scale subsidence
-    ld[i]['wfls'] = ilp[:,3]
-    
-    ld[i]['plttime'] = np.load(lp+'/plttime.npy')
-    ld[i]['zflim'] = np.load(lp+'/zf.npy')
-    
-    ld[i]['izmin'] = np.where(ld[i]['zflim'][0] == ld[i]['zf'])[0][0]
-    ld[i]['izmax'] = np.where(ld[i]['zflim'][-1] == ld[i]['zf'])[0][0]+1
-    
-    ld[i]['qtpf_moist_time'] = np.load(lp+'/qtpf_moist_time.npy')
-    ld[i]['qtpf_dry_time'] = np.load(lp+'/qtpf_dry_time.npy')
-    ld[i]['qtpf_prod_moist_time'] = np.load(lp+'/qtpf_prod_moist_time.npy')
-    ld[i]['qtpf_prod_dry_time'] = np.load(lp+'/qtpf_prod_dry_time.npy')
-    ld[i]['qtpf_prod_wex_moist_time'] = np.load(lp+'/qtpf_prod_moist_wex_time.npy')
-    ld[i]['qtpf_prod_wex_dry_time'] = np.load(lp+'/qtpf_prod_dry_wex_time.npy')
-    ld[i]['qtpf_vdiv_moist_time'] = np.load(lp+'/qtpf_vdiv_moist_time.npy')
-    ld[i]['qtpf_vdiv_dry_time'] = np.load(lp+'/qtpf_vdiv_dry_time.npy')
-    ld[i]['qtpf_hdiv_moist_time'] = np.load(lp+'/qtpf_hdiv_moist_time.npy')
-    ld[i]['qtpf_hdiv_dry_time'] = np.load(lp+'/qtpf_hdiv_dry_time.npy')
-    ld[i]['qtpf_subs_moist_time'] = np.load(lp+'/qtpf_subs_moist_time.npy')
-    ld[i]['qtpf_subs_dry_time'] = np.load(lp+'/qtpf_subs_dry_time.npy')
-    
-    ld[i]['thlvpf_moist_time'] = np.load(lp+'/thlvpf_moist_time.npy')
-    ld[i]['thlvpf_dry_time'] = np.load(lp+'/thlvpf_dry_time.npy')
-    ld[i]['thlvpf_prod_moist_time'] = np.load(lp+'/thlvpf_prod_moist_time.npy')
-    ld[i]['thlvpf_prod_dry_time'] = np.load(lp+'/thlvpf_prod_dry_time.npy')
-    ld[i]['thlvpf_vdiv_moist_time'] = np.load(lp+'/thlvpf_vdiv_moist_time.npy')
-    ld[i]['thlvpf_vdiv_dry_time'] = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
-    ld[i]['thlvpf_hdiv_moist_time'] = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
-    ld[i]['thlvpf_hdiv_dry_time'] = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
-    ld[i]['thlvpf_subs_moist_time'] = np.load(lp+'/thlvpf_subs_moist_time.npy')
-    ld[i]['thlvpf_subs_dry_time'] = np.load(lp+'/thlvpf_subs_dry_time.npy')
-    
-    ld[i]['thlvpp_moist_time'] = np.load(lp+'/thlvpp_moist_time.npy')
-    ld[i]['thlvpp_dry_time'] = np.load(lp+'/thlvpp_dry_time.npy')
-    ld[i]['thlvpp_prod_moist_time'] = np.load(lp+'/thlvpp_prod_moist_time.npy')
-    ld[i]['thlvpp_prod_dry_time'] = np.load(lp+'/thlvpp_prod_dry_time.npy')
-    ld[i]['thlvpp_vdiv_moist_time'] = np.load(lp+'/thlvpp_vdiv_moist_time.npy')
-    ld[i]['thlvpp_vdiv_dry_time'] = np.load(lp+'/thlvpp_vdiv_dry_time.npy')
-    ld[i]['thlvpp_hdiv_moist_time'] = np.load(lp+'/thlvpp_hdiv_moist_time.npy')
-    ld[i]['thlvpp_hdiv_dry_time'] = np.load(lp+'/thlvpp_hdiv_dry_time.npy')
-    ld[i]['thlvpp_subs_moist_time'] = np.load(lp+'/thlvpp_subs_moist_time.npy')
-    ld[i]['thlvpp_subs_dry_time'] = np.load(lp+'/thlvpp_subs_dry_time.npy')
-    
-    ld[i]['wthlvpf_prod_moist_time'] = np.load(lp+'/wthlvpf_prod_moist_time.npy')
-    ld[i]['wthlvpf_prod_dry_time'] =  np.load(lp+'/wthlvpf_prod_dry_time.npy')
-    ld[i]['wthlvpf_vdiv_moist_time'] =  np.load(lp+'/wthlvpf_vdiv_moist_time.npy')
-    ld[i]['wthlvpf_vdiv_dry_time'] = np.load(lp+'/wthlvpf_vdiv_dry_time.npy')
-    ld[i]['wthlvpf_hdiv_moist_time'] = np.load(lp+'/wthlvpf_hdiv_moist_time.npy')
-    ld[i]['wthlvpf_hdiv_dry_time'] = np.load(lp+'/wthlvpf_hdiv_dry_time.npy')
-    ld[i]['wthlvpf_buoy_moist_time'] = np.load(lp+'/wthlvpf_buoy_moist_time.npy')
-    ld[i]['wthlvpf_buoy_dry_time'] = np.load(lp+'/wthlvpf_buoy_dry_time.npy')
-    ld[i]['wthlvpf_pres_moist_time'] = np.load(lp+'/wthlvpf_pres_moist_time.npy')
-    ld[i]['wthlvpf_pres_dry_time'] = np.load(lp+'/wthlvpf_pres_dry_time.npy')
-    ld[i]['wthlvpf_subs_moist_time'] = np.load(lp+'/wthlvpf_subs_moist_time.npy')
-    ld[i]['wthlvpf_subs_dry_time'] = np.load(lp+'/wthlvpf_subs_dry_time.npy')
-    ld[i]['wthlvpf_diff_moist_time'] = np.load(lp+'/wthlvpf_diff_moist_time.npy')
-    ld[i]['wthlvpf_diff_dry_time'] = np.load(lp+'/wthlvpf_diff_dry_time.npy')
-    
-    ld[i]['thl_av_time'] = np.load(lp+'/thl_av_time.npy')
-    ld[i]['thlv_av_time'] = np.load(lp+'/thlv_av_time.npy')
-    ld[i]['qt_av_time'] = np.load(lp+'/qt_av_time.npy')
-    
-    ld[i]['thlpf_moist_time'] = np.load(lp+'/thlpf_moist_time.npy')
-    ld[i]['thlpf_dry_time'] = np.load(lp+'/thlpf_dry_time.npy')
-    ld[i]['wff_moist_time'] = np.load(lp+'/wff_moist_time.npy')
-    ld[i]['wff_dry_time'] = np.load(lp+'/wff_dry_time.npy')
-    ld[i]['qlpf_moist_time'] = np.load(lp+'/qlpf_moist_time.npy') 
-    ld[i]['qlpf_dry_time'] = np.load(lp+'/qlpf_dry_time.npy')
-    
-    ld[i]['thlpp_moist_time'] = np.load(lp+'/thlpp_moist_time.npy')
-    ld[i]['thlpp_dry_time'] = np.load(lp+'/thlpp_dry_time.npy')
-    ld[i]['wfp_moist_time'] = np.load(lp+'/wfp_moist_time.npy')
-    ld[i]['wfp_dry_time'] = np.load(lp+'/wfp_dry_time.npy')
-    ld[i]['qlpp_moist_time'] = np.load(lp+'/qlpp_moist_time.npy') 
-    ld[i]['qlpp_dry_time'] = np.load(lp+'/qlpp_dry_time.npy')
-    
-    ld[i]['wthlpf_moist_time'] = np.load(lp+'/wthlpf_moist_time.npy')
-    ld[i]['wthlpf_dry_time'] = np.load(lp+'/wthlpf_dry_time.npy')
-    
-    ld[i]['wqtpf_moist_time'] = np.load(lp+'/wqtpf_moist_time.npy')
-    ld[i]['wqtpf_dry_time'] = np.load(lp+'/wqtpf_dry_time.npy')
-    
-    ld[i]['wqlpf_moist_time'] = np.load(lp+'/wqlpf_moist_time.npy')
-    ld[i]['wqlpf_dry_time'] = np.load(lp+'/wqlpf_dry_time.npy')
-    
-    ld[i]['wthlvp_av_time'] = np.load(lp+'/wthlvp_av_time.npy')
-    ld[i]['wthlvpf_moist_time'] = np.load(lp+'/wthlvpf_moist_time.npy')
-    ld[i]['wthlvpf_dry_time'] = np.load(lp+'/wthlvpf_dry_time.npy')
-    ld[i]['wthlvpf_l_moist_time'] = np.load(lp+'/wthlvpf_l_moist_time.npy')
-    ld[i]['wthlvpf_l_dry_time'] = np.load(lp+'/wthlvpf_l_dry_time.npy')
-    ld[i]['wthlvpf_c_moist_time'] = np.load(lp+'/wthlvpf_c_moist_time.npy')
-    ld[i]['wthlvpf_c_dry_time'] = np.load(lp+'/wthlvpf_c_dry_time.npy')
-    ld[i]['wthlvpf_r_moist_time'] = np.load(lp+'/wthlvpf_r_moist_time.npy')
-    ld[i]['wthlvpf_r_dry_time'] = np.load(lp+'/wthlvpf_r_dry_time.npy')
-    ld[i]['wthlvpp_moist_time'] = np.load(lp+'/wthlvpp_moist_time.npy')
-    ld[i]['wthlvpp_dry_time'] = np.load(lp+'/wthlvpp_dry_time.npy')
-    
-    ld[i]['wthlvpf_anom_moist_time'] = ld[i]['wthlvpf_moist_time'] - ld[i]['wthlvp_av_time']
-    ld[i]['wthlvpf_anom_dry_time'] = ld[i]['wthlvpf_dry_time'] - ld[i]['wthlvp_av_time']
+    mod = mods[i]
 
-    ld[i]['Gamma_qt_av_time'] = zderivef(ld[i]['qt_av_time'],dzh)
-    ld[i]['Gamma_thlv_av_time'] = zderivef(ld[i]['thlv_av_time'],dzh)
-    ld[i]['Gamrat_av_time'] = ld[i]['Gamma_qt_av_time']/ld[i]['Gamma_thlv_av_time']
-    ld[i]['Gamrat_av_time'][np.abs(ld[i]['Gamrat_av_time'])>0.03] = np.nan
-    ## Reconstruct slab-mean budget terms
-    ## FIXME Not working yet, would need support for time1d vs time and handling different time dimension sizes in restart and original
-    # thl_av_1d = ds1['thl'][:,ld[i]['izmin']:ld[i]['izmax']]
-    # qt_av_1d = ds1['qt'][:,ld[i]['izmin']:ld[i]['izmax']]
-    # thlv_av_1d = thl_av_1d*(1 + 0.608*qt_av_1d)
+    if mod == 'dales':
+        dl = DataLoaderDALES(lp+'/..')
+    elif mod == 'microhh':
+        dl = DataLoaderMicroHH(lp+'/..')
     
-    # # Tendencies
-    # ld[i]['ddt_thlv_av_time'] = tderive(thlv_av_1d, ld[i]['time1d']/3600)
-    # ld[i]['ddt_qt_av_time'] = tderive(qt_av_1d, ld[i]['time1d']/3600)
-    
-    # # Flux divergence (approximately, i.e. ignoring rho)
-    # ld[i]['wthl_av_time'] = ds1['wthlt'][:,ld[i]['izmin']:ld[i]['izmax']]
-    # ld[i]['wqt_av_time'] = ds1['wqtt'][:,ld[i]['izmin']:ld[i]['izmax']]
-    # ld[i]['wthlv_av_time'] = ld[i]['wthl_av_time'] + 0.608*thl_av_1d*ld[i]['wqt_av_time']
-    
-    # ld[i]['ddz_wthlv_av_time'] = zderivef(ld[i]['wthlv_av_time'],dzh)
-    # ld[i]['ddz_wqt_av_time'] = zderivef(ld[i]['wqt_av_time'],dzh)
+    ld.append(load_ppagg(dl, lp))
 
 #%% Function for plotting chosen variable comparison
 
@@ -178,7 +75,7 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
     ndt = int((tpltmax-tpltmin)/dit)
     nvar = len(pltvars)
 
-    fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(2.5*nvar,3*ndt+0.25),
+    fig,axs = plt.subplots(nrows=ndt,ncols=nvar,figsize=(3.2*nvar,3*ndt+0.25),
                            sharex=sharex,sharey=True,squeeze=False)
     col_av = 'k'
     col_moist = plt.cm.RdYlBu(0.99)
@@ -212,12 +109,13 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
                     
                     pltvar_av_mn = np.mean(ld[l][pltvars[p]+'_time'][itmn_min:itmn_max,:],axis=0)
                     
-                    if len(ld[l]['zflim']) != len(pltvar_av_mn):
-                        zplt = ld[l]['zflim'][1:-1]
+                    diffz = len(ld[l]['zflim']) - len(pltvar_av_mn)
+                    if diffz != 0:
+                        zplt = ld[l]['zflim'][diffz//2:-diffz//2]
                     else:
                         zplt = ld[l]['zflim']
                     
-                    lab = labs[l]+', slab-averaged'
+                    lab = labs[l]+', slab-mean'
                     ln = axs[i,p].plot(pltvar_av_mn, zplt, 
                                   color=col_av, linestyle=lines[l],
                                   alpha=alpha, lw=lw)
@@ -228,9 +126,10 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
                 else:
                     pltvar_moist_mn = np.mean(ld[l][pltvars[p]+'_moist_time'][itmn_min:itmn_max,:],axis=0)
                     pltvar_dry_mn = np.mean(ld[l][pltvars[p]+'_dry_time'][itmn_min:itmn_max,:],axis=0)
-                
-                    if len(ld[l]['zflim']) != len(pltvar_moist_mn):
-                        zplt = ld[l]['zflim'][1:-1]
+                    
+                    diffz = len(ld[l]['zflim']) - len(pltvar_moist_mn)
+                    if diffz != 0:
+                        zplt = ld[l]['zflim'][diffz//2:-diffz//2]
                     else:
                         zplt = ld[l]['zflim']
                     
@@ -258,7 +157,7 @@ def plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,
     for p in range(nvar):
         axs[-1,p].set_xlabel(varlab[p])
     # axs[-1,-1].legend(loc='best',bbox_to_anchor=(1,-0.25),ncol=2)
-    fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.075),ncol=2)
+    fig.legend(lns, lbs, bbox_to_anchor=(0.9,0.075),ncol=len(lps))
 
 #%% Plot variables
 
@@ -282,7 +181,6 @@ varlab = [r"${q_{t_m}'}$ [kg/kg]",
 # pltvars = ['thlvpp']
 # varlab = [r"$\theta_{lv}'''$"]
 
-lines = ['-','--']
 
 tpltmin = 13
 tpltmax = 19
@@ -304,12 +202,10 @@ varlab = [r"Gradient production",
 #           r"Vertical transport",
 #           r"Horizontal transport"]
 
-lines = ['-','--']
-
-tpltmin = 13
-tpltmax = 19
-dit = 2.0 # Rounds to closest multiple of dt in time
-tav = 1.0 # Averaging time centred around current time
+tpltmin = 6
+tpltmax = 24
+dit = 6.0 # Rounds to closest multiple of dt in time
+tav = 4.0 # Averaging time centred around current time
 
 plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines)
 plt.savefig(sp+'/comparison_qtpf.pdf',bbox_inches='tight')
@@ -320,7 +216,7 @@ varlab = [r"$\left(w_s'\theta_{lv_s}'\right)$",
           r"$\left(w_s'q_l'\right)$",
           r"$\left(w_s'q_t'\right)$",]
 
-lines = ['-','--']
+lines = ['-','--',':','-.']
 
 tpltmin = 13
 tpltmax = 19
@@ -328,6 +224,58 @@ dit = 2.0 # Rounds to closest multiple of dt in time
 tav = 1.0 # Averaging time centred around current time
 
 plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
+
+#%% wthlv budget
+pltvars = ['wthlvpf_prod','wthlvpf_vdiv','wthlvpf_diff']
+varlab =  [r"Gradient production", 
+          r"Vertical transport",
+          r"Horizontal transport"]
+
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
+
+plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines,sharex='col')
+
+
+#%% Plot 1d comparison of vertically integrated mesoscale moisture fluctuation
+
+ls = ['-','--',':','-.']
+
+tmin = 6.
+tmax = [18.,
+        12.,
+        36.,
+        36.,
+        36.]
+
+alpha=0.5
+lw=2
+col_moist = plt.cm.RdYlBu(0.99)
+col_dry = plt.cm.RdYlBu(0)
+
+f1 = plt.figure(figsize=(5,10/3)); axs1 = plt.gca()
+for i in range(len(lps)):
+    time = ld[i]['time']
+    itpltmin = np.where(time>=tmin)[0][0]
+    itpltmax = np.where(time<tmax[i])[0][-1]+1
+    plttime_var = np.arange(itpltmin,itpltmax,1)
+    
+    zflim = ld[i]['zflim']
+    rhobfi = ld[i]['rhobf'][0,ld[i]['izmin']:ld[i]['izmax']]
+    qtpfmi = ld[i]['qtpf_moist_time']
+    qtpfdi = ld[i]['qtpf_dry_time']
+
+    twppf_moist = vint(qtpfmi,rhobfi,zflim,plttime_var)
+    twppf_dry = vint(qtpfdi,rhobfi,zflim,plttime_var)
+
+    axs1.plot(time[plttime_var],twppf_moist,c=col_moist,linestyle=ls[i],lw=lw,alpha=alpha,label=labs[i])
+    axs1.plot(time[plttime_var],twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
+axs1.set_xlabel('Time [hr]')
+axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
+axs1.legend(loc='upper left',bbox_to_anchor=(1,1))
+plt.savefig(sp+'/twp_evo_num.pdf',bbox_inches='tight')
 
 #%%
 plt.plot(np.mean(wff_moist_time[35:39,:],axis=0),zflim)

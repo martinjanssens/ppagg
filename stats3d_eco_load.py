@@ -11,31 +11,36 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 from scipy.optimize import curve_fit
 from skimage.measure import block_reduce
+from dataloader import DataLoaderDALES, DataLoaderMicroHH
+from functions import vint
 
 # Run specifics
-lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg'
 sp = lp+'/../figs'
-ds1= nc.Dataset(lp+'/../profiles.001.nc')
-ilp = np.loadtxt(lp+'/../lscale.inp.001')
+mod = 'microhh'
 
-time = np.load(lp+'/time.npy')
-
-time1d = np.ma.getdata(ds1.variables['time'][:])
-rhobf = np.ma.getdata(ds1.variables['rhobf'][:])
+if mod == 'dales':
+    dl = DataLoaderDALES(lp+'/..')
+elif mod == 'microhh':
+    dl = DataLoaderMicroHH(lp+'/..')
+    
+time1d = dl.time1d
+rhobf = dl.rhobf
 
 # Larger-scale processes
-zf = ilp[:,0]
-wfls = ilp[:,3]
-qtavp_ls = ilp[:,6]
-thlavp_ls = ilp[:,7]
+zf_inp = dl.zf_inp
+wfls = dl.wfls
+dqdt_ls = dl.dqdt_ls
+dthldt_ls = dl.dthldt_ls
 
+time = np.load(lp+'/time.npy')
 plttime = np.load(lp+'/plttime.npy')
 zflim = np.load(lp+'/zf.npy')
 
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+dzh = np.diff(zflim)[0] # FIXME only valid in lower part of domain
 
-izmin = np.where(zflim[0] == zf)[0][0]
-izmax = np.where(zflim[-1] == zf)[0][0]+1
+izmin = np.where(zflim[0] == zf_inp)[0][0]
+izmax = np.where(zflim[-1] == zf_inp)[0][0]+1
 
 qtpf_moist_time = np.load(lp+'/qtpf_moist_time.npy')
 qtpf_dry_time = np.load(lp+'/qtpf_dry_time.npy')
@@ -153,7 +158,7 @@ thvpf_moist_time = thlvpf_moist_time + 7*thl_av_time*qlpf_moist_time
 thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 # Mean ql (we don't have this from stats3d)
-ql_av_1d = ds1['ql'][:,izmin:izmax]
+ql_av_1d = dl.load_qlav(izmin, izmax)
 
 # Slopes of mean profiles
 Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
@@ -182,8 +187,9 @@ wthlvpf_tend_dry_time[1:,:] = tderive(wthlvpf_dry_anom, time)
 
 
 ## Reconstruct slab-mean budget terms
-thl_av_1d = ds1['thl'][:,izmin:izmax]
-qt_av_1d = ds1['qt'][:,izmin:izmax]
+
+thl_av_1d = dl.load_thlav(izmin, izmax)
+qt_av_1d = dl.load_qtav(izmin, izmax)
 thlv_av_1d = thl_av_1d*(1 + 0.608*qt_av_1d)
 
 # Tendencies
@@ -191,8 +197,8 @@ ddt_thlv_av_time = tderive(thlv_av_1d, time1d/3600)
 ddt_qt_av_time = tderive(qt_av_1d, time1d/3600)
 
 # Flux divergence (approximately, i.e. ignoring rho)
-wthl_av = ds1['wthlt'][:,izmin:izmax]
-wqt_av = ds1['wqtt'][:,izmin:izmax]
+wthl_av = dl.load_wthlav(izmin, izmax)
+wqt_av = dl.load_wqtav(izmin, izmax)
 wthlv_av = wthl_av + 0.608*thl_av_1d*wqt_av
 
 ddz_wthlv_av_time = ((wthlv_av[:,1:] - wthlv_av[:,:-1])/dzh)
@@ -211,9 +217,9 @@ Gamma_qt_1d = (Gamma_qt_1d[:,1:] + Gamma_qt_1d[:,:-1])/2.
 wfls_dthlvdz_av_time = wfls[izmin+1:izmax-1]*Gamma_thlv_1d
 wfls_dqtdz_av_time = wfls[izmin+1:izmax-1]*Gamma_qt_1d
 
-# Large-scale forcing
-dqdt_ls = ilp[izmin:izmax,6]
-dthldt_ls = ilp[izmin:izmax,7]
+# Large scale warming
+dqdt_ls = dqdt_ls[izmin:izmax]
+dthldt_ls = dthldt_ls[izmin:izmax]
 dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
@@ -464,8 +470,8 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
 #%% Average budget contributions over time dimension
-tpltmin = 6.
-tpltmax = 16.
+tpltmin = 20.
+tpltmax = 24.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -557,7 +563,7 @@ plt.savefig(sp+'/qtpf_budget.pdf',bbox_inches='tight')
 
 #%% Average thlvpf budget contributions over time dimension
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 10.
 
 terms = ['Tendency                               ',
          'Gradient production',
@@ -770,8 +776,8 @@ plt.show()
 
 #%% WTG-based model of moisture variance production
 
-tpltmin = 6.
-tpltmax = 16.
+tpltmin = 16.
+tpltmax = 24.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -948,21 +954,7 @@ itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 idtav  = int(round(dtav/2/(time[1]-time[0])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
-
-
-def vint(field,rhob,z,plttime=plttime):
-    
-    if len(field.shape) == 3:
-        var = np.trapz(rhob[:,np.newaxis,np.newaxis]*field[:,:,:],z,axis=0)
-    elif len(field.shape) == 4:
-        var = np.trapz(rhob[np.newaxis,:,np.newaxis,np.newaxis]*
-                       field[plttime,:,:,:],z,axis=1)
-    elif len(field.shape) == 2:
-        var = np.trapz(rhob[np.newaxis,:]*field[plttime,:],z,axis=1)
-    elif len(field.shape) == 1:
-        var = np.trapz(rhob*field,z)
-    return var
-   
+  
 # 1D fields
 rhobfi = rhobf[0,izmin:izmax] # Won't really change much through time, so ok to take 0 value
 
@@ -1174,7 +1166,7 @@ wthvpfmn_moist = np.mean(wthlvpf_moist_time[itpltmin:itpltmax,:]+
                          7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthvpfmn_dry = np.mean(wthlvpf_dry_time[itpltmin:itpltmax,:]+
                          7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
-wthvpmn_av = np.mean(ds1['wthvr'][itpltmin1d:itpltmax1d,izmin:izmax],axis=0)
+wthvpmn_av = np.mean(dl.load_wthvrav(izmin, izmax)[itpltmin1d:itpltmax1d,:],axis=0)
 
 wthlvpfmn_moist = np.mean(wthlvpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlvpfmn_dry = np.mean(wthlvpf_dry_time[itpltmin:itpltmax,:],axis=0)
@@ -1182,15 +1174,15 @@ wthlvpmn_av = np.mean(wthlvp_av_time[itpltmin:itpltmax,:],axis=0)
 
 wthlpfmn_moist = np.mean(wthlpf_moist_time[itpltmin:itpltmax,:],axis=0)
 wthlpfmn_dry = np.mean(wthlpf_dry_time[itpltmin:itpltmax,:],axis=0)
-wthlpmn_av = np.mean(ds1['wthlr'][itpltmin1d:itpltmax1d,izmin:izmax],axis=0)
+wthlpmn_av = np.mean(dl.load_wthlrav(izmin, izmax)[itpltmin1d:itpltmax1d,:],axis=0)
 
 a2wqtpfmn_moist = np.mean(0.608*thl_av_time[itpltmin:itpltmax,:]*wqtpf_moist_time[itpltmin:itpltmax,:],axis=0)
 a2wqtpfmn_dry = np.mean(0.608*thl_av_time[itpltmin:itpltmax,:]*wqtpf_dry_time[itpltmin:itpltmax,:],axis=0)
-a2wqtpmn_av = np.mean(0.608*ds1['thl'][itpltmin1d:itpltmax1d,izmin:izmax]*ds1['wqtr'][itpltmin1d:itpltmax1d,izmin:izmax],axis=0)
+a2wqtpmn_av = np.mean(0.608*thl_av_1d[itpltmin1d:itpltmax1d,:]*dl.load_wqtrav(izmin,izmax)[itpltmin1d:itpltmax1d,:],axis=0)
 
 a3wqlpfmn_moist = np.mean(7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_moist_time[itpltmin:itpltmax,:],axis=0)
 a3wqlpfmn_dry = np.mean(7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
-a3wqlpmn_av = np.mean(7*ds1['thl'][itpltmin1d:itpltmax1d,izmin:izmax]*ds1['wqlr'][itpltmin1d:itpltmax1d,izmin:izmax],axis=0)
+a3wqlpmn_av = np.mean(7*thl_av_1d[itpltmin1d:itpltmax1d,:]*dl.load_wqlrav(izmin,izmax)[itpltmin1d:itpltmax1d,:],axis=0)
 
 # thvpf plot
 fig,axs = plt.subplots(nrows=1,ncols=2,sharey=True,figsize=(10,5), squeeze=False)
@@ -1263,7 +1255,7 @@ plt.savefig(sp+'/wthv_decomposition.pdf',bbox_inches='tight')
 
 # Time to average over
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 10.
 
 labs = [r"$(w'\theta_{lv}')_m$",
         r"$(w_m'\theta_{lv_m}')_m$",
@@ -1644,12 +1636,11 @@ for i in range(len(plttime_var)):
     thlvavp_subs = (-wfls[izmin+1:izmax-1]*Gamma_thlv[plttime_var[i],:])
     
     # Large-scale drying
-    qtavp_larq = (qtavp_ls[izmin:izmax])
-    thlvavp_larq = (0.608*thl_av_time[plttime_var[i],:]*qtavp_ls[izmin:izmax])
+    qtavp_larq = dqdt_ls
+    thlvavp_larq = 0.608*thl_av_time[plttime_var[i],:]*dqdt_ls
 
     # Large-scale cooling
-    thlvavp_lart = (thlavp_ls[izmin:izmax])
-    
+    thlvavp_lart = dthldt_ls
     
     col = plt.cm.Greys((i+1)/len(plttime_var))
     ax.plot(thlv_av_time[plttime_var[i],:], qt_av_time[plttime_var[i],:],
