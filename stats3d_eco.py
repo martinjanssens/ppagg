@@ -16,7 +16,7 @@ from functions import *
 from dataloader import DataLoaderDALES, DataLoaderDALESSeparate, DataLoaderMicroHH
 import argparse
 
-parseFlag = True
+parseFlag = False
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
@@ -46,14 +46,14 @@ if parseFlag:
     pflag = args.pres
     eflag = args.e12
 else:
-    mod = 'microhh'
-    lp = '/scratch-shared/janssens/tmp.bomex/bomex_200m'
+    mod = 'dales'
+    lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
     # lp = '/scratch-shared/janssens/bomex200_e12'
-    itmin = 47
-    itmax = 48
+    itmin = 25
+    itmax = 26
     di    = 1
     izmin = 0
-    izmax = 80
+    izmax = 110
     store = False
     pflag = False
     eflag = False
@@ -82,8 +82,8 @@ rhobh = dl.rhobh
 wfls = dl.wfls
 
 # FIXME temporary hardcoding of dx/dy for data that does not have xf/yf as variables
-dx = 50#np.diff(xf)[0]
-dy = 50#np.diff(yf)[0] # Assumes uniform horizontal spacing
+dx = 100#np.diff(xf)[0]
+dy = 100#np.diff(yf)[0] # Assumes uniform horizontal spacing
 
 # Vertical differences
 dzf = np.zeros(zh.shape)
@@ -213,7 +213,7 @@ wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 # Mask for low-[ass filtering FIXME also hardcoded for now
-circ_mask = np.zeros((1536,1536))
+circ_mask = np.zeros((768,768))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
@@ -707,11 +707,11 @@ for i in range(len(plttime)):
     # SFS diffusion
     if eflag:
         # Heat
-        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi) +
-                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi))
+        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, dzf, dzh, rhobfi, rhobhi) +
+                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzf, dzh, rhobfi, rhobhi))
         diff_thlvpf = lowPass(diff_thlvp, circ_mask)
 
-        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, zf, rhobfi, rhobhi),axis=(1,2))                      
+        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, dzf, dzh, rhobfi, rhobhi),axis=(1,2))                      
 
         # moist/dry and large/small
         diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
@@ -733,7 +733,7 @@ for i in range(len(plttime)):
         wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
         wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
 
-        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,zf,rhobfi,rhobhi)
+        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,dzf,dz,rhobfi,rhobhi)
         thlvpdiffw = thlvpp[2:-3]*(thlvpdiffw[1:,:,:] + thlvpdiffw[:-1,:,:])/2. # At zflim[2:-3]
         thlvpdiffwf = lowPass(thlvpdiffw, circ_mask)
         thlvpdiffw_av = np.mean(thlvpdiffw, axis=(1,2))
@@ -745,10 +745,10 @@ for i in range(len(plttime)):
                                       (wdiff_thlv_av[:-1] + thlvpdiffw_av))
 
         # Moisture
-        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi)+
-                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzh, rhobfi, rhobhi),
+        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, dzf, dzh, rhobfi, rhobhi)+
+                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzf, dzh, rhobfi, rhobhi),
                             circ_mask)
-        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, zf, rhobfi, rhobhi), axis=(1,2))
+        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, dzf, dzh, rhobfi, rhobhi), axis=(1,2))
         
         diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
         diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)

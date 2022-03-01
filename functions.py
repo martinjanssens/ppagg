@@ -64,17 +64,15 @@ def ddzwx_2nd(wh,x,dzf,dzh,rhobf=None):
 
 # Advection at half z-level (for w)
 def ddzww_2nd(wh,dzh,rhobf=None,rhobh=None):
-    # Assumes constant dz
     if type(rhobf) == type(None): # then rhobh must also be None, else you're a moron
         rhobf = np.ones(wh.shape[0])
-        rhobf = np.ones(wh.shape[0]) #Check this shape
     return ((wh[2:,:,:] + wh[1:-1,:,:]) *
             (rhobh[2:,np.newaxis,np.newaxis]*wh[2:,:,:] + 
              rhobh[1:-1,np.newaxis,np.newaxis]*wh[1:-1,:,:]) -
             (wh[:-2,:,:] + wh[1:-1,:,:]) *
             (rhobh[:-2,np.newaxis,np.newaxis]*wh[:-2,:,:] + 
              rhobh[1:-1,np.newaxis,np.newaxis]*wh[1:-1,:,:])
-           ) / (4*dzh*rhobf[1:-1,np.newaxis,np.newaxis])
+            ) / (4*dzh[1:-1,np.newaxis,np.newaxis]*rhobf[1:-1,np.newaxis,np.newaxis])
             
 
 # def ddzw2x_2nd(wh,x,dzh,rhobf=None):
@@ -87,19 +85,19 @@ def ddzww_2nd(wh,dzh,rhobf=None,rhobh=None):
 #                               rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
 #              (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
 
-def kddza_2nd(k,x,zf,rhobf=None):
-    # Assumes constant dz
-    if type(rhobf) == type(None):
-        rhobf = np.ones(k.shape)
-    if k.shape != x.shape:
-        x = x[1:-1,:,:]
-        rhobf = rhobf[1:-1]
-    dzh = np.diff(zf)[0]
-    return (k[1:-1,:,:]*((rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:]+
-                           rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]) - 
-                         (rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:] + 
-                          rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
-             (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
+# def kddza_2nd(k,x,zf,rhobf=None):
+#     # Assumes constant dz
+#     if type(rhobf) == type(None):
+#         rhobf = np.ones(k.shape)
+#     if k.shape != x.shape:
+#         x = x[1:-1,:,:]
+#         rhobf = rhobf[1:-1]
+#     dzh = np.diff(zf)[0]
+#     return (k[1:-1,:,:]*((rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:]+
+#                            rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]) - 
+#                          (rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:] + 
+#                           rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]))/
+#             (2*dzh*rhobf[1:-1,np.newaxis,np.newaxis]))
 
 def ddxhuha_2nd(u,v,a,dx,dy):
     # Assumes constant dx, dy, shape (z,y,x)
@@ -149,12 +147,13 @@ def ddxhuhw_2nd(u,v,w,dx,dy):
 
 
 def wsubdxdz(wfls,x,dzh):
-    # Assumes constant dz, wfls < 0
-    # eturns values starting at half level 1 (though they are used at full level 1 and on)
+    # Assumes wfls < 0
+    # returns values starting at the first half level above the surface, which is used at full level above and up
+    # Shape in z is x.shape[0] - 1
     # wsub defined at cell centres -> Interpolate to edges 
     whls = (wfls[1:] +  wfls[:-1])*0.5
     # upwinding
-    return whls[:,np.newaxis,np.newaxis]*(x[1:,:,:] - x[:-1,:,:])/dzh
+    return whls[:,np.newaxis,np.newaxis]*(x[1:,:,:] - x[:-1,:,:])/dzh[1:,np.newaxis,np.newaxis]
 
 def compute_dthvdz(thl,qt,ql,exnf,dzh):
     # Using 2nd order scheme, ignores first model level
@@ -163,7 +162,7 @@ def compute_dthvdz(thl,qt,ql,exnf,dzh):
     exnf = np.append(exnf,exnf[-1]) 
     
     thv = (thl + Lv*ql/(cp*exnf[:,np.newaxis,np.newaxis]))* (1+(Rv/Rd-1)*qt-Rv/Rd*ql)
-    dthvdz = (thv[2:,:,:] - thv[:-2])/(2*dzh)
+    dthvdz = (thv[2:,:,:] - thv[:-2,:,:])/(dzh[1:-1,np.newaxis,np.newaxis]+dzh[2:,np.newaxis,np.newaxis])
     return dthvdz
 
 def compute_ek(e12,dthvdz,thv_av,delta,cf=2.5,cn=0.76,Pri=3,ekmin=1e-6):
@@ -189,28 +188,31 @@ def compute_ek(e12,dthvdz,thv_av,delta,cf=2.5,cn=0.76,Pri=3,ekmin=1e-6):
     
     return ekm,ekh
 
-def diffzeka(ekh,a,dzh,rhobf,rhobh):
+def diffzeka(ekh,a,dzf,dzh,rhobf,rhobh):
     # Set shapes to ekh shape
     rhobf = rhobf[1:-1]
     rhobh = rhobh[1:-1]
+    dzf = dzf[1:-1]
+    dzh = dzh[1:-1]
     if ekh.shape != a.shape:
         a = a[1:-1,:,:]
     
     return 0.5*(rhobh[2:,np.newaxis,np.newaxis]/rhobf[1:-1,np.newaxis,np.newaxis]
-                *(ekh[1:-1,:,:] + ekh[2:,:,:])*(a[2:,:,:] - a[1:-1,:,:]) / dzh**2
+               *(ekh[1:-1,:,:]*dzf[2:,np.newaxis,np.newaxis] + 
+                 ekh[2:,:,:]*dzf[1:-1,np.newaxis,np.newaxis])*(a[2:,:,:] - a[1:-1,:,:])
+               / dzh[2:,np.newaxis,np.newaxis]**2
               -
                rhobh[1:-1,np.newaxis,np.newaxis]/rhobf[1:-1,np.newaxis,np.newaxis]
-               *(ekh[1:-1,:,:] + ekh[:-2,:,:])*(a[1:-1,:,:] - a[:-2,:,:]) / dzh**2)
+               *(ekh[1:-1,:,:]*dzf[:-2,np.newaxis,np.newaxis] + 
+                 ekh[:-2,:,:]*dzf[1:-1,np.newaxis,np.newaxis])*(a[1:-1,:,:] - a[:-2,:,:]) 
+               / dzh[1:-1,np.newaxis,np.newaxis]**2) / dzf[1:-1,np.newaxis,np.newaxis]
 
-def diffeka(ekh,a,dx,dy,zf,rhobf=None,rhobh=None):
+def diffeka(ekh,a,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
     # Assumes constant vertical spacing
     if type(rhobf) == type(None):
         rhobf = np.ones(zf.shape)
     if type(rhobh) == type(None):
         rhobh = np.ones(zf.shape)
-    
-    # bodge
-    dzh = np.diff(zf)[0]
     
     # set to ekh shape
     a = a[1:-1,:,:]
@@ -220,19 +222,15 @@ def diffeka(ekh,a,dx,dy,zf,rhobf=None,rhobh=None):
                 +
                 ((np.roll(ekh,-1,axis=1) + ekh)*(np.roll(a,-1,axis=1) - a)
                 -(ekh + np.roll(ekh,1,axis=1))*(a - np.roll(a,1,axis=1)))/(dy**2))
-    diffz = diffzeka(ekh, a, dzh, rhobf, rhobh)
+    diffz = diffzeka(ekh, a, dzf, dzh, rhobf, rhobh)
     
     return diffxh[1:-1,:,:] + diffz
 
-def diffekw(ekm,u,v,w,dx,dy,zf,rhobf=None,rhobh=None):
-    # Assumes constant vertical spacing
+def diffekw(ekm,u,v,w,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
     if type(rhobf) == type(None):
         rhobf = np.ones(zf.shape)
     if type(rhobh) == type(None):
         rhobh = np.ones(zf.shape)
-    
-    # bodge
-    dzh = np.diff(zf)[0]
     
     # Set to ekm shape
     u = u[1:-1,:,:]
@@ -240,32 +238,39 @@ def diffekw(ekm,u,v,w,dx,dy,zf,rhobf=None,rhobh=None):
     w = w[1:-1,:,:]
     rhobf = rhobf[1:-1]
     rhobh = rhobh[1:-1]
+    dzf = dzf[1:-1]
+    dzh = dzh[1:-1]
 
-    emom = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=2) +
-            ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=2)) / 4.
+    emom = (((ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=2))*dzf[:-2,np.newaxis,np.newaxis] +
+             (ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=2))*dzf[1:-1,np.newaxis,np.newaxis]) / 
+           (4.*dzh[1:-1,np.newaxis,np.newaxis]))
 
-    eomm = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=1) + 
-            ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=1)) / 4.
+    eomm = (((ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],1,axis=1))*dzf[:-2,np.newaxis,np.newaxis] + 
+             (ekm[:-2,:,:]  + np.roll(ekm[:-2, :,:],1,axis=1))*dzf[1:-1,np.newaxis,np.newaxis]) /
+           (4.*dzh[1:-1,np.newaxis,np.newaxis]))
 
-    eopm = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=1) + 
-            ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=1)) / 4.
+    eopm = (((ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=1))*dzf[:-2,np.newaxis,np.newaxis] + 
+             (ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=1))*dzf[1:-1,np.newaxis,np.newaxis]) /
+           (4.*dzh[1:-1,np.newaxis,np.newaxis]))
 
-    epom = (ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=2) +
-            ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=2)) / 4.
+    epom = (((ekm[1:-1,:,:] + np.roll(ekm[1:-1,:,:],-1,axis=2))*dzf[:-2,np.newaxis,np.newaxis] +
+             (ekm[:-2,:,:]  + np.roll(ekm[:-2,:,:], -1,axis=2))*dzf[1:-1,np.newaxis,np.newaxis]) /
+           (4.*dzh[1:-1,np.newaxis,np.newaxis]))
 
     return ((epom*((np.roll(w[1:-1,:,:],-1,axis=2) - w[1:-1,:,:]) / dx +
-                   (np.roll(u[1:-1,:,:],-1,axis=2) - np.roll(u[:-2, :,:],-1,axis=2) / dzh))
+                   (np.roll(u[1:-1,:,:],-1,axis=2) - np.roll(u[:-2, :,:],-1,axis=2) / dzh[1:-1,np.newaxis,np.newaxis]))
             -emom*((w[1:-1,:,:] - np.roll(w[1:-1,:,:],1,axis=2)) / dx +
-                   (u[1:-1,:,:] - u[:-2,:,:]) / dzh)) / dx
+                   (u[1:-1,:,:] - u[:-2,:,:]) / dzh[1:-1,np.newaxis,np.newaxis])) / dx
            +
             (eopm*((np.roll(w[1:-1,:,:],-1,axis=1) - w[1:-1,:,:]) / dy +
-                   (np.roll(v[1:-1,:,:],-1,axis=1) - np.roll(v[:-2, :,:],-1,axis=1) / dzh))
+                   (np.roll(v[1:-1,:,:],-1,axis=1) - np.roll(v[:-2, :,:],-1,axis=1) / dzh[1:-1,np.newaxis,np.newaxis]))
             -eomm*((w[1:-1,:,:] - np.roll(w[1:-1,:,:],1,axis=1)) / dy +
-                   (v[1:-1,:,:] - v[:-2,:,:]) / dzh)) / dy
+                   (v[1:-1,:,:] - v[:-2,:,:]) / dzh[1:-1,np.newaxis,np.newaxis])) / dy
            + 
             2./rhobh[1:-1,np.newaxis,np.newaxis]*
-            (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dzh -
-             rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh)/dzh)
+            (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dz[1:-1,np.newaxis,np.newaxis] -
+             rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh[:-2,np.newaxis,np.newaxis]) /
+             dzh[1:-1,np.newaxis,np.newaxis])
 
 def mean_mask(field,mask):
     masked = np.ma.masked_equal(field*mask,0)
