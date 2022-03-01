@@ -81,12 +81,13 @@ wfls = dl.wfls
 
 dx = np.diff(xf)[0]
 dy = np.diff(yf)[0] # Assumes uniform horizontal spacing
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+# dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 delta = (dx*dy*np.diff(zh))**(1./3)
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
+zhlim = zh[izmin:izmax]
 
 qtpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 qtpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -448,10 +449,10 @@ for i in range(len(plttime)):
     # Gradient production
     
     # Mean gradients
-    Gamma_thl = (thl_av[1:] - thl_av[:-1])/dzh
-    Gamma_qt = (qt_av[1:] - qt_av[:-1])/dzh
-    # Gamma_ql = (ql_av[1:] - ql_av[:-1])/dzh
-    Gamma_thlv = (thlv_av[1:] - thlv_av[:-1])/dzh
+    Gamma_thl = (thl_av[1:] - thl_av[:-1])/(zflim[1:] - zflim[:-1])
+    Gamma_qt = (qt_av[1:] - qt_av[:-1])/(zflim[1:] - zflim[:-1])
+    # Gamma_ql = (ql_av[1:] - ql_av[:-1])/(zflim[1:] - zflim[:-1])
+    Gamma_thlv = (thlv_av[1:] - thlv_av[:-1])/(zflim[1:] - zflim[:-1])
     
     Gamma_thl_f = (Gamma_thl[1:] + Gamma_thl[:-1])*0.5
     Gamma_qt_f = (Gamma_qt[1:] + Gamma_qt[:-1])*0.5
