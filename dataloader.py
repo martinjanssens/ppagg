@@ -99,8 +99,21 @@ class DataLoaderDALES:
         return np.ma.getdata(self.ds1.variables['w2r'][:,izmin:izmax] +
                              self.ds1.variables['w2s'][:,izmin:izmax])
     
-    def load_diss(self, izmin, izmax):
+    def load_dissav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['diss'][:,izmin:izmax])
+    
+    def load_qt2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['qt2r'][:,izmin:izmax])
+    
+    def load_ql2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['ql2r'][:,izmin:izmax])
+    
+    def load_thl2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thl2r'][:,izmin:izmax])
+    
+    def load_thv2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thv2r'][:,izmin:izmax])
+    
 
 class DataLoaderMicroHH:
 
@@ -198,5 +211,18 @@ class DataLoaderMicroHH:
     def load_w2tav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['w_2'][:,izmin:izmax])
 
-    def load_diss(self, izmin, izmax):
+    def load_dissav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['budget']['tke_diff'][:,izmin:izmax])
+    
+    def load_qt2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['qt_2'][:,izmin:izmax])
+
+    def load_ql2av(self, izmin, izmax):
+        raise NotImplementedError('MicroHH does not solve for e12')
+    
+    def load_thl2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thl_2'][:,izmin:izmax])
+    
+    def load_thv2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thv_2'][:,izmin:izmax])
+    
