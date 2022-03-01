@@ -269,7 +269,7 @@ for i in range(len(plttime)):
     
     # Eddy diffusivities
     if eflag:
-        dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzh)
+        dthvdz = compute_dthvdz(thlp, qt, qlp, exnf, dzhlim)
         ekmp,ekhp = compute_ek(e12, dthvdz, thv_av, delta[izmin:izmax-1])
         ekm_av = np.mean(ekmp,axis=(1,2))
         ekh_av = np.mean(ekhp,axis=(1,2))
@@ -533,7 +533,7 @@ for i in range(len(plttime)):
     # wdiv_wthlv_av = lowPass(wfp[1:-1,:,:]*div_wthlv_av[:,np.newaxis,np.newaxis],circ_mask) # <-- basically zero
     wdiv_wthlv_av = np.mean(wfp[1:-1,:,:]*div_wthlv_r,axis=(1,2))
 
-    div_ww_r = ddzww_2nd(whp, dzh, rhobf=rhobfi, rhobh=rhobhi) # At half levels
+    div_ww_r = ddzww_2nd(whp, dzhlim, rhobf=rhobfi, rhobh=rhobhi) # At half levels
     div_ww_r = (div_ww_r[1:,:,:] + div_ww_r[:-1,:,:])*0.5 # At full levels zflim[1:-2]
     
     thlvpdiv_wwf_r = lowPass(thlvpp[1:-2,:,:]*div_ww_r,circ_mask)
@@ -653,7 +653,7 @@ for i in range(len(plttime)):
 
     # Subsidence warming
     # Defined from half level 1 on, used from full level 0 on (upwinding)
-    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlvpf+thlvpp, dzh)
+    wsubdthlvpdz = wsubdxdz(wfls[izmin:izmax],thlvpf+thlvpp, dzhlim)
     wsubdthlvpdzf = lowPass(wsubdthlvpdz, circ_mask)
     
     # moist/dry and large/small
@@ -669,7 +669,7 @@ for i in range(len(plttime)):
     thlvpp_subs_dry_time[i,:] = wsubdthlvpdzp_dry[1:]
     
     # wthlv 
-    wwsubdthlvppdz = wfp[:-1,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzh)
+    wwsubdthlvppdz = wfp[:-1,:,:]*wsubdxdz(wfls[izmin:izmax],thlvpp, dzhlim)
     wwsubdthlvppdz_av = np.mean(wwsubdthlvppdz,axis=(1,2))
     wwsubdthlvppdzf = lowPass(wwsubdthlvppdz, circ_mask)
     
@@ -680,7 +680,7 @@ for i in range(len(plttime)):
     wthlvpf_subs_dry_time[i,:] = wwsubdthlvppdzf_dry[1:] - wwsubdthlvppdz_av[1:]
     
     # Subsidence drying
-    wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzh),circ_mask)
+    wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzhlim),circ_mask)
     wsubdqtpdzf_moist = mean_mask(wsubdqtpdzf,mask_moist)
     wsubdqtpdzf_dry = mean_mask(wsubdqtpdzf,mask_dry)
     
@@ -707,11 +707,11 @@ for i in range(len(plttime)):
     # SFS diffusion
     if eflag:
         # Heat
-        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, dzf, dzh, rhobfi, rhobhi) +
-                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzf, dzh, rhobfi, rhobhi))
+        diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi) +
+                      diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzflim, dzhlim, rhobfi, rhobhi))
         diff_thlvpf = lowPass(diff_thlvp, circ_mask)
 
-        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, dzf, dzh, rhobfi, rhobhi),axis=(1,2))                      
+        diff_thlvp_av = np.mean(diffeka(ekhp, thlvpf+thlvpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi),axis=(1,2))                      
 
         # moist/dry and large/small
         diff_thlvpf_moist = mean_mask(diff_thlvpf, mask_moist)
@@ -733,7 +733,7 @@ for i in range(len(plttime)):
         wdiff_thlvpf = lowPass(wfp[2:-2,:,:]*diff_thlvp, circ_mask)
         wdiff_thlv_av = np.mean(wfp[2:-2,:,:]*diff_thlvp, axis=(1,2))
 
-        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,dzf,dz,rhobfi,rhobhi)
+        thlvpdiffw = diffekw(ekmp+ekm_av[:,np.newaxis,np.newaxis],u,v,whp,dx,dy,dzflim,dzhlim,rhobfi,rhobhi)
         thlvpdiffw = thlvpp[2:-3]*(thlvpdiffw[1:,:,:] + thlvpdiffw[:-1,:,:])/2. # At zflim[2:-3]
         thlvpdiffwf = lowPass(thlvpdiffw, circ_mask)
         thlvpdiffw_av = np.mean(thlvpdiffw, axis=(1,2))
@@ -745,10 +745,10 @@ for i in range(len(plttime)):
                                       (wdiff_thlv_av[:-1] + thlvpdiffw_av))
 
         # Moisture
-        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, dzf, dzh, rhobfi, rhobhi)+
-                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzf, dzh, rhobfi, rhobhi),
+        diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi)+
+                            diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzflim, dzhlim, rhobfi, rhobhi),
                             circ_mask)
-        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, dzf, dzh, rhobfi, rhobhi), axis=(1,2))
+        diff_qtp_av = np.mean(diffeka(ekhp, qtpf+qtpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi), axis=(1,2))
         
         diff_qtpf_moist = mean_mask(diff_qtpf,mask_moist)
         diff_qtpf_dry = mean_mask(diff_qtpf,mask_dry)
@@ -766,7 +766,7 @@ for i in range(len(plttime)):
     
     # Pressure fluctuation gradient (in wthlvp budget)
     if pflag:
-        thlvppgrad = (pp[1:,:,:] - pp[:-1,:,:])/dzh # At half levels (as it appears in w eq)
+        thlvppgrad = (pp[1:,:,:] - pp[:-1,:,:])/dzhlim[1:,np.newaxis,np.newaxis] # At half levels (as it appears in w eq)
         thlvppgrad = (thlvppgrad[1:,:,:] + thlvppgrad[:-1,:,:])*0.5 # Move to full levels
         thlvppgrad = thlvpp[1:-1,:,:]*thlvppgrad
         thlvppgrad_av = np.mean(thlvppgrad,axis=(1,2))
