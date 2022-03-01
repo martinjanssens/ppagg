@@ -16,27 +16,37 @@ from matplotlib.patches import FancyArrowPatch
 from scipy.optimize import curve_fit
 
 
-lps = [
-        '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
+lps = ['/home/hp200321/data/botany-6-768/runs/Run_40',
+       '/home/hp200321/data/botany-6-1536-50/runs/Run_40',
+       ]
+
+labs = ['dx = 100m',
+        'dx = 50m'
+        ]
+
+sp = '/home/hp200321/data/pp/figs' 
+
+#lps = [
+#        '/scratch-shared/janssens/bomex200_from100_12hr/spectra',
         # '/scratch-shared/janssens/bomex100a5_from100_12hr/spectra',
         # '/scratch-shared/janssens/bomex200_fiso_from100_12hr/spectra',
         # '/scratch-shared/janssens/bomex200_f200_from100_12hr/spectra',
-        '/scratch-shared/janssens/bomex100_e12/spectra',
-        ]
-labs = [r'D1: $\Delta x = 200m$',
+#        '/scratch-shared/janssens/bomex100_e12/spectra',
+#        ]
+#labs = [r'D1: $\Delta x = 200m$',
         # r'D2: $\Delta x = 100m$, a5',
         # r'D3: $\Delta x = 200m$, fiso',
         # r'$\Delta x = 200m$, f200',
-        r'D4: $\Delta x = 100m$',
-        ]
+#        r'D4: $\Delta x = 100m$',
+#        ]
 lines = ['-',
-         # '-.',
+          '-.',
          # (0, (3, 2, 1, 2, 1, 2)),
-         (0, (4,4))
+         #(0, (4,4))
          ]
 # dashes=[(1,0),(3,6),(1,1),(2,2)]
 
-sp = '/scratch-shared/janssens/bomex_comparisons'
+#sp = '/scratch-shared/janssens/bomex_comparisons'
 
 # lps = ['/scratch-shared/janssens/bomex200_e12/spectra',
 #        '/scratch-shared/janssens/tmp.bomex/bomex_200m/spectra',
@@ -147,7 +157,7 @@ for i in range(len(lps)):
 
 #%% Plot multiple runs  at same time
 
-tplt = 12.
+tplt = 24.
 tav = 1. # Hours after tplt
 zplt = 1500.
 klp = 4

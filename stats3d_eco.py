@@ -13,7 +13,7 @@ import gc
 import sys
 sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
-from dataloader import DataLoaderDALES, DataLoaderMicroHH
+from dataloader import DataLoaderDALES, DataLoaderDALESSeparate, DataLoaderMicroHH
 import argparse
 
 parseFlag = True
@@ -63,6 +63,8 @@ else:
 
 if mod == 'dales':
     dl = DataLoaderDALES(lp)
+elif mod == 'dales_separate':
+    dl = DataLoaderDALESSeparate(lp)
 elif mod == 'microhh':
     dl = DataLoaderMicroHH(lp)
 else:
@@ -70,17 +72,18 @@ else:
 time = dl.time
 zf = dl.zf
 zh = dl.zh
-xf = dl.xf
-xh = dl.xh
-yf = dl.yf
-yh = dl.yh
+#xf = dl.xf
+#xh = dl.xh
+#yf = dl.yf
+#yh = dl.yh
 time1d = dl.time1d
 rhobf = dl.rhobf
 rhobh = dl.rhobh
 wfls = dl.wfls
 
-dx = np.diff(xf)[0]
-dy = np.diff(yf)[0] # Assumes uniform horizontal spacing
+# FIXME temporary hardcoding of dx/dy for data that does not have xf/yf as variables
+dx = 50#np.diff(xf)[0]
+dy = 50#np.diff(yf)[0] # Assumes uniform horizontal spacing
 dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
 
 delta = (dx*dy*np.diff(zh))**(1./3)
@@ -197,8 +200,8 @@ wthlvpf_r_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
-# Mask for low-[ass filtering
-circ_mask = np.zeros((xf.size,xf.size))
+# Mask for low-[ass filtering FIXME also hardcoded for now
+circ_mask = np.zeros((1536,1536))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 

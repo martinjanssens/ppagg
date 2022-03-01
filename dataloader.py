@@ -17,7 +17,7 @@ class DataLoaderDALES:
         self.lp = load_path
 
         try:
-            self.ds = nc.Dataset(self.lp+'/fielddump.001.nc')
+            self.ds = nc.Dataset(self.lp+'/fielddump.nc')
             self.time  = np.ma.getdata(self.ds.variables['time'][:]) / 3600
             self.xf    = np.ma.getdata(self.ds.variables['xt'][:]) 
             self.xh    = np.ma.getdata(self.ds.variables['xm'][:])
@@ -25,7 +25,7 @@ class DataLoaderDALES:
             self.yh    = np.ma.getdata(self.ds.variables['ym'][:])
         except:
             print('Warning: No 3D fields loaded, load_ routines that rely on \
-                  these fields will fail.')
+                   these fields will fail.')
 
         self.ds1= nc.Dataset(self.lp+'/profiles.001.nc')
         self.zf     = np.ma.getdata(self.ds1.variables['zt'][:])
@@ -65,6 +65,117 @@ class DataLoaderDALES:
     def load_p(self, it, izmin, izmax):
         return np.ma.getdata(self.ds.variables['p'][it,izmin:izmax,:,:])
 
+    def load_presh(self, it, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['presh'][it,izmin:izmax])
+
+    def load_qtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['qt'][:,izmin:izmax])
+
+    def load_thlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thl'][:,izmin:izmax])
+
+    def load_qlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['ql'][:,izmin:izmax])
+
+    def load_wqtav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqtt'][:,izmin:izmax])
+
+    def load_wthlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthlt'][:,izmin:izmax])
+
+    def load_wqtrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqtr'][:,izmin:izmax])
+
+    def load_wthlrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthlr'][:,izmin:izmax])
+
+    def load_wqlrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqlr'][:,izmin:izmax])
+
+    def load_wthvrav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthvr'][:,izmin:izmax])
+    
+    def load_w2tav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['w2r'][:,izmin:izmax] +
+                             self.ds1.variables['w2s'][:,izmin:izmax])
+    
+    def load_dissav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['diss'][:,izmin:izmax])
+    
+    def load_qt2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['qt2r'][:,izmin:izmax])
+    
+    def load_ql2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['ql2r'][:,izmin:izmax])
+    
+    def load_thl2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thl2r'][:,izmin:izmax])
+    
+    def load_thv2av(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['thv2r'][:,izmin:izmax])
+
+class DataLoaderDALESSeparate:
+
+    def __init__(self, load_path):
+        print('Initialising dataloader...')
+        self.lp = load_path
+
+        try:
+            self.dsqt = nc.Dataset(self.lp+'/fielddump-qt.nc')
+            self.dsthl = nc.Dataset(self.lp+'/fielddump-thl.nc')
+            self.dsql = nc.Dataset(self.lp+'/fielddump-ql.nc')
+            self.dsqr = nc.Dataset(self.lp+'/fielddump-qr.nc')
+            self.dsw = nc.Dataset(self.lp+'/fielddump-w.nc')
+            self.dsu = nc.Dataset(self.lp+'/fielddump-u.nc')
+            self.dsv = nc.Dataset(self.lp+'/fielddump-v.nc')
+            
+            self.time  = np.ma.getdata(self.dsqt.variables['time'][:]) / 3600
+            self.xf    = np.ma.getdata(self.dsqt.variables['xt'][:]) 
+            self.xh    = np.ma.getdata(self.dsu.variables['xm'][:])
+            self.yf    = np.ma.getdata(self.dsqt.variables['yt'][:])
+            self.yh    = np.ma.getdata(self.dsv.variables['ym'][:])
+        except:
+            print('Warning: No 3D fields loaded, load_ routines that rely on \
+                   these fields will fail.')
+
+        self.ds1= nc.Dataset(self.lp+'/profiles.001.nc')
+        self.zf     = np.ma.getdata(self.ds1.variables['zt'][:])
+        self.zh     = np.ma.getdata(self.ds1.variables['zm'][:])        
+        self.time1d = np.ma.getdata(self.ds1.variables['time'][:])
+        self.rhobf  = np.ma.getdata(self.ds1.variables['rhobf'][:])
+        self.rhobh  = np.ma.getdata(self.ds1.variables['rhobh'][:])
+
+        self.ilp = np.loadtxt(self.lp+'/lscale.inp.001')
+        self.zf_inp = self.ilp[:,0]
+        self.wfls = self.ilp[:,3]
+        self.dqdt_ls = self.ilp[:,6]
+        self.dthldt_ls = self.ilp[:,7]
+        print('Set paths to all datasets and extracted dimensions')
+
+    def load_qt(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsqt.variables['qt'][it,izmin:izmax,:,:])
+
+    def load_wh(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsw.variables['w'][it,izmin:izmax+1,:,:])
+
+    def load_thl(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsthl.variables['thl'][it,izmin:izmax,:,:])
+
+    def load_ql(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsql.variables['ql'][it,izmin:izmax,:,:])
+
+    def load_u(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsu.variables['u'][it,izmin:izmax,:,:])
+
+    def load_v(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsv.variables['v'][it,izmin:izmax,:,:])
+
+    def load_e12(self, it, izmin, izmax):
+        raise NotImplementedError('These runs does not these runs do not return e12')
+
+    def load_p(self, it, izmin, izmax):
+        raise NotImplementedError('These runs does not these runs do not return p')
+    
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['presh'][it,izmin:izmax])
 
