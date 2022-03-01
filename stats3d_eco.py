@@ -72,18 +72,18 @@ else:
 time = dl.time
 zf = dl.zf
 zh = dl.zh
-#xf = dl.xf
-#xh = dl.xh
-#yf = dl.yf
-#yh = dl.yh
+xf = dl.xf
+xh = dl.xh
+yf = dl.yf
+yh = dl.yh
 time1d = dl.time1d
 rhobf = dl.rhobf
 rhobh = dl.rhobh
 wfls = dl.wfls
 
 # FIXME temporary hardcoding of dx/dy for data that does not have xf/yf as variables
-dx = 100#np.diff(xf)[0]
-dy = 100#np.diff(yf)[0] # Assumes uniform horizontal spacing
+dx = np.diff(xf)[0]
+dy = np.diff(yf)[0] # Assumes uniform horizontal spacing
 
 # Vertical differences
 dzf = np.zeros(zh.shape)
@@ -213,7 +213,7 @@ wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 # Mask for low-[ass filtering FIXME also hardcoded for now
-circ_mask = np.zeros((768,768))
+circ_mask = np.zeros((xf.size,xf.size))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
