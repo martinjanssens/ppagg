@@ -50,16 +50,17 @@ def scaleDecomposeFlux(xt,xp,yt,yp,mask):
     return Le, Cr, Re
 
 # Advection at the cell centre
-def ddzwx_2nd(wh,x,zf,zh,rhobf=None):
-    dzh = zf[1:] - zf[:-1] # First value is difference mid 2nd cell and mid 1st cell
-    dzf = zh[1:] - zh[:-1] # First value is difference top 1st cell and surface
+def ddzwx_2nd(wh,x,dzf,dzh,rhobf=None):
     if type(rhobf) == type(None):
         rhobf = np.ones(x.shape[0])
-    return ((wh[2:,:,:]*(rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:]*dzf[:-1,np.newaxis,np.newaxis] + 
-                         rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]*dzf[1:,np.newaxis,np.newaxis])/dzh[1:,np.newaxis,np.newaxis] - 
-             wh[1:-1,:,:]*(rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:]*dzf[:-1,np.newaxis,np.newaxis]+
-                           rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]*dzf[:-2,np.newaxis,np.newaxis])//dzh[:1,np.newaxis,np.newaxis])/
-             (2*dzf[:,np.newaxis,np.newaxis]*rhobf[1:-1,np.newaxis,np.newaxis]))
+    return ((wh[2:,:,:]*(rhobf[2:,np.newaxis,np.newaxis]*x[2:,:,:]*dzf[1:-1,np.newaxis,np.newaxis] + 
+                         rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]*dzf[2:,np.newaxis,np.newaxis])/
+                         dzh[2:,np.newaxis,np.newaxis]
+                         - 
+             wh[1:-1,:,:]*(rhobf[:-2,np.newaxis,np.newaxis]*x[:-2,:,:]*dzf[1:-1,np.newaxis,np.newaxis] +
+                           rhobf[1:-1,np.newaxis,np.newaxis]*x[1:-1,:,:]*dzf[:-2,np.newaxis,np.newaxis])/
+                           dzh[1:-1,np.newaxis,np.newaxis])/
+             (2*dzf[1:-1,np.newaxis,np.newaxis]*rhobf[1:-1,np.newaxis,np.newaxis]))
 
 # Advection at half z-level (for w)
 def ddzww_2nd(wh,dzh,rhobf=None,rhobh=None):

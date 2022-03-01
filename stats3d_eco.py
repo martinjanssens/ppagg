@@ -84,13 +84,24 @@ wfls = dl.wfls
 # FIXME temporary hardcoding of dx/dy for data that does not have xf/yf as variables
 dx = 50#np.diff(xf)[0]
 dy = 50#np.diff(yf)[0] # Assumes uniform horizontal spacing
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+
+# Vertical differences
+dzf = np.zeros(zh.shape)
+dzf[:-1] = zh[1:] - zh[:-1] # First value is difference top 1st cell and surface
+dzf[-1] = dzf[-2]
+
+dzh = np.zeros(zf.shape)
+dzh[1:] = zf[1:] - zf[:-1] # First value is difference mid 1st cell and mid 1st cell below ground
+dzh[0] = 2*zf[1]
 
 delta = (dx*dy*np.diff(zh))**(1./3)
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
 zhlim = zh[izmin:izmax]
+
+dzflim = dzf[izmin:izmax]
+dzhlim = dzh[izmin:izmax]
 
 qtpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 qtpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -497,8 +508,8 @@ for i in range(len(plttime)):
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
     # thlv
-    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzh, rhobf=rhobfi)
-    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzh, rhobf=rhobfi),axis=(1,2))
+    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
     div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous p-scale flux
 
@@ -534,8 +545,8 @@ for i in range(len(plttime)):
                                (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
     
     # qt
-    div_wqt_r = ddzwx_2nd(whp, qtpp, dzh, rhobf=rhobfi)
-    div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzh, rhobf=rhobfi),axis=(1,2))
+    div_wqt_r = ddzwx_2nd(whp, qtpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wqt_rf = lowPass(div_wqt_r, circ_mask)
     
     div_wqt_rf_moist = mean_mask(div_wqt_rf,mask_moist)
@@ -545,7 +556,7 @@ for i in range(len(plttime)):
     qtpf_vdiv_dry_time[i,:] = div_wqt_rf_dry - div_wqt_av
     
     # ql
-    div_wql = ddzwx_2nd(whp, qlpf+qlpp, dzh, rhobf=rhobfi)
+    div_wql = ddzwx_2nd(whp, qlpf+qlpp, dzflim, dzhlim, rhobf=rhobfi)
     div_wql_av = np.mean(div_wql,axis=(1,2))
     div_wqlf = lowPass(div_wql, circ_mask)
     
@@ -568,7 +579,7 @@ for i in range(len(plttime)):
 
     # Moisture instability term model (WTG for thlv and qtpf model for flux anomaly div)
     w_mod = lowPass(np.abs(whp),circ_mask)
-    div_wthlvfa_mod = ddzwx_2nd(w_mod, -0.608*thl_av[:,np.newaxis,np.newaxis]*qtpf, dzh, rhobf=rhobfi)
+    div_wthlvfa_mod = ddzwx_2nd(w_mod, -0.608*thl_av[:,np.newaxis,np.newaxis]*qtpf, dzflim, dzhlim, rhobf=rhobfi)
     div_wthlvfa_mod_moist = mean_mask(div_wthlvfa_mod, mask_moist)
     div_wthlvfa_mod_dry = mean_mask(div_wthlvfa_mod, mask_dry)
     del w_mod
