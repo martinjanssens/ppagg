@@ -16,6 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_mean/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -39,8 +40,8 @@ zflim = np.load(lp+'/zf.npy')
 
 dzh = np.diff(zflim)[0] # FIXME only valid in lower part of domain
 
-izmin = np.where(zflim[0] == zf_inp)[0][0]
-izmax = np.where(zflim[-1] == zf_inp)[0][0]+1
+izmin = np.where(zflim[0] >= zf_inp)[0][0]
+izmax = np.where(zflim[-1] <= zf_inp)[0][0]+1
 
 qtpf_moist_time = np.load(lp+'/qtpf_moist_time.npy')
 qtpf_dry_time = np.load(lp+'/qtpf_dry_time.npy')
@@ -56,6 +57,8 @@ qtpf_subs_moist_time = np.load(lp+'/qtpf_subs_moist_time.npy')
 qtpf_subs_dry_time = np.load(lp+'/qtpf_subs_dry_time.npy')
 qtpf_diff_moist_time = np.load(lp+'/qtpf_diff_moist_time.npy')
 qtpf_diff_dry_time = np.load(lp+'/qtpf_diff_dry_time.npy')
+qtpf_micr_moist_time = np.load(lp+'/qtpf_micr_moist_time.npy')
+qtpf_micr_dry_time = np.load(lp+'/qtpf_micr_dry_time.npy')
 
 thlvpf_moist_time = np.load(lp+'/thlvpf_moist_time.npy')
 thlvpf_dry_time = np.load(lp+'/thlvpf_dry_time.npy')
@@ -66,9 +69,13 @@ thlvpf_vdiv_dry_time = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
 thlvpf_hdiv_moist_time = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
 thlvpf_hdiv_dry_time = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
 thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-thlvpf_diff_moist_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
+thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_dry_time.npy')
+thlvpf_diff_moist_time = np.load(lp+'/thlvpf_diff_moist_time.npy')
 thlvpf_diff_dry_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
+thlvpf_radi_moist_time = np.load(lp+'/thlvpf_radi_moist_time.npy')
+thlvpf_radi_dry_time = np.load(lp+'/thlvpf_radi_dry_time.npy')
+thlvpf_micr_moist_time = np.load(lp+'/thlvpf_micr_moist_time.npy')
+thlvpf_micr_dry_time = np.load(lp+'/thlvpf_micr_dry_time.npy')
 
 thlvpp_moist_time = np.load(lp+'/thlvpp_moist_time.npy')
 thlvpp_dry_time = np.load(lp+'/thlvpp_dry_time.npy')
@@ -224,9 +231,9 @@ dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 16.
-dit = 1.0 # Rounds to closest multiple of dt in time
-dtav = 1.0 # Around each plotted time step
+tpltmax = 26.
+dit = 2.0 # Rounds to closest multiple of dt in time
+dtav = 2.0 # Around each plotted time step
 alpha = 0.5
 lw=2
 
@@ -258,7 +265,7 @@ for i in range(len(plttime_var)):
     
     it1d = np.argmin(abs(ti-time1d/3600))
     
-    ql_avi = np.mean(ql_av_1d[it1d-idtav1:it1d+idtav1],axis=0)
+    ql_avi = np.mean(ql_av_1d[it1d-idtav1:it1d+idtav1,:],axis=0)
     z_cb = zflim[ql_avi>0][1]
     
     z_ib = zflim[np.argmin(np.mean(wthlv_av[it1d-idtav1:it1d+idtav1],axis=0))]
@@ -354,7 +361,7 @@ for i in range(len(plttime_var)):
     axs[5].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[5].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[5].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[5].annotate('f)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[5].set_xlabel(r"$\theta_{lv_m}'$ [K]")
         axs[5].set_xlim((-4e-2,4e-2))
@@ -473,8 +480,8 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
 #%% Average budget contributions over time dimension
-tpltmin = 20.
-tpltmax = 24.
+tpltmin = 6.
+tpltmax = 12.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -490,7 +497,9 @@ terms = ['Tendency                               ',
          'Vertical flux convergence',
          'Horizontal flux convergence',
          'Subsidence',
-         'SFS diffusion'
+         'SFS diffusion',
+         'Residual',
+         'Precipitation'
          ]
 
 colors = ['black',
@@ -499,7 +508,8 @@ colors = ['black',
           'olivedrab',
           'sienna',
           'goldenrod',
-          'lightgray']
+          'lightgray',
+          'maroon',]
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -510,14 +520,15 @@ qtpfmn_vdiv_moist = np.mean(qtpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_hdiv_moist = np.mean(qtpf_hdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_subs_moist = np.mean(qtpf_subs_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_diff_moist = np.mean(qtpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+qtpfmn_micr_moist = np.mean(qtpf_micr_moist_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_budg_moist = (-qtpfmn_prod_moist_wex[1:-1] - qtpfmn_vdiv_moist[1:-1]
                      -qtpfmn_hdiv_moist[1:-1] - qtpfmn_subs_moist[1:-1]
-                     +qtpfmn_diff_moist)
+                     +qtpfmn_diff_moist + qtpfmn_micr_moist[2:-2])
 qtpfmn_resi_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_budg_moist
 
 # The residual is mostly due to integration error of vertical transport
 # -> Include the residual in this term
-qtpfmn_vdiv_moist = qtpfmn_vdiv_moist[1:-1] - qtpfmn_resi_moist
+# qtpfmn_vdiv_moist = qtpfmn_vdiv_moist[1:-1] - qtpfmn_resi_moist
 
 qtpfmn_tend_dry = np.mean(qtpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0)
@@ -525,11 +536,12 @@ qtpfmn_vdiv_dry = np.mean(qtpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_hdiv_dry = np.mean(qtpf_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_subs_dry = np.mean(qtpf_subs_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_diff_dry = np.mean(qtpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
+qtpfmn_micr_dry = np.mean(qtpf_micr_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_budg_dry = (-qtpfmn_prod_dry_wex[1:-1] - qtpfmn_vdiv_dry[1:-1]
                      -qtpfmn_hdiv_dry[1:-1] - qtpfmn_subs_dry[1:-1]
-                     +qtpfmn_diff_dry)
+                     +qtpfmn_diff_dry + qtpfmn_micr_dry[2:-2])
 qtpfmn_resi_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_budg_dry
-qtpfmn_vdiv_dry = qtpfmn_vdiv_dry[1:-1] - qtpfmn_resi_dry
+# qtpfmn_vdiv_dry = qtpfmn_vdiv_dry[1:-1] - qtpfmn_resi_dry
 
 
 alpha = 0.75
@@ -539,10 +551,11 @@ fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 # fig.suptitle(colors)
 axs[0].plot(qtpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_prod_moist_wex, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
-axs[0].plot(-qtpfmn_vdiv_moist, zflim[2:-2],c=colors[2],alpha=alpha,lw=lw)
+axs[0].plot(-qtpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_hdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_subs_moist, zflim[1:-1],c=colors[4],alpha=alpha,lw=lw)
 axs[0].plot(qtpfmn_diff_moist, zflim[2:-2],c=colors[5],alpha=alpha,lw=lw)
+axs[0].plot(qtpfmn_micr_moist, zflim,c=colors[7],alpha=alpha,lw=lw)
 # axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c='gray')
 axs[0].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[0].set_xlim((-7.5e-8,7.5e-8))
@@ -550,10 +563,11 @@ axs[0].set_title('Moist')
 
 axs[1].plot(qtpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_prod_dry_wex, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
-axs[1].plot(-qtpfmn_vdiv_dry, zflim[2:-2],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
+axs[1].plot(-qtpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_hdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_subs_dry, zflim[1:-1],c=colors[4],label=terms[4],alpha=alpha,lw=lw)
 axs[1].plot(qtpfmn_diff_dry, zflim[2:-2],c=colors[5],label=terms[5],alpha=alpha,lw=lw)
+axs[1].plot(qtpfmn_micr_dry, zflim,c=colors[7],label=terms[7],alpha=alpha,lw=lw)
 # axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
 axs[1].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[1].set_xlim((-7.5e-8,7.5e-8))
@@ -573,7 +587,10 @@ terms = ['Tendency                               ',
          'Vertical flux convergence',
          'Horizontal flux convergence',
          'Subsidence',
-         'SFS diffusion'
+         'SFS diffusion',
+         'Residual',
+         'Precipitation',
+         'Radiation'
          ]
 
 colors = ['black',
@@ -582,7 +599,9 @@ colors = ['black',
           'olivedrab',
           'sienna',
           'goldenrod',
-          'lightgray']
+          'lightgray',
+          'maroon',
+          'midnightblue']
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -593,11 +612,14 @@ thlvpfmn_vdiv_moist = np.mean(thlvpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0
 thlvpfmn_hdiv_moist = np.mean(thlvpf_hdiv_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_subs_moist = np.mean(thlvpf_subs_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_diff_moist = np.mean(thlvpf_diff_moist_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_micr_moist = np.mean(thlvpf_micr_moist_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_radi_moist = np.mean(thlvpf_radi_moist_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_budg_moist = (-thlvpfmn_prod_moist[1:-1] - thlvpfmn_vdiv_moist[1:-1]
                        -thlvpfmn_hdiv_moist[1:-1] - thlvpfmn_subs_moist[1:-1]
-                       +thlvpfmn_diff_moist)
+                       +thlvpfmn_diff_moist + thlvpfmn_micr_moist[1:-1]
+                       +thlvpfmn_radi_moist[2:-2])
 thlvpfmn_resi_moist = thlvpfmn_tend_moist[1:-1] - thlvpfmn_budg_moist
-thlvpfmn_vdiv_moist = thlvpfmn_vdiv_moist[1:-1] - thlvpfmn_resi_moist
+# thlvpfmn_vdiv_moist = thlvpfmn_vdiv_moist[1:-1] - thlvpfmn_resi_moist
 
 thlvpfmn_tend_dry = np.mean(thlvpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_prod_dry = np.mean(thlvpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
@@ -605,19 +627,24 @@ thlvpfmn_vdiv_dry = np.mean(thlvpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_hdiv_dry = np.mean(thlvpf_hdiv_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_subs_dry = np.mean(thlvpf_subs_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_diff_dry = np.mean(thlvpf_diff_dry_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_micr_dry = np.mean(thlvpf_micr_dry_time[itpltmin:itpltmax,:],axis=0)
+thlvpfmn_radi_dry = np.mean(thlvpf_radi_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_budg_dry = (-thlvpfmn_prod_dry[1:-1] - thlvpfmn_vdiv_dry[1:-1]
                      -thlvpfmn_hdiv_dry[1:-1] - thlvpfmn_subs_dry[1:-1]
-                     +thlvpfmn_diff_dry)
+                     +thlvpfmn_diff_dry + thlvpfmn_micr_dry[1:-1]
+                     +thlvpfmn_radi_dry[2:-2])
 thlvpfmn_resi_dry = thlvpfmn_tend_dry[1:-1] - thlvpfmn_budg_dry
-thlvpfmn_vdiv_dry = thlvpfmn_vdiv_dry[1:-1] - thlvpfmn_resi_dry
+# thlvpfmn_vdiv_dry = thlvpfmn_vdiv_dry[1:-1] - thlvpfmn_resi_dry
 
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 axs[0].plot(thlvpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_prod_moist, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
-axs[0].plot(-thlvpfmn_vdiv_moist, zflim[2:-2],c=colors[2],alpha=alpha,lw=lw)
+axs[0].plot(-thlvpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_hdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_subs_moist, zflim[1:-1],c=colors[4],alpha=alpha,lw=lw)
 axs[0].plot( thlvpfmn_diff_moist, zflim[2:-2],c=colors[5],alpha=alpha,lw=lw)
+axs[0].plot( thlvpfmn_micr_moist, zflim[1:-1],c=colors[7],alpha=alpha,lw=lw)
+axs[0].plot( thlvpfmn_radi_moist, zflim,c=colors[8],alpha=alpha,lw=lw)
 # axs[0].plot( thlvpfmn_resi_moist, zflim[2:-2],c='gray')
 axs[0].set_xlabel(r"Contribution to $\theta_{lv_m}'$ tendency [K/s]")
 axs[0].set_xlim((-5.5e-5,5.5e-5))
@@ -625,10 +652,12 @@ axs[0].set_title('Moist')
 
 axs[1].plot(thlvpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_prod_dry, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
-axs[1].plot(-thlvpfmn_vdiv_dry, zflim[2:-2],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
+axs[1].plot(-thlvpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_hdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_subs_dry, zflim[1:-1],c=colors[4],label=terms[4],alpha=alpha,lw=lw)
 axs[1].plot (thlvpfmn_diff_dry, zflim[2:-2],c=colors[5],label=terms[5],alpha=alpha,lw=lw)
+axs[1].plot (thlvpfmn_micr_dry, zflim[1:-1],c=colors[7],label=terms[7],alpha=alpha,lw=lw)
+axs[1].plot (thlvpfmn_radi_dry, zflim,c=colors[8],label=terms[8],alpha=alpha,lw=lw)
 # axs[1].plot( thlvpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
 axs[1].set_xlabel(r"Contribution to $\theta_{lv_m}'$ tendency [K/s]")
 axs[1].set_xlim((-5.5e-5,5.5e-5))
