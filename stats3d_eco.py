@@ -47,6 +47,8 @@ if parseFlag:
     store = args.store
     pflag = args.pres
     eflag = args.e12
+    mcrflag = args.mcr
+    radflag = args.rad
 else:
     mod = 'dales'
     # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
