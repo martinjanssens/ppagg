@@ -17,7 +17,7 @@ class DataLoaderDALES:
         self.lp = load_path
 
         try:
-            self.ds = nc.Dataset(self.lp+'/fielddump.nc')
+            self.ds = nc.Dataset(self.lp+'/fielddump.001.nc')
             self.time  = np.ma.getdata(self.ds.variables['time'][:]) / 3600
             self.xf    = np.ma.getdata(self.ds.variables['xt'][:]) 
             self.xh    = np.ma.getdata(self.ds.variables['xm'][:])
@@ -64,6 +64,14 @@ class DataLoaderDALES:
 
     def load_p(self, it, izmin, izmax):
         return np.ma.getdata(self.ds.variables['p'][it,izmin:izmax,:,:])
+
+    def load_mcr(self, it, izmin, izmax):
+        # mcr_masked = self.ds.variables['qtpmcr'][it,izmin:izmax,:,:]
+        # np.ma.set_fill_value(mcr_masked, 0.) # Assuming undefined points are just zero in non-cloudy regions
+        return np.ma.getdata(self.ds.variables['qtpmcr'][it,izmin:izmax,:,:])
+
+    def load_rad(self, it, izmin, izmax):
+        return np.ma.getdata(self.ds.variables['thlprad'][it,izmin:izmax,:,:])
 
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['presh'][it,izmin:izmax])

@@ -16,7 +16,7 @@ from functions import *
 from dataloader import DataLoaderDALES, DataLoaderDALESSeparate, DataLoaderMicroHH
 import argparse
 
-parseFlag = False
+parseFlag = True
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
@@ -31,6 +31,8 @@ if parseFlag:
     parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
     parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
     parser.add_argument("--e12", action="store_true", default=False, help="3D e12 data is available")
+    parser.add_argument("--mcr", action="store_true", default=False, help="3D microphysical qt tendency data is available")
+    parser.add_argument("--rad", action="store_true", default=False, help="3D radiative heating rate data is available")
 
     args = parser.parse_args()
 
@@ -47,16 +49,18 @@ if parseFlag:
     eflag = args.e12
 else:
     mod = 'dales'
-    lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
-    # lp = '/scratch-shared/janssens/bomex200_e12'
-    itmin = 25
-    itmax = 26
+    # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
+    lp = '/scratch-shared/janssens/eurec4a_test'
+    itmin = 49
+    itmax = 50
     di    = 1
     izmin = 0
-    izmax = 110
-    store = False
+    izmax = 75
+    store = True
     pflag = False
     eflag = False
+    mcrflag = True
+    radflag = True
     klp = 4
 
 #%% Dry/moist regions
@@ -117,6 +121,8 @@ qtpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 qtpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 qtpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 qtpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+qtpf_micr_moist_time = np.zeros((plttime.size,izmax-izmin))
+qtpf_micr_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 thlvpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 thlvpf_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -130,6 +136,10 @@ thlvpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 thlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+thlvpf_radi_moist_time = np.zeros((plttime.size,izmax-izmin))
+thlvpf_radi_dry_time = np.zeros((plttime.size,izmax-izmin))
+thlvpf_micr_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+thlvpf_micr_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 
 thlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 thlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -237,16 +247,6 @@ for i in range(len(plttime)):
         e12 = dl.load_e12(plttime[i], izmin, izmax)
     if pflag:
         pp = dl.load_p(plttime[i], izmin, izmax)
-#    qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
-#    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
-#    thlp =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
-#    qlp = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
-#    u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
-#    v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
-#    if eflag:
-#        e12 = np.ma.getdata(ds.variables['e12'][plttime[i],izmin:izmax,:,:])
-#    if pflag:
-#        pp = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
 
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
@@ -781,6 +781,38 @@ for i in range(len(plttime)):
         del thlvppgrad
         gc.collect()
 
+    # Radiation impact in thlvp budget
+    if radflag:
+        Sthlrad = dl.load_rad(plttime[i], izmin, izmax)
+        Sthlradpf = lowPass(Sthlrad - np.mean(Sthlrad,axis=(1,2))[:,np.newaxis,np.newaxis],
+                            circ_mask)
+        thlvpf_radi_moist_time[i,:] = mean_mask(Sthlradpf, mask_moist)
+        thlvpf_radi_dry_time[i,:] = mean_mask(Sthlradpf, mask_dry)
+        
+        del Sthlradpf
+        gc.collect()
+    
+    
+    if mcrflag:
+        Sqtmcr = dl.load_mcr(plttime[i], izmin, izmax)
+        Sqtmcrpf = lowPass(Sqtmcr - np.mean(Sqtmcr,axis=(1,2))[:,np.newaxis,np.newaxis],
+                            circ_mask)
+        
+        qtpf_micr_moist = mean_mask(Sqtmcrpf, mask_moist).data # needed to unmask
+        qtpf_micr_dry = mean_mask(Sqtmcrpf, mask_dry).data
+        
+        qtpf_micr_moist_time[i,:] = qtpf_micr_moist
+        qtpf_micr_dry_time[i,:] = qtpf_micr_dry
+        
+        cmcr = 0.608*thl_av[1:-1] - Lv/cp/exnf[:-1]
+        
+        thlvpf_micr_moist_time[i,:] = cmcr*qtpf_micr_moist[1:-1]
+        thlvpf_micr_dry_time[i,:] = cmcr*qtpf_micr_dry[1:-1]
+        
+        del Sqtmcrpf
+        gc.collect()
+
+
 if store:
     np.save(lp+'/time.npy',time[plttime])
     np.save(lp+'/plttime.npy',plttime)
@@ -800,6 +832,8 @@ if store:
     np.save(lp+'/qtpf_subs_dry_time.npy',qtpf_subs_dry_time)
     np.save(lp+'/qtpf_diff_moist_time.npy',qtpf_diff_moist_time)
     np.save(lp+'/qtpf_diff_dry_time.npy',qtpf_diff_dry_time)
+    np.save(lp+'/qtpf_micr_moist_time.npy',qtpf_micr_moist_time)
+    np.save(lp+'/qtpf_micr_dry_time.npy',qtpf_micr_dry_time)
     
     np.save(lp+'/thlvpf_moist_time.npy',thlvpf_moist_time)
     np.save(lp+'/thlvpf_dry_time.npy',thlvpf_dry_time)
@@ -813,6 +847,10 @@ if store:
     np.save(lp+'/thlvpf_subs_dry_time.npy',thlvpf_subs_dry_time)
     np.save(lp+'/thlvpf_diff_moist_time.npy',thlvpf_diff_moist_time)
     np.save(lp+'/thlvpf_diff_dry_time.npy',thlvpf_diff_dry_time)
+    np.save(lp+'/thlvpf_radi_moist_time.npy',thlvpf_radi_moist_time)
+    np.save(lp+'/thlvpf_radi_dry_time.npy',thlvpf_radi_dry_time)
+    np.save(lp+'/thlvpf_micr_moist_time.npy',thlvpf_micr_moist_time)
+    np.save(lp+'/thlvpf_micr_dry_time.npy',thlvpf_micr_dry_time)
     
     np.save(lp+'/thlvpp_moist_time.npy',thlvpp_moist_time)
     np.save(lp+'/thlvpp_dry_time.npy',thlvpp_dry_time)
@@ -826,6 +864,8 @@ if store:
     np.save(lp+'/thlvpp_subs_dry_time.npy',thlvpp_subs_dry_time)
     np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
     np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
+    
+    
     
     np.save(lp+'/qlpf_vdiv_moist_time.npy',qlpf_vdiv_moist_time)
     np.save(lp+'/qlpf_vdiv_dry_time.npy',qlpf_vdiv_dry_time)

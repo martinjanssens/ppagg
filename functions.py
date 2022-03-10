@@ -228,9 +228,9 @@ def diffeka(ekh,a,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
 
 def diffekw(ekm,u,v,w,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
     if type(rhobf) == type(None):
-        rhobf = np.ones(zf.shape)
+        rhobf = np.ones(dzh.shape)
     if type(rhobh) == type(None):
-        rhobh = np.ones(zf.shape)
+        rhobh = np.ones(dzf.shape)
     
     # Set to ekm shape
     u = u[1:-1,:,:]
@@ -268,7 +268,7 @@ def diffekw(ekm,u,v,w,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
                    (v[1:-1,:,:] - v[:-2,:,:]) / dzh[1:-1,np.newaxis,np.newaxis])) / dy
            + 
             2./rhobh[1:-1,np.newaxis,np.newaxis]*
-            (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dz[1:-1,np.newaxis,np.newaxis] -
+            (rhobf[1:-1,np.newaxis,np.newaxis]*ekm[1:-1,:,:]*(w[2:,:,:] - w[1:-1,:,:])/dzh[1:-1,np.newaxis,np.newaxis] -
              rhobf[:-2, np.newaxis,np.newaxis]*ekm[:-2, :,:]*(w[1:-1,:,:] - w[:-2,:,:])/dzh[:-2,np.newaxis,np.newaxis]) /
              dzh[1:-1,np.newaxis,np.newaxis])
 
