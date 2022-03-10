@@ -66,8 +66,8 @@ thlvpf_vdiv_dry_time = np.load(lp+'/thlvpf_vdiv_dry_time.npy')
 thlvpf_hdiv_moist_time = np.load(lp+'/thlvpf_hdiv_moist_time.npy')
 thlvpf_hdiv_dry_time = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
 thlvpf_subs_moist_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_moist_time.npy')
-thlvpf_diff_moist_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
+thlvpf_subs_dry_time = np.load(lp+'/thlvpf_subs_dry_time.npy')
+thlvpf_diff_moist_time = np.load(lp+'/thlvpf_diff_moist_time.npy')
 thlvpf_diff_dry_time = np.load(lp+'/thlvpf_diff_dry_time.npy')
 
 thlvpp_moist_time = np.load(lp+'/thlvpp_moist_time.npy')
@@ -354,7 +354,7 @@ for i in range(len(plttime_var)):
     axs[5].axhline(z_cb,color=colc,linestyle='-',alpha=alpha)
     axs[5].axhline(z_ib,color=colc,linestyle='-',alpha=alpha)
     axs[5].axhline(z_ct,color=colc,linestyle='-',alpha=alpha)
-    if i == 0:
+    if i == len(plttime_var)-1:
         axs[5].annotate('f)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         axs[5].set_xlabel(r"$\theta_{lv_m}'$ [K]")
         axs[5].set_xlim((-4e-2,4e-2))
