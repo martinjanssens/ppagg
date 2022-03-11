@@ -52,17 +52,17 @@ if parseFlag:
 else:
     mod = 'dales'
     # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
-    lp = '/scratch-shared/janssens/eurec4a_test'
-    itmin = 49
-    itmax = 50
+    lp = '/scratch-shared/janssens/bomex200_e12'
+    itmin = 27
+    itmax = 28
     di    = 1
     izmin = 0
     izmax = 75
     store = True
     pflag = False
     eflag = False
-    mcrflag = True
-    radflag = True
+    mcrflag = False
+    radflag = False
     klp = 4
 
 #%% Dry/moist regions
@@ -224,7 +224,7 @@ wthlvpf_r_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
-# Mask for low-[ass filtering FIXME also hardcoded for now
+# Mask for low-[ass filtering
 circ_mask = np.zeros((xf.size,xf.size))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
@@ -599,9 +599,15 @@ for i in range(len(plttime)):
     qtpf_prod_dry_time[i,:] = qtpf_prod_dry
 
     # Horizontal advection
+    # We will assume the budget is Lagrangian following the mean flow, i.e.
+    # we subtract <u_h>da'/dx_h, to not have mean flow advection of the fluctuations 
+    # obscure their evolution. This is equivalent to computing d/dx_h(u_h'a')
 
-    # Horizontal thlv advection
-    div_uhthlvp = ddxhuha_2nd(u, v, thlvpf+thlvpp, dx, dy)
+    up = u - np.mean(u,axis=(1,2))[:,np.newaxis,np.newaxis]
+    vp = v - np.mean(v,axis=(1,2))[:,np.newaxis,np.newaxis]
+    
+    # Horizontal thlv advection 
+    div_uhthlvp = ddxhuha_2nd(up, vp, thlvpf+thlvpp, dx, dy)
     div_uhthlvpf = lowPass(div_uhthlvp, circ_mask)
     
     # moist/dry and large/small scale
@@ -620,11 +626,11 @@ for i in range(len(plttime)):
     #  - lowPass(wfp*ddxhuha_2nd(u,v,thlvpp)) \approx lowPass(wfp*ddxhuha_2nd(u,v,thlvpf+thlvpp))
     #  - lowPass(thlvpp*ddxhuhw_2nd(u,v,whp)) \approx lowPass(thlvpp*ddxhuhw_2nd(u,v,whf+whp))
     
-    wdiv_uhthlvp = wfp*ddxhuha_2nd(u, v, thlvpp, dx, dy)
+    wdiv_uhthlvp = wfp*ddxhuha_2nd(up, vp, thlvpp, dx, dy)
     wdiv_uhthlvpf = lowPass(wdiv_uhthlvp, circ_mask)
     wdiv_uhthlvp_av = np.mean(wdiv_uhthlvpf, axis=(1,2))
 
-    thlvpdiv_uhwp = ddxhuhw_2nd(u, v, whp, dx, dy) # half level 1 and up
+    thlvpdiv_uhwp = ddxhuhw_2nd(up, vp, whp, dx, dy) # half level 1 and up
     thlvpdiv_uhwp = (thlvpdiv_uhwp[1:,:,:] + thlvpdiv_uhwp[:-1,:,:]) * 0.5 # Interpolated to zflim[1:-1]
     thlvpdiv_uhwp = thlvpp[1:-1,:,:]*thlvpdiv_uhwp
     thlvpdiv_uhwpf = lowPass(thlvpdiv_uhwp, circ_mask)
@@ -637,13 +643,15 @@ for i in range(len(plttime)):
 
     # Horizontal moisture advection
     # intra-scale contribution largest, but entire term kept for now
-    div_uhqtp = lowPass(ddxhuha_2nd(u, v, qtpf+qtpp, dx, dy), circ_mask)
+    div_uhqtp = lowPass(ddxhuha_2nd(up, vp, qtpf+qtpp, dx, dy), circ_mask)
     div_uhqtp_moist = mean_mask(div_uhqtp,mask_moist)
     div_uhqtp_dry = mean_mask(div_uhqtp,mask_dry)
 
     qtpf_hdiv_moist_time[i,:] = div_uhqtp_moist[1:-1]
     qtpf_hdiv_dry_time[i,:] = div_uhqtp_dry[1:-1]
     
+    del up
+    del vp
     del div_uhthlvp
     del div_uhthlvpf
     del wdiv_uhthlvp
