@@ -16,7 +16,7 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 from thermofunctions import qsatur, rlv, rd, rv, cp
 
-lp = '/scratch-shared/janssens/bomex200_e12'
+lp = '/scratch-shared/janssens/eurec4a_test'
 sp = lp+'/figs'
 itmin = 63
 itmax = 64
