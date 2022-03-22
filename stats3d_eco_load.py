@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_mean/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_qtpf/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -42,6 +42,8 @@ dzh = np.diff(zflim)[0] # FIXME only valid in lower part of domain
 
 izmin = np.where(zflim[0] >= zf_inp)[0][0]
 izmax = np.where(zflim[-1] <= zf_inp)[0][0]+1
+
+rhobfi = rhobf[0,izmin:izmax] # Won't really change much through time, so ok to take 0 value
 
 qtpf_moist_time = np.load(lp+'/qtpf_moist_time.npy')
 qtpf_dry_time = np.load(lp+'/qtpf_dry_time.npy')
@@ -231,9 +233,9 @@ dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 26.
-dit = 2.0 # Rounds to closest multiple of dt in time
-dtav = 2.0 # Around each plotted time step
+tpltmax = 15.
+dit = 1.0 # Rounds to closest multiple of dt in time
+dtav = 1.0 # Around each plotted time step
 alpha = 0.5
 lw=2
 
@@ -479,9 +481,9 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
               ncol=2,title='moist  time [hr]   dry')
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
-#%% Average budget contributions over time dimension
-tpltmin = 6.
-tpltmax = 12.
+#%% Average qtpf budget contributions over time dimension
+tpltmin = 11.
+tpltmax = 13.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -556,7 +558,7 @@ axs[0].plot(-qtpfmn_hdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_subs_moist, zflim[1:-1],c=colors[4],alpha=alpha,lw=lw)
 axs[0].plot(qtpfmn_diff_moist, zflim[2:-2],c=colors[5],alpha=alpha,lw=lw)
 axs[0].plot(qtpfmn_micr_moist, zflim,c=colors[7],alpha=alpha,lw=lw)
-# axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c='gray')
+axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c='gray')
 axs[0].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[0].set_xlim((-7.5e-8,7.5e-8))
 axs[0].set_title('Moist')
@@ -568,7 +570,7 @@ axs[1].plot(-qtpfmn_hdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha
 axs[1].plot(-qtpfmn_subs_dry, zflim[1:-1],c=colors[4],label=terms[4],alpha=alpha,lw=lw)
 axs[1].plot(qtpfmn_diff_dry, zflim[2:-2],c=colors[5],label=terms[5],alpha=alpha,lw=lw)
 axs[1].plot(qtpfmn_micr_dry, zflim,c=colors[7],label=terms[7],alpha=alpha,lw=lw)
-# axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
+axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
 axs[1].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[1].set_xlim((-7.5e-8,7.5e-8))
 axs[1].set_title('Dry')
@@ -580,7 +582,7 @@ plt.savefig(sp+'/qtpf_budget.pdf',bbox_inches='tight')
 
 #%% Average thlvpf budget contributions over time dimension
 tpltmin = 6.
-tpltmax = 10.
+tpltmax = 16.
 
 terms = ['Tendency                               ',
          'Gradient production',
@@ -808,8 +810,8 @@ plt.show()
 
 #%% WTG-based model of moisture variance production
 
-tpltmin = 16.
-tpltmax = 24.
+tpltmin = 6.
+tpltmax = 16.
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -970,7 +972,10 @@ terms = ['Tendency',
          'Vertical flux convergence',
          'Horizontal flux convergence',
          'Subsidence',
-         'SFS diffusion'
+         'SFS diffusion',
+         'Residual',
+         'Precipitation',
+         'Radiation'
          ]
 
 colors = ['black',
@@ -979,7 +984,9 @@ colors = ['black',
           'olivedrab',
           'sienna',
           'goldenrod',
-          'lightgray']
+          'lightgray',
+          'maroon',
+          'midnightblue']
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -987,8 +994,6 @@ idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
 idtav  = int(round(dtav/2/(time[1]-time[0])))
 plttime_var = np.arange(itpltmin,itpltmax,idtplt)
   
-# 1D fields
-rhobfi = rhobf[0,izmin:izmax] # Won't really change much through time, so ok to take 0 value
 
 qtpfi_moist = vint(qtpf_moist_time,rhobfi,zflim,plttime_var)
 qtpfi_dry = vint(qtpf_dry_time,rhobfi,zflim,plttime_var)
@@ -1021,13 +1026,17 @@ qtpfi_subs_dry = vint(qtpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 qtpfi_diff_moist = vint(qtpf_diff_moist_time,rhobfi[2:-2],zflim[2:-2],plttime_var)
 qtpfi_diff_dry = vint(qtpf_diff_dry_time,rhobfi[2:-2],zflim[2:-2],plttime_var)
 
+# Moistening through precipitation
+qtpfi_micr_moist = vint(qtpf_micr_moist_time,rhobfi,zflim,plttime_var)
+qtpfi_micr_dry = vint(qtpf_micr_dry_time,rhobfi,zflim,plttime_var)
+
 # Estimate residual
-qtpfi_resid_moist = qtpfi_tend_moist + qtpfi_prod_wex_moist + qtpfi_vdiv_moist + qtpfi_hdiv_moist + qtpfi_subs_moist #- qtpfi_diff_moist
-qtpfi_resid_dry = qtpfi_tend_dry + qtpfi_prod_wex_dry + qtpfi_vdiv_dry + qtpfi_hdiv_dry + qtpfi_subs_dry #- qtpfi_diff_dry
+qtpfi_resid_moist = qtpfi_tend_moist + qtpfi_prod_wex_moist + qtpfi_vdiv_moist + qtpfi_hdiv_moist + qtpfi_subs_moist - qtpfi_diff_moist
+qtpfi_resid_dry = qtpfi_tend_dry + qtpfi_prod_wex_dry + qtpfi_vdiv_dry + qtpfi_hdiv_dry + qtpfi_subs_dry - qtpfi_diff_dry
 
 # And include it in the tendency, which is the worst-estimated
-qtpfi_tend_moist-=qtpfi_resid_moist
-qtpfi_tend_dry-=qtpfi_resid_dry
+# qtpfi_tend_moist-=qtpfi_resid_moist
+# qtpfi_tend_dry-=qtpfi_resid_dry
 
 # Temporal plot
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,10/3))
@@ -1037,7 +1046,8 @@ axs[0].plot(time[plttime_var],-qtpfi_vdiv_moist,c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(time[plttime_var],-qtpfi_hdiv_moist,c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(time[plttime_var],-qtpfi_subs_moist,c=colors[4],alpha=alpha,lw=lw)
 axs[0].plot(time[plttime_var],qtpfi_diff_moist,c=colors[5],alpha=alpha,lw=lw)
-# axs[0].plot(time[plttime_var],qtpfi_resid_moist,c=colors[6],alpha=alpha,lw=lw)
+axs[0].plot(time[plttime_var],qtpfi_resid_moist,c=colors[6],alpha=alpha,lw=lw)
+axs[0].plot(time[plttime_var],qtpfi_micr_moist,c=colors[7],alpha=alpha,lw=lw)
 axs[0].set_xlabel('Time [hr]')
 axs[0].set_title('Moist')
 
@@ -1047,7 +1057,8 @@ axs[1].plot(time[plttime_var],-qtpfi_vdiv_dry,c=colors[2],label=terms[2],alpha=a
 axs[1].plot(time[plttime_var],-qtpfi_hdiv_dry,c=colors[3],label=terms[3],alpha=alpha,lw=lw)
 axs[1].plot(time[plttime_var],-qtpfi_subs_dry,c=colors[4],label=terms[4],alpha=alpha,lw=lw)
 axs[1].plot(time[plttime_var],qtpfi_diff_dry,c=colors[5],label=terms[5],alpha=alpha,lw=lw)
-# axs[1].plot(time[plttime_var],qtpfi_resid_dry,c=colors[6],label=r"Residual")
+axs[1].plot(time[plttime_var],qtpfi_resid_dry,c=colors[6],label=terms[6],alpha=alpha,lw=lw)
+axs[1].plot(time[plttime_var],qtpfi_micr_dry,c=colors[7],label=terms[7],alpha=alpha,lw=lw)
 axs[1].set_xlabel('Time [hr]')
 axs[1].set_title('Dry')
 
@@ -1056,90 +1067,90 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 plt.savefig(sp+'/qtpf_budget_int.pdf',bbox_inches='tight')
 
 # Model evaluation
-fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
-axs[0].plot(time[plttime_var],qtpfi_tend_moist,c='midnightblue')
-axs[0].plot(time[plttime_var],-qtpfi_prod_wex_moist,c='darkseagreen')
-axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen',linestyle='dotted')
-axs[0].set_xlabel('Time [hr]')
-axs[0].set_title('Moist region')
+# fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
+# axs[0].plot(time[plttime_var],qtpfi_tend_moist,c='midnightblue')
+# axs[0].plot(time[plttime_var],-qtpfi_prod_wex_moist,c='darkseagreen')
+# axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen',linestyle='dotted')
+# axs[0].set_xlabel('Time [hr]')
+# axs[0].set_title('Moist region')
 
-axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=terms[0])
-axs[1].plot(time[plttime_var],-qtpfi_prod_wex_dry,c='darkseagreen',label=terms[1])
-axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',linestyle='dotted',label='Modelled '+terms[1])
-axs[1].set_xlabel('Time [hr]')
-axs[1].set_title('Dry region')
+# axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=terms[0])
+# axs[1].plot(time[plttime_var],-qtpfi_prod_wex_dry,c='darkseagreen',label=terms[1])
+# axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',linestyle='dotted',label='Modelled '+terms[1])
+# axs[1].set_xlabel('Time [hr]')
+# axs[1].set_title('Dry region')
 
-axs[0].set_ylabel('Large-scale moistening rate [kg/kg/s]')
-axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+# axs[0].set_ylabel('Large-scale moistening rate [kg/kg/s]')
+# axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
-### And now for thlv
-thlvpfi_moist = vint(thlvpf_moist_time,rhobfi,zflim,plttime_var)
-thlvpfi_dry = vint(thlvpf_dry_time,rhobfi,zflim,plttime_var)
+# ### And now for thlv
+# thlvpfi_moist = vint(thlvpf_moist_time,rhobfi,zflim,plttime_var)
+# thlvpfi_dry = vint(thlvpf_dry_time,rhobfi,zflim,plttime_var)
 
-# thlv gradient production
-thlvpfi_prod_moist = vint(thlvpf_prod_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-thlvpfi_prod_dry = vint(thlvpf_prod_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# # thlv gradient production
+# thlvpfi_prod_moist = vint(thlvpf_prod_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# thlvpfi_prod_dry = vint(thlvpf_prod_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 
-# heating through anomalous vertical fluxes
-# FIXME offset zf in integration by 1 from field
-thlvpfi_vdiv_moist = vint(thlvpf_vdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-thlvpfi_vdiv_dry = vint(thlvpf_vdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# # heating through anomalous vertical fluxes
+# # FIXME offset zf in integration by 1 from field
+# thlvpfi_vdiv_moist = vint(thlvpf_vdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# thlvpfi_vdiv_dry = vint(thlvpf_vdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 
-# Heating through horizontal advection
-thlvpfi_hdiv_moist = vint(thlvpf_hdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-thlvpfi_hdiv_dry = vint(thlvpf_hdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# # Heating through horizontal advection
+# thlvpfi_hdiv_moist = vint(thlvpf_hdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# thlvpfi_hdiv_dry = vint(thlvpf_hdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 
-# Heating through subsidence
-thlvpfi_subs_moist = vint(thlvpf_subs_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-thlvpfi_subs_dry = vint(thlvpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# # Heating through subsidence
+# thlvpfi_subs_moist = vint(thlvpf_subs_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+# thlvpfi_subs_dry = vint(thlvpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
 
-# Heating through SFS diffusion
-# thlvpfi_diff_moist = vint(thlvpf_diff_moist_time,rhobfi,zflim,plttime_var)
-# thlvpfi_diff_dry = vint(thlvpf_diff_dry_time,rhobfi,zflim,plttime_var)
+# # Heating through SFS diffusion
+# # thlvpfi_diff_moist = vint(thlvpf_diff_moist_time,rhobfi,zflim,plttime_var)
+# # thlvpfi_diff_dry = vint(thlvpf_diff_dry_time,rhobfi,zflim,plttime_var)
 
 
-# Fit the haeting fluctuation's evolution
-[exp_moist,fac_moist], cov = curve_fit(lambda x, a, b: b * x**a, 
-                                       time[plttime_var]*3600, 
-                                       thlvpfi_moist,
-                                       p0=[1,0])
+# # Fit the haeting fluctuation's evolution
+# [exp_moist,fac_moist], cov = curve_fit(lambda x, a, b: b * x**a, 
+#                                        time[plttime_var]*3600, 
+#                                        thlvpfi_moist,
+#                                        p0=[1,0])
 
-[exp_dry,fac_dry], cov = curve_fit(lambda x, a, b: b * x**a, 
-                                       time[plttime_var]*3600, 
-                                       thlvpfi_dry,
-                                       p0=[-3,0])
+# [exp_dry,fac_dry], cov = curve_fit(lambda x, a, b: b * x**a, 
+#                                        time[plttime_var]*3600, 
+#                                        thlvpfi_dry,
+#                                        p0=[-3,0])
 
-# And differentiate to estimate its tendency
-thlvpfi_tend_moist = fac_moist*exp_moist*(time[plttime_var]*3600)**(exp_moist-1)
-thlvpfi_tend_dry = fac_dry*exp_dry*(time[plttime_var]*3600)**(exp_dry-1)
+# # And differentiate to estimate its tendency
+# thlvpfi_tend_moist = fac_moist*exp_moist*(time[plttime_var]*3600)**(exp_moist-1)
+# thlvpfi_tend_dry = fac_dry*exp_dry*(time[plttime_var]*3600)**(exp_dry-1)
 
-# Estimate residual
-thlvpfi_resid_moist = thlvpfi_tend_moist + thlvpfi_prod_moist + thlvpfi_vdiv_moist + thlvpfi_hdiv_moist + thlvpfi_subs_moist
-thlvpfi_resid_dry = thlvpfi_tend_dry + thlvpfi_prod_dry + thlvpfi_vdiv_dry + thlvpfi_hdiv_dry + thlvpfi_subs_dry
+# # Estimate residual
+# thlvpfi_resid_moist = thlvpfi_tend_moist + thlvpfi_prod_moist + thlvpfi_vdiv_moist + thlvpfi_hdiv_moist + thlvpfi_subs_moist
+# thlvpfi_resid_dry = thlvpfi_tend_dry + thlvpfi_prod_dry + thlvpfi_vdiv_dry + thlvpfi_hdiv_dry + thlvpfi_subs_dry
 
-fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
-axs[0].plot(time[plttime_var],thlvpfi_tend_moist,c='midnightblue')
-# axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen')
-axs[0].plot(time[plttime_var],-thlvpfi_prod_moist,c='maroon')
-axs[0].plot(time[plttime_var],-thlvpfi_vdiv_moist,c='peachpuff')
-axs[0].plot(time[plttime_var],-thlvpfi_hdiv_moist,c='olive')
-axs[0].plot(time[plttime_var],-thlvpfi_subs_moist,c='skyblue')
-axs[0].plot(time[plttime_var],thlvpfi_resid_moist,c='slategray')
-axs[0].set_xlabel('Time [hr]')
-axs[0].set_title('Moist region')
+# fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(15,5))
+# axs[0].plot(time[plttime_var],thlvpfi_tend_moist,c='midnightblue')
+# # axs[0].plot(time[plttime_var],qtpfi_prod_moist,c='darkseagreen')
+# axs[0].plot(time[plttime_var],-thlvpfi_prod_moist,c='maroon')
+# axs[0].plot(time[plttime_var],-thlvpfi_vdiv_moist,c='peachpuff')
+# axs[0].plot(time[plttime_var],-thlvpfi_hdiv_moist,c='olive')
+# axs[0].plot(time[plttime_var],-thlvpfi_subs_moist,c='skyblue')
+# axs[0].plot(time[plttime_var],thlvpfi_resid_moist,c='slategray')
+# axs[0].set_xlabel('Time [hr]')
+# axs[0].set_title('Moist region')
 
-axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=r"$\frac{\partial\langle\tilde{\theta_{lv}'}\rangle}{\partial t}$")
-# axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',label=r"$F_{\langle\tilde{q_t'}\rangle}$")
-axs[1].plot(time[plttime_var],-thlvpfi_prod_dry,c='maroon',label=r"$-\tilde{w'}\frac{\partial \overline{\theta_{lv}}}{\partial z}$")
-axs[1].plot(time[plttime_var],-thlvpfi_vdiv_dry,c='peachpuff',label=r"$-\frac{1}{\rho_0}\frac{\partial}{\partial z}\left(\rho_0\left(\widetilde{w'\theta_{lv}'}-\overline{w'\theta_{lv}'}\right)\right)$")
-axs[1].plot(time[plttime_var],-thlvpfi_hdiv_dry,c='olive',label=r"$-\frac{\partial}{\partial x_{hj}}\left(\widetilde{u_{hj}'\theta_{lv}'}\right)$")
-axs[1].plot(time[plttime_var],-thlvpfi_subs_dry,c='skyblue',label=r"$-\overline{w_{LS}}\frac{\partial \tilde{\theta_{lv}'}}{\partial z}$")
-axs[1].plot(time[plttime_var],thlvpfi_resid_dry,c='slategray',label=r"Residual")
-axs[1].set_xlabel('Time [hr]')
-axs[1].set_title('Dry region')
+# axs[1].plot(time[plttime_var],qtpfi_tend_dry,c='midnightblue',label=r"$\frac{\partial\langle\tilde{\theta_{lv}'}\rangle}{\partial t}$")
+# # axs[1].plot(time[plttime_var],qtpfi_prod_dry,c='darkseagreen',label=r"$F_{\langle\tilde{q_t'}\rangle}$")
+# axs[1].plot(time[plttime_var],-thlvpfi_prod_dry,c='maroon',label=r"$-\tilde{w'}\frac{\partial \overline{\theta_{lv}}}{\partial z}$")
+# axs[1].plot(time[plttime_var],-thlvpfi_vdiv_dry,c='peachpuff',label=r"$-\frac{1}{\rho_0}\frac{\partial}{\partial z}\left(\rho_0\left(\widetilde{w'\theta_{lv}'}-\overline{w'\theta_{lv}'}\right)\right)$")
+# axs[1].plot(time[plttime_var],-thlvpfi_hdiv_dry,c='olive',label=r"$-\frac{\partial}{\partial x_{hj}}\left(\widetilde{u_{hj}'\theta_{lv}'}\right)$")
+# axs[1].plot(time[plttime_var],-thlvpfi_subs_dry,c='skyblue',label=r"$-\overline{w_{LS}}\frac{\partial \tilde{\theta_{lv}'}}{\partial z}$")
+# axs[1].plot(time[plttime_var],thlvpfi_resid_dry,c='slategray',label=r"Residual")
+# axs[1].set_xlabel('Time [hr]')
+# axs[1].set_title('Dry region')
 
-axs[0].set_ylabel('Large-scale heating rate [K/s]')
-axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+# axs[0].set_ylabel('Large-scale heating rate [K/s]')
+# axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
 #%% Fluxes and fluctuations of thv
 
@@ -1531,7 +1542,7 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1),ncol=len(plttime_var)//13+1)
 #%% Relation qtpf - wthlvpf_anom
 
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 24.
 C = 0.4 # Constant of proportionality
 fs = 14 # fontsize
 
@@ -1594,8 +1605,8 @@ axs[0,0].set_ylabel(r"$-F_{{\theta_{lv}}_m'}$ [K m/s]",fontsize=fs)
 axs[0,0].set_xlabel(r"$q_{t_m}'$ [kg/kg]",fontsize=fs)
 axs[0,0].annotate('a)', (0.05,0.92), xycoords='axes fraction', fontsize=fs)
 
-axs[0,1].scatter(qtpfi_moist,wthlvpf_anomi_moist,c='k',s=0.5)
-axs[0,1].scatter(qtpfi_dry,wthlvpf_anomi_dry,c='k',s=0.5)
+axs[0,1].scatter(qtpfi_moist,wthlvpf_anomi_moist,s=0.5,c='k')#time[plttime_plt],s=0.5)
+axs[0,1].scatter(qtpfi_dry,wthlvpf_anomi_dry,s=0.5,c='k')#time[plttime_plt],s=0.5)
 axs[0,1].plot(qtpfi_mod,wthlvpf_anomi_mod,'k')
 axs[0,1].set_ylabel(r"$-\left\langle F_{{\theta_{lv}}_m'} \frac{\partial}{\partial z}\left(\frac{\Gamma_{q_t}}{\Gamma_{\theta_{lv}}}\right) \right\rangle$ [kg/$m^2$/s]", fontsize=fs)
 axs[0,1].set_xlabel(r"$\left\langle q_{t_m}'\right\rangle$ [kg/m$^2$]", fontsize=fs)
