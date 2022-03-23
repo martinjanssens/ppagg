@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_qtpf/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_100km/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -233,7 +233,7 @@ dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
 tpltmin = 6.
-tpltmax = 15.
+tpltmax = 12.
 dit = 1.0 # Rounds to closest multiple of dt in time
 dtav = 1.0 # Around each plotted time step
 alpha = 0.5
@@ -482,8 +482,8 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
 #%% Average qtpf budget contributions over time dimension
-tpltmin = 11.
-tpltmax = 13.
+tpltmin = 3.
+tpltmax = 24.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -530,7 +530,7 @@ qtpfmn_resi_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_budg_moist
 
 # The residual is mostly due to integration error of vertical transport
 # -> Include the residual in this term
-# qtpfmn_vdiv_moist = qtpfmn_vdiv_moist[1:-1] - qtpfmn_resi_moist
+# qtpfmn_tend_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_resi_moist
 
 qtpfmn_tend_dry = np.mean(qtpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0)
@@ -543,7 +543,7 @@ qtpfmn_budg_dry = (-qtpfmn_prod_dry_wex[1:-1] - qtpfmn_vdiv_dry[1:-1]
                      -qtpfmn_hdiv_dry[1:-1] - qtpfmn_subs_dry[1:-1]
                      +qtpfmn_diff_dry + qtpfmn_micr_dry[2:-2])
 qtpfmn_resi_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_budg_dry
-# qtpfmn_vdiv_dry = qtpfmn_vdiv_dry[1:-1] - qtpfmn_resi_dry
+# qtpfmn_tend_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_resi_dry
 
 
 alpha = 0.75
@@ -960,7 +960,7 @@ plt.savefig(sp+'/wpf_qtpfprod_wtg.pdf',bbox_inches='tight')
 
 
 #%% Vertically integrated statistics
-tpltmin = 6.
+tpltmin = 2.
 tpltmax = 36.
 dit = 0.5 # Rounds to closest multiple of dt in time
 dtav = 1.0 # Average around each plotted time step
@@ -1034,9 +1034,9 @@ qtpfi_micr_dry = vint(qtpf_micr_dry_time,rhobfi,zflim,plttime_var)
 qtpfi_resid_moist = qtpfi_tend_moist + qtpfi_prod_wex_moist + qtpfi_vdiv_moist + qtpfi_hdiv_moist + qtpfi_subs_moist - qtpfi_diff_moist
 qtpfi_resid_dry = qtpfi_tend_dry + qtpfi_prod_wex_dry + qtpfi_vdiv_dry + qtpfi_hdiv_dry + qtpfi_subs_dry - qtpfi_diff_dry
 
-# And include it in the tendency, which is the worst-estimated
-# qtpfi_tend_moist-=qtpfi_resid_moist
-# qtpfi_tend_dry-=qtpfi_resid_dry
+# And include it in the horizontal advection, which is the worst-estimated
+# qtpfi_hdiv_moist-=qtpfi_resid_moist
+# qtpfi_hdiv_dry-=qtpfi_resid_dry
 
 # Temporal plot
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,10/3))
