@@ -16,6 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/home/hp200321/data/botany-6-1536-50/runs/Run_40/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
