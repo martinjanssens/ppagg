@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_100km/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_3101/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -232,10 +232,10 @@ dthldt_ls = dthldt_ls[izmin:izmax]
 dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
-tpltmin = 6.
-tpltmax = 12.
-dit = 1.0 # Rounds to closest multiple of dt in time
-dtav = 1.0 # Around each plotted time step
+tpltmin = 3.
+tpltmax = 24.
+dit = 4.0 # Rounds to closest multiple of dt in time
+dtav = 2.0 # Around each plotted time step
 alpha = 0.5
 lw=2
 
@@ -939,7 +939,7 @@ axs[1,0].plot(qtpfmn_prod_moist_thl, zflim[1:-1], c=colors[2],linewidth=lw,alpha
 axs[1,0].plot(qtpfmn_prod_moist_ql,  zflim[1:-1], c=colors[4],linewidth=lw,alpha=alpha)
 # axs[1,0].plot(qtpfmn_prod_moist, zflim[1:-1], c='black',linestyle='-.')
 axs[1,0].axvline(0,color='gray',linestyle='dotted')
-axs[1,0].set_xlim((-8e-8,8e-8))
+axs[1,0].set_xlim((-9e-8,9e-8))
 axs[1,0].set_xlabel(r"$w_m'\Gamma_{q_t}$ [kg/kg/s]")
 axs[1,0].annotate('c)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
 axs[1,0].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
@@ -949,7 +949,7 @@ axs[1,1].plot(qtpfmn_prod_dry_wtg, zflim[2:-2], c=colors[1],linewidth=lw,alpha=a
 axs[1,1].plot(qtpfmn_prod_dry_thl, zflim[1:-1], c=colors[2],linewidth=lw,alpha=alpha)
 axs[1,1].plot(qtpfmn_prod_dry_ql,  zflim[1:-1], c=colors[4],linewidth=lw,alpha=alpha)
 axs[1,1].axvline(0,color='gray',linestyle='dotted')
-axs[1,1].set_xlim((-8e-8,8e-8))
+axs[1,1].set_xlim((-9e-8,9e-8))
 axs[1,1].set_xlabel(r"$w_m'\Gamma_{q_t}$ [kg/kg/s]")
 axs[1,1].annotate('d)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
 axs[1,1].ticklabel_format(style='sci',axis='x',scilimits=(0,0))
