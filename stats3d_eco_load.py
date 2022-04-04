@@ -159,6 +159,9 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 # Mean ql (we don't have this from stats3d)
 ql_av_1d = dl.load_qlav(izmin, izmax)
+pref_1d = dl.load_presh(0,izmin, izmax+1)
+pref_1d = (pref_1d[1:] + pref_1d[:-1])*0.5
+exnf = (pref_1d/1e5)**(2./7.)
 
 # Slopes of mean profiles
 Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
@@ -569,7 +572,7 @@ plt.savefig(sp+'/qtpf_budget.pdf',bbox_inches='tight')
 
 #%% Average thlvpf budget contributions over time dimension
 tpltmin = 6.
-tpltmax = 10.
+tpltmax = 16.
 
 terms = ['Tendency                               ',
          'Gradient production',
@@ -1120,19 +1123,22 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 # Time to average over
 tpltmin = 10.
 tpltmax = 16.
+dit = 1.0
+dtav = 1.0 # Around each plotted time step
 
 terms0 = [r"$\theta_{v_m}'$",
           r"$\theta_{lv_m}'$",
           r"$\theta_{l_m}'$",
-          r"$0.608\overline{\theta_l}q_{t_m}'$",
-          r"$7\overline{\theta_l}q_{l_m}'$",
+          r"$a_2q_{t_m}'$",
+          r"$a_3q_{l_m}'$",
          ]
 
 terms1 = [r"$\left(w'\theta_v'\right)_m$",
           r"$\left(w'\theta_{lv}'\right)_m$",
           r"$\left(w'\theta_l'\right)_m$",
-          r"$0.608\overline{\theta_l}\left(w'q_t'\right)_m$",
-          r"$7\overline{\theta_l}\left(w'q_l'\right)_m$",
+          r"$a_2\left(w'q_t'\right)_m$",
+          r"$a_3\left(w'q_l'\right)_m$",
+          r"$-a_4\left(w'q_l'\right)_m$"
          ]
 
 colors = ['black',
@@ -1140,16 +1146,24 @@ colors = ['black',
           'peru',
           'olive',
           'seagreen',
+          'dodgerblue'
           ]
 
-alpha = 0.6
+alpha = 0.8
 lw = 2
+a4 = 2.5e6/exnf/1004 # a4
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
 
 itpltmin1d = np.where(time1d>=tpltmin*3600)[0][0]
 itpltmax1d = np.where(time1d<tpltmax*3600)[0][-1]+1
+
+idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+idtav  = int(round(dtav/2/(time[1]-time[0])))
+plttime_var = np.arange(itpltmin,itpltmax,idtplt) #FIXME
+
+alphas = np.linspace(0.1,0.5,len(plttime_var))
 
 # Contributions to thv
 thvpfmn_moist = np.mean(thvpf_moist_time[itpltmin:itpltmax,:],axis=0)
@@ -1190,9 +1204,37 @@ a3wqlpfmn_moist = np.mean(7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_moist_time[it
 a3wqlpfmn_dry = np.mean(7*thl_av_time[itpltmin:itpltmax,:]*wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
 a3wqlpmn_av = np.mean(7*thl_av_1d[itpltmin1d:itpltmax1d,:]*dl.load_wqlrav(izmin,izmax)[itpltmin1d:itpltmax1d,:],axis=0)
 
-# thvpf plot
+a4wqlpfmn_moist = -np.mean(a4*wqlpf_moist_time[itpltmin:itpltmax,:],axis=0)
+a4wqlpfmn_dry = -np.mean(a4*wqlpf_dry_time[itpltmin:itpltmax,:],axis=0)
+a4wqlpmn_av = -np.mean(a4*dl.load_wqlrav(izmin,izmax)[itpltmin1d:itpltmax1d,:],axis=0)
+
 fig,axs = plt.subplots(nrows=1,ncols=2,sharey=True,figsize=(10,5), squeeze=False)
-axs[0,0].plot(thvpfmn_moist, zflim,c=colors[0],alpha=alpha,lw=lw)
+for i in range(len(plttime_var)):
+    # thvpf plot
+    axs[0,0].plot(np.mean(thvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,c=colors[0],alpha=alphas[i],lw=lw)
+    axs[0,0].plot(np.mean(thlvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,c=colors[1],alpha=alpha,lw=lw)
+    axs[0,0].plot(np.mean(thlpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,c=colors[2],alpha=alpha,lw=lw)
+    axs[0,0].plot(np.mean(thvpf_moist_time[plttime_var[i]-idtav:plttime_var[i]+idtav,:],axis=0), zflim,c=colors[3],alpha=alpha,lw=lw)
+    axs[0,0].plot(a3qlpfmn_moist, zflim,c=colors[4],alpha=alpha,lw=lw)
+    axs[0,0].set_xlabel(r"Contribution to $\theta_{v_m}'$ [K]")
+    axs[0,0].set_ylabel(r'Height [m]')
+    axs[0,0].axvline(0,color='gray',linestyle='dotted')
+    axs[0,0].set_xlim((-0.072,0.072))
+    axs[0,0].set_title('Moist')
+    # axs[0,0].annotate('a)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+    
+    axs[0,1].plot(thvpfmn_dry, zflim,c=colors[0],alpha=alpha,lw=lw)
+    axs[0,1].plot(thlvpfmn_dry, zflim,c=colors[1],alpha=alpha,lw=lw)
+    axs[0,1].plot(thlpfmn_dry, zflim,c=colors[2],alpha=alpha,lw=lw)
+    axs[0,1].plot(a2qtpfmn_dry, zflim,c=colors[3],alpha=alpha,lw=lw)
+    axs[0,1].plot(a3qlpfmn_dry, zflim,c=colors[4],alpha=alpha,lw=lw)
+    axs[0,1].set_xlabel(r"Contribution to $\theta_{v_m}'$ [K]")
+    axs[0,1].axvline(0,color='gray',linestyle='dotted')
+    axs[0,1].set_xlim((-0.072,0.072))
+    axs[0,1].set_title('Dry')
+    # axs[0,1].annotate('b)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
+
+axs[0,0].plot(thvpfmn_moist, zflim,c=colors[0],alpha=alphas[i],lw=lw)
 axs[0,0].plot(thlvpfmn_moist, zflim,c=colors[1],alpha=alpha,lw=lw)
 axs[0,0].plot(thlpfmn_moist, zflim,c=colors[2],alpha=alpha,lw=lw)
 axs[0,0].plot(a2qtpfmn_moist, zflim,c=colors[3],alpha=alpha,lw=lw)
@@ -1215,7 +1257,6 @@ axs[0,1].set_xlim((-0.072,0.072))
 axs[0,1].set_title('Dry')
 # axs[0,1].annotate('b)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
 axs[0,1].legend(bbox_to_anchor=(1,1),loc='upper left')
-
 plt.savefig(sp+'/thv_decomposition.pdf',bbox_inches='tight')
 
 # wthvpf plot
@@ -1225,15 +1266,17 @@ axs[0,0].plot(wthlvpfmn_moist, zflim,c=colors[1],alpha=alpha,lw=lw)
 axs[0,0].plot(wthlpfmn_moist, zflim,c=colors[2],alpha=alpha,lw=lw)
 axs[0,0].plot(a2wqtpfmn_moist, zflim,c=colors[3],alpha=alpha,lw=lw)
 axs[0,0].plot(a3wqlpfmn_moist, zflim,c=colors[4],alpha=alpha,lw=lw)
+axs[0,0].plot(a4wqlpfmn_moist, zflim,c=colors[5],alpha=alpha,lw=lw)
 axs[0,0].plot(wthvpmn_av, zflim,c=colors[0],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,0].plot(wthlvpmn_av, zflim,c=colors[1],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,0].plot(wthlpmn_av, zflim,c=colors[2],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,0].plot(a2wqtpmn_av, zflim,c=colors[3],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,0].plot(a3wqlpmn_av, zflim,c=colors[4],alpha=alpha,lw=lw-0.5,linestyle='--')
+axs[0,0].plot(a4wqlpmn_av, zflim,c=colors[5],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,0].set_xlabel(r"Contribution to $\left(w'\theta_{v}'\right)_m$ [Km/s]")
 axs[0,0].set_ylabel(r'Height [m]')
 axs[0,0].axvline(0,color='gray',linestyle='dotted')
-axs[0,0].set_xlim((-0.047,0.047))
+axs[0,0].set_xlim((-0.055,0.055))
 axs[0,0].set_title('Moist')
 # axs[1,0].annotate('c)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
 
@@ -1242,14 +1285,16 @@ axs[0,1].plot(wthlvpfmn_dry, zflim,c=colors[1],alpha=alpha,lw=lw,label=terms1[1]
 axs[0,1].plot(wthlpfmn_dry, zflim,c=colors[2],alpha=alpha,lw=lw,label=terms1[2])
 axs[0,1].plot(a2wqtpfmn_dry, zflim,c=colors[3],alpha=alpha,lw=lw,label=terms1[3])
 axs[0,1].plot(a3wqlpfmn_dry, zflim,c=colors[4],alpha=alpha,lw=lw,label=terms1[4])
+axs[0,1].plot(a4wqlpfmn_dry, zflim,c=colors[5],alpha=alpha,lw=lw,label=terms1[5])
 axs[0,1].plot(wthvpmn_av, zflim,c=colors[0],alpha=alpha,lw=lw-0.5,linestyle='--',label='Slab average')
 axs[0,1].plot(wthlvpmn_av, zflim,c=colors[1],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,1].plot(wthlpmn_av, zflim,c=colors[2],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,1].plot(a2wqtpmn_av, zflim,c=colors[3],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,1].plot(a3wqlpmn_av, zflim,c=colors[4],alpha=alpha,lw=lw-0.5,linestyle='--')
+axs[0,1].plot(a4wqlpmn_av, zflim,c=colors[5],alpha=alpha,lw=lw-0.5,linestyle='--')
 axs[0,1].set_xlabel(r"Contribution to $\left(w'\theta_{v}'\right)_m$ [Km/s]")
 axs[0,1].axvline(0,color='gray',linestyle='dotted')
-axs[0,1].set_xlim((-0.047,0.047))
+axs[0,1].set_xlim((-0.055,0.055))
 axs[0,1].set_title('Dry')
 # axs[0,1].annotate('d)', (0.05,0.9), xycoords='axes fraction', fontsize=14)
 axs[0,1].legend(bbox_to_anchor=(1,1),loc='upper left')
