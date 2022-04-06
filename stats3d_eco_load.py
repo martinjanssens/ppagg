@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_3101/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_mean/ppagg_new'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -482,8 +482,8 @@ axs[3].legend(handles, labels, loc='best',bbox_to_anchor=(1.8,1),
 plt.savefig(sp+'/vars_small_evo.pdf', bbox_inches='tight')
 
 #%% Average qtpf budget contributions over time dimension
-tpltmin = 3.
-tpltmax = 24.
+tpltmin = 6.
+tpltmax = 20.
 
 # Budget terms
 # terms = [r"$\frac{\partial\langle\tilde{q_t'}\rangle}{\partial t}$",
@@ -530,7 +530,7 @@ qtpfmn_resi_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_budg_moist
 
 # The residual is mostly due to integration error of vertical transport
 # -> Include the residual in this term
-# qtpfmn_tend_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_resi_moist
+qtpfmn_tend_moist = qtpfmn_tend_moist[1:-1] - qtpfmn_resi_moist
 
 qtpfmn_tend_dry = np.mean(qtpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
 qtpfmn_prod_dry_wex = np.mean(qtpf_prod_dry_wex_time[itpltmin:itpltmax,:],axis=0)
@@ -543,7 +543,7 @@ qtpfmn_budg_dry = (-qtpfmn_prod_dry_wex[1:-1] - qtpfmn_vdiv_dry[1:-1]
                      -qtpfmn_hdiv_dry[1:-1] - qtpfmn_subs_dry[1:-1]
                      +qtpfmn_diff_dry + qtpfmn_micr_dry[2:-2])
 qtpfmn_resi_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_budg_dry
-# qtpfmn_tend_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_resi_dry
+qtpfmn_tend_dry = qtpfmn_tend_dry[1:-1] - qtpfmn_resi_dry
 
 
 alpha = 0.75
@@ -551,26 +551,26 @@ lw = 2
 
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 # fig.suptitle(colors)
-axs[0].plot(qtpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
+axs[0].plot(qtpfmn_tend_moist, zflim[2:-2],c=colors[0],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_prod_moist_wex, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_hdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_subs_moist, zflim[1:-1],c=colors[4],alpha=alpha,lw=lw)
 axs[0].plot(qtpfmn_diff_moist, zflim[2:-2],c=colors[5],alpha=alpha,lw=lw)
 axs[0].plot(qtpfmn_micr_moist, zflim,c=colors[7],alpha=alpha,lw=lw)
-axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c='gray')
+# axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c='gray')
 axs[0].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[0].set_xlim((-7.5e-8,7.5e-8))
 axs[0].set_title('Moist')
 
-axs[1].plot(qtpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
+axs[1].plot(qtpfmn_tend_dry, zflim[2:-2],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_prod_dry_wex, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_hdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_subs_dry, zflim[1:-1],c=colors[4],label=terms[4],alpha=alpha,lw=lw)
 axs[1].plot(qtpfmn_diff_dry, zflim[2:-2],c=colors[5],label=terms[5],alpha=alpha,lw=lw)
 axs[1].plot(qtpfmn_micr_dry, zflim,c=colors[7],label=terms[7],alpha=alpha,lw=lw)
-axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
+# axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c='gray',label='Residual')
 axs[1].set_xlabel(r"Contribution to $q_{t_m}'$ tendency [kg/kg/s]")
 axs[1].set_xlim((-7.5e-8,7.5e-8))
 axs[1].set_title('Dry')
@@ -582,7 +582,7 @@ plt.savefig(sp+'/qtpf_budget.pdf',bbox_inches='tight')
 
 #%% Average thlvpf budget contributions over time dimension
 tpltmin = 6.
-tpltmax = 16.
+tpltmax = 20.
 
 terms = ['Tendency                               ',
          'Gradient production',
@@ -621,7 +621,7 @@ thlvpfmn_budg_moist = (-thlvpfmn_prod_moist[1:-1] - thlvpfmn_vdiv_moist[1:-1]
                        +thlvpfmn_diff_moist + thlvpfmn_micr_moist[1:-1]
                        +thlvpfmn_radi_moist[2:-2])
 thlvpfmn_resi_moist = thlvpfmn_tend_moist[1:-1] - thlvpfmn_budg_moist
-# thlvpfmn_vdiv_moist = thlvpfmn_vdiv_moist[1:-1] - thlvpfmn_resi_moist
+thlvpfmn_tend_moist = thlvpfmn_tend_moist[1:-1] - thlvpfmn_resi_moist
 
 thlvpfmn_tend_dry = np.mean(thlvpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
 thlvpfmn_prod_dry = np.mean(thlvpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
@@ -636,10 +636,10 @@ thlvpfmn_budg_dry = (-thlvpfmn_prod_dry[1:-1] - thlvpfmn_vdiv_dry[1:-1]
                      +thlvpfmn_diff_dry + thlvpfmn_micr_dry[1:-1]
                      +thlvpfmn_radi_dry[2:-2])
 thlvpfmn_resi_dry = thlvpfmn_tend_dry[1:-1] - thlvpfmn_budg_dry
-# thlvpfmn_vdiv_dry = thlvpfmn_vdiv_dry[1:-1] - thlvpfmn_resi_dry
+thlvpfmn_tend_dry = thlvpfmn_tend_dry[1:-1] - thlvpfmn_resi_dry
 
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
-axs[0].plot(thlvpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
+axs[0].plot(thlvpfmn_tend_moist, zflim[2:-2],c=colors[0],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_prod_moist, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(-thlvpfmn_hdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
@@ -652,7 +652,7 @@ axs[0].set_xlabel(r"Contribution to $\theta_{lv_m}'$ tendency [K/s]")
 axs[0].set_xlim((-5.5e-5,5.5e-5))
 axs[0].set_title('Moist')
 
-axs[1].plot(thlvpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
+axs[1].plot(thlvpfmn_tend_dry, zflim[2:-2],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_prod_dry, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
 axs[1].plot(-thlvpfmn_hdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
