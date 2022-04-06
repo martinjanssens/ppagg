@@ -10,17 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import netCDF4 as nc
 from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
 from skimage.measure import block_reduce
 from dataloader import DataLoaderDALES, DataLoaderMicroHH
 from functions import vint
 
 # Run specifics
-<<<<<<< HEAD
-lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_meansub'
-=======
+
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/home/hp200321/data/botany-6-1536-50/runs/Run_40/ppagg'
->>>>>>> 159d89e4887eef5a5e2e2416bdc56cb707aba306
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -164,9 +161,15 @@ thvpf_dry_time = thlvpf_dry_time + 7*thl_av_time*qlpf_dry_time
 
 # Mean ql (we don't have this from stats3d)
 ql_av_1d = dl.load_qlav(izmin, izmax)
+ql_interp = interp1d(time1d/3600,ql_av_1d,axis=0)
+ql_av_time = ql_interp(time)
+
+# Reference pressure and constants
 pref_1d = dl.load_presh(0,izmin, izmax+1)
 pref_1d = (pref_1d[1:] + pref_1d[:-1])*0.5
 exnf = (pref_1d/1e5)**(2./7.)
+Lv = 2.5e6
+cp = 1004
 
 # Slopes of mean profiles
 Gamma_thlv = thlvpf_prod_moist_time/wff_moist_time[:,1:-1]
@@ -1156,7 +1159,7 @@ colors = ['black',
 
 alpha = 0.8
 lw = 2
-a4 = 2.5e6/exnf/1004 # a4
+a4 = Lv/exnf/cp # a4
 
 itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
 itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
@@ -1914,3 +1917,195 @@ axs[0].set_ylabel(r'Height [m]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
 plt.savefig(sp+'/slab_av_budget.pdf',bbox_inches='tight')
+
+#%% Investigating validity of various assumptions in the WTG approximation
+
+# WTG should originally only apply to th = thl - Lv/(cp*exnf)
+
+# important th budget terms, if dthpf/dt \approx - prod_thl - vdiv_thl + Lv/(cp*exnf)*dqlpf/dt
+thlpf_vdiv_moist_time = thlvpf_vdiv_moist_time - 0.608*thl_av_time[:,1:-1]*qtpf_vdiv_moist_time
+thlpf_vdiv_dry_time = thlvpf_vdiv_dry_time - 0.608*thl_av_time[:,1:-1]*qtpf_vdiv_dry_time
+
+Gamma_thl = (thl_av_time[:,1:] - thl_av_time[:,:-1])/dzh
+Gamma_thl_f = (Gamma_thl[:,1:] + Gamma_thl[:,:-1])*0.5
+
+thlpf_prod_moist_time = Gamma_thl_f*wff_moist_time[:,1:-1]
+thlpf_prod_dry_time = Gamma_thl_f*wff_dry_time[:,1:-1]
+
+qlpf_tend_moist_time = np.zeros(qlpf_vdiv_moist_time.shape)
+qlpf_tend_dry_time = np.zeros(qlpf_vdiv_dry_time.shape)
+qlpf_tend_moist_time[1:,:] = tderive(qlpf_moist_time, time)
+qlpf_tend_dry_time[1:,:] = tderive(qlpf_dry_time, time)
+
+thpf_cond_moist_time = Lv/(cp*exnf[np.newaxis,1:-1])*qlpf_tend_moist_time
+thpf_cond_dry_time = Lv/(cp*exnf[np.newaxis,1:-1])*qlpf_tend_dry_time
+
+thpf_tend_moist_time = (-thlpf_prod_moist_time - thlpf_vdiv_moist_time + thpf_cond_moist_time)
+thpf_tend_dry_time = (-thlpf_prod_dry_time - thlpf_vdiv_dry_time + thpf_cond_dry_time)
+
+tpltmin = 6.
+tpltmax = 16.
+
+terms = ['Tendency                               ',
+         'Gradient production',
+         'Vertical flux convergence',
+         'Condensation'
+         ]
+
+colors = ['black',
+          'cadetblue',
+          'lightsteelblue',
+          'cornflowerblue']
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+thpfmn_tend_moist = np.mean(thpf_tend_moist_time[itpltmin:itpltmax,:],axis=0)
+thlpfmn_prod_moist = np.mean(thlpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
+thlpfmn_vdiv_moist = np.mean(thlpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_cond_moist = np.mean(thpf_cond_moist_time[itpltmin:itpltmax,:],axis=0)
+
+thpfmn_tend_dry = np.mean(thpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
+thlpfmn_prod_dry = np.mean(thlpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
+thlpfmn_vdiv_dry = np.mean(thlpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_cond_dry = np.mean(thpf_cond_dry_time[itpltmin:itpltmax,:],axis=0)
+
+fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
+axs[0].plot(thpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
+axs[0].plot(-thlpfmn_prod_moist, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
+axs[0].plot(-thlpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
+axs[0].plot(thpfmn_cond_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
+axs[0].set_xlabel(r"Contribution to $\theta_{m}'$ tendency [K/s]")
+axs[0].set_xlim((-5.5e-5,5.5e-5))
+axs[0].set_title('Moist')
+
+axs[1].plot(thpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
+axs[1].plot(-thlpfmn_prod_dry, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
+axs[1].plot(-thlpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
+axs[1].plot(thpfmn_cond_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
+axs[1].set_xlabel(r"Contribution to $\theta_{m}'$ tendency [K/s]")
+axs[1].set_xlim((-5.5e-5,5.5e-5))
+axs[1].set_title('Dry')
+
+axs[0].set_ylabel(r'Height [m]')
+axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+
+# -> The condensation contribution is practically zero, i.e. 
+# d/dt(thlpf) \approx d/dt(thpf)
+
+#%% How does the convergence/grad production of thlpf depend on wth and wql?
+
+# First grad prod
+qlthl = Lv/(cp*exnf[np.newaxis,:])*ql_av_time
+
+# th
+th_av_time = thl_av_time - qlthl
+Gamma_th = (th_av_time[:,1:] - th_av_time[:,:-1])/dzh
+Gamma_th_f = (Gamma_th[:,1:] + Gamma_th[:,:-1])*0.5
+
+thpf_prod_moist_time = Gamma_th_f*wff_moist_time[:,1:-1]
+thpf_prod_dry_time = Gamma_th_f*wff_dry_time[:,1:-1]
+
+# ql contribution to thl
+Gamma_qlthl = (qlthl[:,1:] - qlthl[:,:-1])/dzh
+Gamma_qlthl_f = (Gamma_qlthl[:,1:] + Gamma_qlthl[:,:-1])*0.5
+
+qlthlpf_prod_moist_time = Gamma_qlthl_f*wff_moist_time[:,1:-1]
+qlthlpf_prod_dry_time = Gamma_qlthl_f*wff_dry_time[:,1:-1]
+
+tpltmin = 6.
+tpltmax = 16.
+
+terms = [r"Gradient production of $\theta_{l_m}'$",
+         r"Contribution from $\theta_m$",
+         r"Contribution from $q_{l_m}$"
+         ]
+
+colors = ['cadetblue',
+          ]
+
+linestyles = ['-','--',':']
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+thlpfmn_prod_moist = np.mean(thlpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_prod_moist = np.mean(thpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
+qlthlpfmn_prod_moist = np.mean(qlthlpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
+
+thlpfmn_prod_dry = np.mean(thlpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_prod_dry = np.mean(thpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
+qlthlpfmn_prod_dry = np.mean(qlthlpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
+
+fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
+axs[0].plot(thlpfmn_prod_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[0])
+axs[0].plot(thpfmn_prod_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[1])
+axs[0].plot(qlthlpfmn_prod_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[2])
+axs[0].set_xlabel(r"Contribution to $w_m'\frac{\partial\overline{\theta_l}}{\partial z}$ [K/s]")
+axs[0].set_xlim((-5.5e-5,5.5e-5))
+axs[0].set_title('Moist')
+
+axs[1].plot(thlpfmn_prod_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[0],label=terms[0])
+axs[1].plot(thpfmn_prod_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[1],label=terms[1])
+axs[1].plot(qlthlpfmn_prod_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[2],label=terms[2])
+axs[1].set_xlabel(r"Contribution to $w_m'\frac{\partial\overline{\theta_l}}{\partial z}$ [K/s]")
+axs[1].set_xlim((-5.5e-5,5.5e-5))
+axs[1].set_title('Dry')
+
+axs[0].set_ylabel(r'Height [m]')
+axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+
+# -> Grad prod is all due to th, i.e. w_m'd<thl>/dz \approx w_m'd<th>/dz
+
+#%% And now the same question for the flux convergence
+
+qlthlpf_vdiv_moist_time = Lv/(cp*exnf[np.newaxis,1:-1])*qlpf_vdiv_moist_time
+qlthlpf_vdiv_dry_time = Lv/(cp*exnf[np.newaxis,1:-1])*qlpf_vdiv_dry_time
+
+thpf_vdiv_moist_time = thlpf_vdiv_moist_time + qlthlpf_vdiv_moist_time
+thpf_vdiv_dry_time = thlpf_vdiv_dry_time + qlthlpf_vdiv_dry_time
+
+tpltmin = 6.
+tpltmax = 16.
+
+terms = [r"Flux convergence of $\theta_{l_m}'$",
+         r"Contribution from $\theta_m$",
+         r"Contribution from $q_{l_m}$"
+         ]
+
+colors = ['lightsteelblue',
+          ]
+
+linestyles = ['-','--',':']
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+thlpfmn_vdiv_moist = np.mean(thlpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_vdiv_moist = np.mean(thpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
+qlthlpfmn_vdiv_moist = np.mean(qlthlpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
+
+thlpfmn_vdiv_dry = np.mean(thlpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_vdiv_dry = np.mean(thpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
+qlthlpfmn_vdiv_dry = np.mean(qlthlpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
+
+fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
+axs[0].plot(thlpfmn_vdiv_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[0])
+axs[0].plot(thpfmn_vdiv_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[1])
+axs[0].plot(-qlthlpfmn_vdiv_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[2])
+axs[0].set_xlabel(r"Contribution to $\frac{1}{\rho_0}\frac{\partial}{\partial z}\left(F_{{\theta_l}_m'}\right)$ [K/s]")
+axs[0].set_xlim((-5.5e-5,5.5e-5))
+axs[0].set_title('Moist')
+
+axs[1].plot(thlpfmn_vdiv_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[0],label=terms[0])
+axs[1].plot(thpfmn_vdiv_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[1],label=terms[1])
+axs[1].plot(-qlthlpfmn_vdiv_dry, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw,linestyle=linestyles[2],label=terms[2])
+axs[1].set_xlabel(r"Contribution to $\frac{1}{\rho_0}\frac{\partial}{\partial z}\left(F_{{\theta_l}_m'}\right)$ [K/s]")
+axs[1].set_xlim((-5.5e-5,5.5e-5))
+axs[1].set_title('Dry')
+
+axs[0].set_ylabel(r'Height [m]')
+axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+
+# And this is almost entirely due to wql. Perfect.
+
