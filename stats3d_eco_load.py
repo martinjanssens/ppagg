@@ -15,7 +15,12 @@ from dataloader import DataLoaderDALES, DataLoaderMicroHH
 from functions import vint
 
 # Run specifics
+<<<<<<< HEAD
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_meansub'
+=======
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/home/hp200321/data/botany-6-1536-50/runs/Run_40/ppagg'
+>>>>>>> 159d89e4887eef5a5e2e2416bdc56cb707aba306
 sp = lp+'/../figs'
 mod = 'dales'
 
