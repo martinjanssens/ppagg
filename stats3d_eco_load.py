@@ -2109,3 +2109,58 @@ axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 
 # And this is almost entirely due to wql. Perfect.
 
+#%% And finally, just do the qlpf budget
+
+# Grad prod
+Gamma_ql = (ql_av_time[:,1:] - ql_av_time[:,:-1])/dzh
+Gamma_ql_f = (Gamma_ql[:,1:] + Gamma_ql[:,:-1])*0.5
+
+qlpf_prod_moist_time = Gamma_ql_f*wff_moist_time[:,1:-1]
+qlpf_prod_dry_time = Gamma_ql_f*wff_dry_time[:,1:-1]
+
+tpltmin = 6.
+tpltmax = 16.
+
+terms = ['Tendency                               ',
+         'Gradient production',
+         'Vertical flux convergence',
+         'Net condensation'
+         ]
+
+colors = ['black',
+          'cadetblue',
+          'lightsteelblue',
+          'cornflowerblue']
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+
+qlpfmn_tend_moist = np.mean(qlpf_tend_moist_time[itpltmin:itpltmax,:],axis=0)
+qlpfmn_prod_moist = np.mean(qlpf_prod_moist_time[itpltmin:itpltmax,:],axis=0)
+qlpfmn_vdiv_moist = np.mean(qlpf_vdiv_moist_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_cond_moist = qlpfmn_tend_moist + qlpfmn_prod_moist + qlpfmn_vdiv_moist
+
+qlpfmn_tend_dry = np.mean(qlpf_tend_dry_time[itpltmin:itpltmax,:],axis=0)
+qlpfmn_prod_dry = np.mean(qlpf_prod_dry_time[itpltmin:itpltmax,:],axis=0)
+qlpfmn_vdiv_dry = np.mean(qlpf_vdiv_dry_time[itpltmin:itpltmax,:],axis=0)
+thpfmn_cond_dry = qlpfmn_tend_dry + qlpfmn_prod_dry + qlpfmn_vdiv_dry
+
+fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
+axs[0].plot(qlpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
+axs[0].plot(-qlpfmn_prod_moist, zflim[1:-1],c=colors[1],alpha=alpha,lw=lw)
+axs[0].plot(-qlpfmn_vdiv_moist, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
+axs[0].plot(thpfmn_cond_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
+axs[0].set_xlabel(r"Contribution to $q_{l_m}'$ tendency [kg/kg/s]")
+# axs[0].set_xlim((-5.5e-5,5.5e-5))
+axs[0].set_title('Moist')
+
+axs[1].plot(qlpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
+axs[1].plot(-qlpfmn_prod_dry, zflim[1:-1],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
+axs[1].plot(-qlpfmn_vdiv_dry, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
+axs[1].plot(thpfmn_cond_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
+axs[1].set_xlabel(r"Contribution to $q_{l_m}'$ tendency [kg/kg/s]")
+# axs[1].set_xlim((-5.5e-5,5.5e-5))
+axs[1].set_title('Dry')
+
+axs[0].set_ylabel(r'Height [m]')
+axs[1].legend(loc='best',bbox_to_anchor=(1,1))
