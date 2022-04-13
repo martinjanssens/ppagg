@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_mean/ppagg_new'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_sst_het/ppagg'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -1155,8 +1155,8 @@ plt.savefig(sp+'/qtpf_budget_int.pdf',bbox_inches='tight')
 #%% Fluxes and fluctuations of thv
 
 # Time to average over
-tpltmin = 10.
-tpltmax = 16.
+tpltmin = 2.
+tpltmax = 6.
 
 terms0 = [r"$\theta_{v_m}'$",
           r"$\theta_{lv_m}'$",
