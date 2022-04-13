@@ -273,11 +273,11 @@ def diffekw(ekm,u,v,w,dx,dy,dzf,dzh,rhobf=None,rhobh=None):
              dzh[1:-1,np.newaxis,np.newaxis])
 
 def mean_mask(field,mask):
-    masked = np.ma.masked_equal(field*mask,0)
+    # Assumes mask is 1-0
     if len(field.shape) == 2:
-        return masked.mean()
+        return np.sum(field*mask) / np.sum(mask) 
     elif len(field.shape) == 3:
-        return masked.mean(axis=(1,2))
+        return np.sum(field*mask[np.newaxis,:,:],axis=(1,2)) / np.sum(mask)
     else:
         print('Input field has wrong shape')
         return
