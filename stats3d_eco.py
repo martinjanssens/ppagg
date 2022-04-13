@@ -16,7 +16,7 @@ from functions import *
 from dataloader import DataLoaderDALES, DataLoaderDALESSeparate, DataLoaderMicroHH
 import argparse
 
-parseFlag = True 
+parseFlag = False 
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
@@ -53,8 +53,8 @@ else:
     mod = 'dales'
     # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
     lp = '/scratch-shared/janssens/bomex200_e12'
-    itmin = 27
-    itmax = 28
+    itmin = 63
+    itmax = 64
     di    = 1
     izmin = 0
     izmax = 75
