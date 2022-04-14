@@ -17,7 +17,7 @@ from functions import vint
 
 # Run specifics
 
-lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_meansub'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -551,7 +551,7 @@ lw = 2
 fig,axs = plt.subplots(ncols=2,sharey=True,figsize=(10,5))
 # fig.suptitle(colors)
 axs[0].plot(qtpfmn_tend_moist, zflim[1:-1],c=colors[0],alpha=alpha,lw=lw)
-axs[0].plot(-qtpfmn_resi_moist, zflim[2:-2],c=colors[1],alpha=alpha,lw=lw)
+axs[0].plot(qtpfmn_resi_moist, zflim[2:-2],c=colors[1],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_prod_moist_wex, zflim[1:-1],c=colors[2],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_vdiv_moist, zflim[1:-1],c=colors[3],alpha=alpha,lw=lw)
 axs[0].plot(-qtpfmn_hdiv_moist, zflim[1:-1],c=colors[4],alpha=alpha,lw=lw)
@@ -562,7 +562,7 @@ axs[0].set_xlim((-7.5e-8,7.5e-8))
 axs[0].set_title('Moist')
 
 axs[1].plot(qtpfmn_tend_dry, zflim[1:-1],c=colors[0],label=terms[0],alpha=alpha,lw=lw)
-axs[1].plot(-qtpfmn_resi_dry, zflim[2:-2],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
+axs[1].plot(qtpfmn_resi_dry, zflim[2:-2],c=colors[1],label=terms[1],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_prod_dry_wex, zflim[1:-1],c=colors[2],label=terms[2],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_vdiv_dry, zflim[1:-1],c=colors[3],label=terms[3],alpha=alpha,lw=lw)
 axs[1].plot(-qtpfmn_hdiv_dry, zflim[1:-1],c=colors[4],label=terms[4],alpha=alpha,lw=lw)
@@ -2164,3 +2164,28 @@ axs[1].set_title('Dry')
 
 axs[0].set_ylabel(r'Height [m]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
+
+#%% dA/dt per wff
+tpltmin = 6.
+tpltmax = 36.
+dit = 0.5 # Rounds to closest multiple of dt in time
+dtav = 1.0 # Average around each plotted time step
+alpha = 0.5
+lw=2
+
+itpltmin = np.where(time[plttime]>=tpltmin)[0][0]
+itpltmax = np.where(time[plttime]<tpltmax)[0][-1]+1
+idtplt = int(round(dit/(time[plttime[1]]-time[plttime[0]])))
+idtav  = int(round(dtav/2/(time[1]-time[0])))
+plttime_var = np.arange(itpltmin,itpltmax,idtplt)
+
+rhobfi = rhobf[0,izmin:izmax]
+
+wff_div_moist = (wff_moist_time[:,1:] - wff_moist_time[:,:-1]) / (zflim[1:] - zflim[:-1])
+wff_div_moist = (wff_div_moist[:,1:] + wff_div_moist[:,:-1]) * 0.5
+
+Amoist_tend = vint(-wff_div_moist*qt_av_time[:,1:-1],rhobfi[1:-1],zflim[1:-1],plttime_var)
+twp_av_time = vint(qt_av_time,rhobfi,zflim,plttime_var)
+Amoist_tend = Amoist_tend/twp_av_time
+
+
