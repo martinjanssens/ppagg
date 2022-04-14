@@ -328,7 +328,7 @@ class DataLoaderMicroHH:
         return np.ma.getdata(self.ds1['thermo']['thv_w'][:,izmin:izmax])
 
     def load_w2tav(self, izmin, izmax):
-        return np.ma.getdata(self.ds1['thermo']['w_2'][:,izmin:izmax])
+        return np.ma.getdata(self.ds1['default']['w_2'][:,izmin:izmax])
 
     def load_dissav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['budget']['tke_diff'][:,izmin:izmax])

@@ -10,9 +10,11 @@ Created on Wed Nov  3 14:56:45 2021
 import numpy as np
 import matplotlib.pyplot as plt
 import netCDF4 as nc
+import matplotlib.animation as animation
 from functions import getRad, lowPass, mean_mask
 
 lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+lp = '/scratch-shared/janssens/eurec4a_old/eurec4a_mean_ssthet'
 sp = lp+'/figs'
 
 klp = 4
@@ -77,9 +79,9 @@ plt.savefig(sp+'/twpfluct.pdf',bbox_inches='tight',dpi=300)
 
 #%% Plot the time evolution of twpp
 
-tPlot = np.arange(6,18,3)
+tPlot = np.arange(0,16,2)
 
-fig,axs = plt.subplots(ncols=len(tPlot),nrows=2,figsize=(3.5*len(tPlot),7),
+fig,axs = plt.subplots(ncols=len(tPlot),nrows=3,figsize=(3.5*len(tPlot),10),
                        sharex=True,sharey=True,squeeze=False)
 
 for j in range(len(tPlot)):
@@ -93,9 +95,13 @@ for j in range(len(tPlot)):
     # cm[qli<qlc] = 0
     # cm[qli>=qlc] = 1
 
+    buoycb = np.ma.getdata(ds.variables['buoycb'][it,:,:])
+
     sc1 = axs[0,j].imshow(twpp, extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
     
     sc2 = axs[1,j].imshow(cm  , extent=extent,vmin=0 ,vmax=2000,cmap='gray')
+    
+    sc3 = axs[2,j].imshow(buoycb  , extent=extent,vmin=-1 ,vmax=1,cmap='RdYlBu_r')
     
     if j > 1:
         axs[0,j].contour(twppf,levels=[0],extent=extent,origin='upper',
@@ -103,7 +109,11 @@ for j in range(len(tPlot)):
         axs[1,j].contour(twppf,levels=[0],extent=extent,origin='upper',
                          linewidths=1,colors='white')
     
+        axs[2,j].contour(twppf,levels=[0],extent=extent,origin='upper',
+                         linewidths=1,colors='black')
+
     axs[1,j].set_xlabel('x [km]')
+    axs[2,j].set_xlabel('x [km]')
     axs[0,j].set_title('t = %.1f hr'%tPlot[j])
     if j == 0:
         axs[0,j].set_ylabel('y [km]')
@@ -120,9 +130,69 @@ for j in range(len(tPlot)):
         cb2 = fig.colorbar(sc2, cax=cbax2)
         cb2.ax.set_ylabel(r"Cloud-top height [m]", rotation=270, labelpad=15)
 
+        pos3 = axs[2,j].get_position()
+        cbax3 = fig.add_axes([.92, pos2.ymin, 0.01, pos3.height])
+        cb3 = fig.colorbar(sc3, cax=cbax3)
+        cb3.ax.set_ylabel(r"Cloud-base buoyancy [K]", rotation=270, labelpad=15)
 plt.savefig(sp+'/twp_cld_evo.pdf', bbox_inches='tight',dpi=300)
+
+#%% Make movie over time
+tpltmin = 0.0
+tpltmax = 24.0
+
+itpltmin = np.where(time>=tpltmin)[0][0]
+itpltmax = np.where(time<tpltmax)[0][-1]+1
+
+tPlot = time[itpltmin:itpltmax]
+
+def animate(i):
+    ax.collections = []
+    twpp = np.ma.getdata(ds.variables['twp'][itpltmin+i,:,:])
+    twpp -= np.mean(twpp)
+    twppf = lowPass(twpp, circ_mask)
     
+    sc1 = ax.imshow(twpp, extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
+    ax.contour(twppf,levels=[0],extent=extent,origin='upper',linewidths=1,colors='black')
+    ax.set_xlabel('x [km]')
+    ax.set_xlabel('y [km]')
+    ax.set_title('t = %.1f hr'%tPlot[i])
+
+fig, ax = plt.subplots(figsize=(5, 5))
+
+ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(tPlot))
+
+ani.save(sp+"/twppf.mp4")
+
+#%% Plot time evolution of fraction of twppf_moist
+tPlot = np.arange(6,24,0.25)
+alpha=0.5
+lw=2
+col_moist = plt.cm.RdYlBu(0.99)
+
+twppf_moist_frac = np.zeros(tPlot.shape)
+twppf_moist = np.zeros(tPlot.shape)
+cf = np.zeros(tPlot.shape)
+
+for j in range(len(tPlot)):
+    it = np.argmin(abs(tPlot[j]-time))
+    twpp = np.ma.getdata(ds.variables['twp'][it,:,:])
+    twpp -= np.mean(twpp)
+    twppf = lowPass(twpp, circ_mask)
+    mask_moist = np.zeros(twppf.shape)
+    mask_moist[twppf - np.mean(twppf) > 0] = 1
+    twppf_moist_frac[j] = np.count_nonzero(mask_moist) / mask_moist.size
+    twppf_moist[j] = mean_mask(twppf, mask_moist)
     
+    cm = np.ma.getdata(ds.variables['cldtop'][it,:,:])
+    cf[j] = np.count_nonzero(cm) / cm.size
+
+fig = plt.figure(figsize=(5,10/3)); axs = plt.gca()
+# axs.plot(tPlot,twppf_moist,c=col_moist,lw=lw,alpha=alpha,label=labs[i])
+axs.plot(tPlot,twppf_moist_frac,c=col_moist,lw=lw,alpha=alpha,label='Fraction of moist, mesoscale columns')
+
+ax2 = axs.twinx()
+ax2.plot(tPlot,cf,c='k',lw=lw,alpha=alpha,label='Cloud fraction')
+plt.show()
 #%% Plot time evolution of twp, for a number of simulations
 
 # time 50m res:np.arange(600,115200,600)
