@@ -16,7 +16,7 @@ from functions import vint
 
 # Run specifics
 lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12/ppagg_ql'
-lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_sst_het/ppagg'
+lp = '/Users/martinjanssens/Documents/Wageningen/EUREC4A/moisture_circulation/eurec4a_mean/ppagg_new'
 sp = lp+'/../figs'
 mod = 'dales'
 
@@ -232,9 +232,9 @@ dthldt_ls = dthldt_ls[izmin:izmax]
 dthlvdt_ls = dthldt_ls + 0.608*thl_av_1d*dqdt_ls
 
 #%% Plotprofiles of  mesoscale-filtered variables in time
-tpltmin = 3.
-tpltmax = 24.
-dit = 4.0 # Rounds to closest multiple of dt in time
+tpltmin = 2.
+tpltmax = 14.
+dit = 2.0 # Rounds to closest multiple of dt in time
 dtav = 2.0 # Around each plotted time step
 alpha = 0.5
 lw=2
