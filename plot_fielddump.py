@@ -16,7 +16,8 @@ sys.path.insert(1, '/home/janssens/scripts/pp3d/')
 from functions import *
 from thermofunctions import qsatur, rlv, rd, rv, cp
 
-lp = '/scratch-shared/janssens/eurec4a_test'
+lp = '/scratch-shared/janssens/eurec4a_old/eurec4a_mean'
+lp = '/scratch-shared/janssens/bomex200_e12'
 sp = lp+'/figs'
 itmin = 63
 itmax = 64
@@ -39,10 +40,24 @@ rhobh = np.ma.getdata(ds1.variables['rhobh'][:])
 
 dx = np.diff(xf)[0]
 dy = np.diff(xf)[0] # Assumes uniform horizontal spacing
-dzh = np.diff(zf)[0] # FIXME only valid in lower part of domain
+
+# Vertical differences
+dzf = np.zeros(zh.shape)
+dzf[:-1] = zh[1:] - zh[:-1] # First value is difference top 1st cell and surface
+dzf[-1] = dzf[-2]
+
+dzh = np.zeros(zf.shape)
+dzh[1:] = zf[1:] - zf[:-1] # First value is difference mid 1st cell and mid 1st cell below ground
+dzh[0] = 2*zf[1]
+
+delta = (dx*dy*np.diff(zh))**(1./3)
+
+dzflim = dzf[izmin:izmax]
+dzhlim = dzh[izmin:izmax]
 
 plttime = np.arange(itmin, itmax, di)
 zflim = zf[izmin:izmax]
+zhlim = zh[izmin:izmax]
 
 # Mask for low-[ass filtering
 circ_mask = np.zeros((xf.size,xf.size))
@@ -60,14 +75,15 @@ for i in range(len(plttime)):
     qt  = np.ma.getdata(ds.variables['qt'][plttime[i],izmin:izmax,:,:])
     u = np.ma.getdata(ds.variables['u'][plttime[i],izmin:izmax,:,:])
     v = np.ma.getdata(ds.variables['v'][plttime[i],izmin:izmax,:,:])
-    wf = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
+    wh = np.ma.getdata(ds.variables['w'][plttime[i],izmin:izmax+1,:,:])
     thl =  np.ma.getdata(ds.variables['thl'][plttime[i],izmin:izmax,:,:])
     ql = np.ma.getdata(ds.variables['ql'][plttime[i],izmin:izmax,:,:])
     if 'p' in ds.variables.keys():
         p = np.ma.getdata(ds.variables['p'][plttime[i],izmin:izmax,:,:])
     
     # w  h-> f-levels
-    wf = (wf[1:,:,:] + wf[:-1,:,:])*0.5
+    wf = (wh[1:,:,:] + wh[:-1,:,:])*0.5
+    wh = wh[:-1,:,:]
     
     # Tempereature and saturation specific humidity
     presh  = np.ma.getdata(ds1.variables['presh'][it1d,izmin:izmax])
@@ -109,6 +125,10 @@ for i in range(len(plttime)):
     wthlvpf = lowPass(wthlvp,circ_mask)
     
     ddxhuh = (np.roll(u,-1,axis=2) - u)/dx + (np.roll(v,-1,axis=1) - v)/dy
+    
+    div_wql = ddzwx_2nd(wh, qlp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wql_av = np.mean(div_wql,axis=(1,2))
+    div_wqlf = lowPass(div_wql, circ_mask)
     
     # Sort by twp
     itwpsort = np.argsort(twppf.flatten())
@@ -180,31 +200,33 @@ for i in range(len(plttime)):
 
     plt.savefig(sp+'/structure.pdf',bbox_inches='tight',dpi=300)
     plt.show()
-    
+#%%
     # Conceptual figure
     extent=[xf.min()/1000,xf.max()/1000,zflim[0],zflim[-1]]
     ix = 372
     iz0 = 15
     iz1 = 37
+    fq = 1000 # kg/kg => g/kg
+    fwql = 7*300 # kg/kg m/s => K m/s
     # fig,axs = plt.subplots(figsize=(10,4),nrows=1)
     fig = plt.figure(figsize=(10,4)); axs = plt.gca()
-    sc0 = axs.imshow(np.flipud(qt[:,ix,:]),
+    sc0 = axs.imshow(np.flipud(qt[:,ix,:])*fq,
                             extent=extent,
                             aspect='auto',cmap='RdYlBu',
-                            vmin=0.01,vmax=0.018)
+                            vmin=0.01*fq,vmax=0.018*fq)
     pos = axs.get_position()
     cbax0=fig.add_axes([.92, pos.ymin, 0.007, pos.height])
     cb0 = fig.colorbar(sc0, cax=cbax0)
-    cb0.ax.set_ylabel(r"$q_t$ [kg/kg]", rotation=270, labelpad=15)
+    cb0.ax.set_ylabel(r"$q_t$ [g/kg]", rotation=270, labelpad=15)
     
     # sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
-    sc1 = axs.contour(wqlpf[:-1,ix,:],extent=extent,origin='lower',linewidths=1,cmap='Blues',levels=np.linspace(0.0001,0.0002,6))
-    cbax1=fig.add_axes([1.02, pos.ymin, 0.007, pos.height])
+    sc1 = axs.contour(wqlpf[:-1,ix,:]*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.0001*fwql,0.0002*fwql,6))
+    cbax1=fig.add_axes([0.98, pos.ymin, 0.007, pos.height])
     norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
     sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
     sm.set_array([])
     cb1 = fig.colorbar(sm, cax=cbax1)
-    cb1.ax.set_ylabel(r"${w'q_l'}_m$ [m/s kg/kg]", rotation=270, labelpad=15)
+    cb1.ax.set_ylabel(r"$a_3\overline{\theta_l}{w'q_l'}_m$ [Km/s]", rotation=270, labelpad=15)
     cb1.locator = ticker.MaxNLocator(nbins=6)
     cb1.update_ticks()
     axs.contour(ql[:,ix,:],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
@@ -220,5 +242,130 @@ for i in range(len(plttime)):
     axs.set_xlabel('x [km]')
     axs.set_ylabel('z [m]')
     axs.set_xlim(extent[0:2])
-    plt.savefig(sp+'/concept.pdf',bbox_inches='tight',dpi=300)
+    plt.savefig(sp+'/concept.svg',bbox_inches='tight',dpi=300)
     plt.show()
+
+#%% Presentatoin workshop figure
+# Conceptual figure
+extent=[xf.min()/1000,xf.max()/1000,zflim[0],zflim[-1]]
+ix = 372
+iz0 = 15
+iz1 = 37
+fq = 1000 # kg/kg => g/kg
+fwql = 7*300 # kg/kg m/s => K m/s
+# fig,axs = plt.subplots(figsize=(10,4),nrows=1)
+fig = plt.figure(figsize=(10,4)); axs = plt.gca()
+sc0 = axs.imshow(np.flipud(qt[:,ix,:])*fq,
+                        extent=extent,
+                        aspect='auto',cmap='RdYlBu',
+                        vmin=0.01*fq,vmax=0.018*fq)
+pos = axs.get_position()
+cbax0=fig.add_axes([.92, pos.ymin, 0.007, pos.height])
+cb0 = fig.colorbar(sc0, cax=cbax0)
+cb0.ax.set_ylabel(r"Total water [g/kg]", rotation=270, labelpad=15)
+
+# sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+# sc1 = axs.contour(wqlf[:-1,ix,:]*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.0001*fwql,0.0002*fwql,6))
+# cbax1=fig.add_axes([0.98, pos.ymin, 0.007, pos.height])
+# norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
+# sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
+# sm.set_array([])
+# cb1 = fig.colorbar(sm, cax=cbax1)
+# cb1.ax.set_ylabel(r"Filtered liquid water flux [Km/s]", rotation=270, labelpad=15)
+# cb1.locator = ticker.MaxNLocator(nbins=6)
+# cb1.update_ticks()
+axs.contour(ql[:,ix,:],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+axs.contour(qtpf[:,ix,:],levels=[0.0004],extent=extent,origin='lower',linewidths=2,colors='steelblue')#,linestyles='dashed')
+xfstr = np.linspace(xf[0],xf[-1],len(xf))/1000
+[X,Y] = np.meshgrid(xfstr,zflim)
+speed = np.sqrt((upf[:,ix,:]/1000)**2+wff[:,ix,:]**2)
+lws = np.maximum(.75,3.*speed/np.max(speed))
+st = axs.streamplot(X,Y,upf[:,ix,:]/1000,wff[:,ix,:],linewidth=lws, density=1,color='grey')
+axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+
+axs.set_xlabel('x [km]')
+axs.set_ylabel('z [m]')
+axs.set_xlim(extent[0:2])
+plt.savefig(sp+'/concept.svg',bbox_inches='tight',dpi=300)
+plt.show()
+
+#%%
+# First inset
+extent=[20,70,zflim[0],2500]
+fig = plt.figure(figsize=(5,4)); axs = plt.gca()
+sc0 = axs.imshow(np.flipud(qt[:62,ix,100:350])*fq,
+                        extent=extent,
+                        aspect='auto',cmap='RdYlBu',
+                        vmin=0.01*fq,vmax=0.018*fq)
+pos = axs.get_position()
+cbax0=fig.add_axes([.92, pos.ymin, 0.01, pos.height])
+cb0 = fig.colorbar(sc0, cax=cbax0)
+cb0.ax.set_ylabel(r"Total moisture [g/kg]", rotation=270, labelpad=15)
+
+# sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+# sc1 = axs.contour(wqlf[:61,ix,100:350]*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.0001*fwql,0.0002*fwql,6))
+# cbax1=fig.add_axes([1.05, pos.ymin, 0.01, pos.height])
+# norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
+# sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
+# sm.set_array([])
+# cb1 = fig.colorbar(sm, cax=cbax1)
+# cb1.ax.set_ylabel(r"Filtered liquid water flux [Km/s]", rotation=270, labelpad=15)
+# cb1.locator = ticker.MaxNLocator(nbins=6)
+# cb1.update_ticks()
+axs.contour(ql[:62,ix,100:350],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+
+axs.contour(qtpf[:62,ix,100:350],levels=[0.0004],extent=extent,origin='lower',linewidths=1,colors='black')# ,linestyles='dashed')
+xfstr = np.linspace(xf[0],xf[-1],len(xf))/1000
+[X,Y] = np.meshgrid(xfstr,zflim[:62])
+speed = np.sqrt((upf[:62,ix,:]/1000)**2+wff[:62,ix,:]**2)
+lws = np.maximum(.75,3.*speed/np.max(speed))
+st = axs.streamplot(X,Y,upf[:62,ix,:]/1000,wff[:62,ix,:],linewidth=lws, density=1,color='grey')
+axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+
+axs.set_xlabel('x [km]')
+axs.set_ylabel('z [m]')
+axs.set_xlim(extent[0:2])
+plt.savefig(sp+'/concept_1.svg',bbox_inches='tight',dpi=300)
+plt.show()
+
+#%% Second inset
+extent=[30,50,zflim[10],2500]
+fig = plt.figure(figsize=(5,4)); axs = plt.gca()
+sc0 = axs.imshow(np.flipud(qt[10:62,ix,150:275]/qs[10:62,ix,150:275]),
+                        extent=extent,
+                        aspect='auto',cmap='YlGnBu',
+                        vmin=0.8,vmax=1.1)
+pos = axs.get_position()
+cbax0=fig.add_axes([.92, pos.ymin, 0.01, pos.height])
+cb0 = fig.colorbar(sc0, cax=cbax0)
+cb0.ax.set_ylabel(r"Relative humidity [g/kg]", rotation=270, labelpad=15)
+
+# sc1 = axs.contour(qtpf[:-1,ix,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+sc1 = axs.contour(wqlf[10:61,ix,150:275]*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.00005*fwql,0.0002*fwql,8))
+cbax1=fig.add_axes([1.07, pos.ymin, 0.01, pos.height])
+norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
+sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
+sm.set_array([])
+cb1 = fig.colorbar(sm, cax=cbax1)
+cb1.ax.set_ylabel(r"Filtered liquid water flux [Km/s]", rotation=270, labelpad=15)
+cb1.locator = ticker.MaxNLocator(nbins=6)
+cb1.update_ticks()
+axs.contour(ql[10:62,ix,150:275],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+
+# axs.contour(qtpf[:62,ix,100:350],levels=[0.0004],extent=extent,origin='lower',linewidths=1,colors='black',linestyles='dashed')
+# xfstr = np.linspace(xf[0],xf[-1],len(xf))/1000
+# [X,Y] = np.meshgrid(xfstr,zflim[:62])
+# speed = np.sqrt((upf[:62,ix,:]/1000)**2+wff[:62,ix,:]**2)
+# lws = np.maximum(.75,3.*speed/np.max(speed))
+# st = axs.streamplot(X,Y,upf[:62,ix,:]/1000,wff[:62,ix,:],linewidth=lws, density=1,color='grey')
+axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+
+axs.set_xlabel('x [km]')
+axs.set_ylabel('z [m]')
+axs.set_xlim(extent[0:2])
+plt.savefig(sp+'/concept_2.svg',bbox_inches='tight',dpi=300)
+plt.show()
+

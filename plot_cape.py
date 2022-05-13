@@ -9,12 +9,13 @@ Created on Wed Nov  3 14:56:45 2021
 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import netCDF4 as nc
 import matplotlib.animation as animation
 from functions import getRad, lowPass, mean_mask
 
 lp = '/scratch-shared/janssens/bomex200aswitch/a2'
-lp = '/scratch-shared/janssens/eurec4a_old/eurec4a_mean_ssthet'
+# lp = '/scratch-shared/janssens/eurec4a_old/eurec4a_mean_ssthet'
 sp = lp+'/figs'
 
 klp = 4
@@ -79,9 +80,9 @@ plt.savefig(sp+'/twpfluct.pdf',bbox_inches='tight',dpi=300)
 
 #%% Plot the time evolution of twpp
 
-tPlot = np.arange(0,16,2)
+tPlot = np.arange(6,19,3)
 
-fig,axs = plt.subplots(ncols=len(tPlot),nrows=3,figsize=(3.5*len(tPlot),10),
+fig,axs = plt.subplots(ncols=len(tPlot),nrows=2,figsize=(3.5*len(tPlot),7),
                        sharex=True,sharey=True,squeeze=False)
 
 for j in range(len(tPlot)):
@@ -94,6 +95,7 @@ for j in range(len(tPlot)):
     # cm = np.zeros(qli.shape)
     # cm[qli<qlc] = 0
     # cm[qli>=qlc] = 1
+    cf = np.count_nonzero(cm) / cm.size
 
     buoycb = np.ma.getdata(ds.variables['buoycb'][it,:,:])
 
@@ -101,7 +103,7 @@ for j in range(len(tPlot)):
     
     sc2 = axs[1,j].imshow(cm  , extent=extent,vmin=0 ,vmax=2000,cmap='gray')
     
-    sc3 = axs[2,j].imshow(buoycb  , extent=extent,vmin=-1 ,vmax=1,cmap='RdYlBu_r')
+    # sc3 = axs[2,j].imshow(buoycb  , extent=extent,vmin=-1 ,vmax=1,cmap='RdYlBu_r')
     
     if j > 1:
         axs[0,j].contour(twppf,levels=[0],extent=extent,origin='upper',
@@ -109,11 +111,11 @@ for j in range(len(tPlot)):
         axs[1,j].contour(twppf,levels=[0],extent=extent,origin='upper',
                          linewidths=1,colors='white')
     
-        axs[2,j].contour(twppf,levels=[0],extent=extent,origin='upper',
-                         linewidths=1,colors='black')
+        # axs[2,j].contour(twppf,levels=[0],extent=extent,origin='upper',
+                         # linewidths=1,colors='black')
 
     axs[1,j].set_xlabel('x [km]')
-    axs[2,j].set_xlabel('x [km]')
+    # axs[2,j].set_xlabel('x [km]')
     axs[0,j].set_title('t = %.1f hr'%tPlot[j])
     if j == 0:
         axs[0,j].set_ylabel('y [km]')
@@ -123,18 +125,30 @@ for j in range(len(tPlot)):
         pos1 = axs[0,j].get_position()
         cbax1 = fig.add_axes([.92, pos1.ymin, 0.01, pos1.height])
         cb1 = fig.colorbar(sc1, cax=cbax1)
-        cb1.ax.set_ylabel(r"$TWP'$ [kg/kg/m$^2$]", rotation=270, labelpad=15)
+        cb1.ax.set_ylabel(r"Total water path fluctuations [kg/m$^2$]", rotation=270, labelpad=15)
         
         pos2 = axs[1,j].get_position()
         cbax2 = fig.add_axes([.92, pos2.ymin, 0.01, pos2.height])
         cb2 = fig.colorbar(sc2, cax=cbax2)
         cb2.ax.set_ylabel(r"Cloud-top height [m]", rotation=270, labelpad=15)
 
-        pos3 = axs[2,j].get_position()
-        cbax3 = fig.add_axes([.92, pos2.ymin, 0.01, pos3.height])
-        cb3 = fig.colorbar(sc3, cax=cbax3)
-        cb3.ax.set_ylabel(r"Cloud-base buoyancy [K]", rotation=270, labelpad=15)
+        # pos3 = axs[2,j].get_position()
+        # cbax3 = fig.add_axes([.92, pos2.ymin, 0.01, pos3.height])
+        # cb3 = fig.colorbar(sc3, cax=cbax3)
+        # cb3.ax.set_ylabel(r"Cloud-base buoyancy [K]", rotation=270, labelpad=15)
+    axs[1,j].annotate('cloud fraction: %.2f'%cf, (0.05,1.05),xycoords='axes fraction')
 plt.savefig(sp+'/twp_cld_evo.pdf', bbox_inches='tight',dpi=300)
+
+#%% Make cth distribution
+tPlot = np.arange(6,19,3)
+itmin = np.argmin(abs(tPlot[0]-time))
+itmax = np.argmin(abs(tPlot[-1]-time))
+
+#fig,axs = plt.subplots(ncols=1,nrows=1,figsize=(5,5),squeeze=False)
+
+cth = np.ma.getdata(ds.variables['cldtop'][itmin:itmax,:,:])
+ax = sns.histplot(y=cth[cth>0],bins=np.arange(500,2040,40),element="poly", fill=False,stat='density',color='k')
+
 
 #%% Make movie over time
 tpltmin = 0.0
