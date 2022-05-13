@@ -14,14 +14,16 @@ import netCDF4 as nc
 import matplotlib.animation as animation
 from functions import getRad, lowPass, mean_mask
 
-lp = '/scratch-shared/janssens/bomex200aswitch/a2'
+# lp = '/scratch-shared/janssens/bomex200aswitch/a2'
 # lp = '/scratch-shared/janssens/eurec4a_old/eurec4a_mean_ssthet'
+lp = '/Users/martinjanssens/Documents/Wageningen/Patterns-in-satellite-images/BOMEXStability/bomex200_e12'
 sp = lp+'/figs'
 
 klp = 4
 qlc = 1e-7
 
 ds = nc.Dataset(lp+'/cape2d.001.nc')
+ds1 = nc.Dataset(lp+'/profiles.001.nc')
 
 time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 xf    = np.ma.getdata(ds.variables['xt'][:]) # Cell centres (f in mhh)
@@ -35,9 +37,16 @@ circ_mask = np.zeros((xf.size,xf.size))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
 
+# Calculate column-averaged density
+zf = ds1['zt'][:].data
+rhob = ds1['rhobf'][0,:].data
+rho0 = np.trapz(rhob,zf)
+
 #%% Plot twp, twppf and clouds at a single time step
 
+
 tPlot = 24
+fq=1e3
 
 it = np.argmin(abs(tPlot-time))
 
@@ -57,12 +66,12 @@ twpp -= np.mean(twpp)
 twppf = lowPass(twpp, circ_mask)
 
 fig,axs = plt.subplots(ncols=2,figsize=(8,4),sharey=True)
-sc = axs[0].imshow(twpp,extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
+sc = axs[0].imshow(twpp*fq/rho0,extent=extent,vmin=-2*fq/rho0,vmax=2*fq/rho0,cmap='RdYlBu')
 axs[0].set_xlabel('x [km]')
 axs[0].set_ylabel('y [km]')
 
-axs[1].imshow(twppf,extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
-axs[1].contour(twppf,levels=[0],extent=extent,origin='upper')
+axs[1].imshow(twppf*fq/rho0,extent=extent,vmin=-2*fq/rho0,vmax=2*fq/rho0,cmap='RdYlBu')
+axs[1].contour(twppf*fq/rho0,levels=[0],extent=extent,origin='upper')
 axs[1].set_xlabel('x [km]')
 
 # axs[2].contour(twppf,levels=[0],extent=extent,origin='upper',colors='white')
@@ -74,13 +83,13 @@ cbax = fig.add_axes([.92, pos1.ymin, 0.01, pos1.height])
 # cbax = fig.add_axes([1, 0.1, 0.02, 0.85])
 # cbax = fig.add_axes([-0.06, 0.1, 0.02, 0.85])
 cb = fig.colorbar(sc, cax=cbax)
-cb.ax.set_ylabel(r"Total Water Path fluctuation [kg/kg/m$^2$]", rotation=270, labelpad=15) #-65
+cb.ax.set_ylabel(r" $\langle q_t'\rangle$ [g/kg]", rotation=270, labelpad=15) #-65
 # plt.tight_layout()
 plt.savefig(sp+'/twpfluct.pdf',bbox_inches='tight',dpi=300)
 
 #%% Plot the time evolution of twpp
 
-tPlot = np.arange(6,19,3)
+tPlot = np.arange(6,16,3)
 
 fig,axs = plt.subplots(ncols=len(tPlot),nrows=2,figsize=(3.5*len(tPlot),7),
                        sharex=True,sharey=True,squeeze=False)
@@ -99,16 +108,16 @@ for j in range(len(tPlot)):
 
     buoycb = np.ma.getdata(ds.variables['buoycb'][it,:,:])
 
-    sc1 = axs[0,j].imshow(twpp, extent=extent,vmin=-2,vmax=2,cmap='RdYlBu')
+    sc1 = axs[0,j].imshow(twpp*fq/rho0, extent=extent,vmin=-2*fq/rho0,vmax=2*fq/rho0,cmap='RdYlBu')
     
     sc2 = axs[1,j].imshow(cm  , extent=extent,vmin=0 ,vmax=2000,cmap='gray')
     
     # sc3 = axs[2,j].imshow(buoycb  , extent=extent,vmin=-1 ,vmax=1,cmap='RdYlBu_r')
     
     if j > 1:
-        axs[0,j].contour(twppf,levels=[0],extent=extent,origin='upper',
+        axs[0,j].contour(twppf*fq/rho0,levels=[0],extent=extent,origin='upper',
                          linewidths=1,colors='black')
-        axs[1,j].contour(twppf,levels=[0],extent=extent,origin='upper',
+        axs[1,j].contour(twppf*fq/rho0,levels=[0],extent=extent,origin='upper',
                          linewidths=1,colors='white')
     
         # axs[2,j].contour(twppf,levels=[0],extent=extent,origin='upper',
@@ -123,12 +132,12 @@ for j in range(len(tPlot)):
 
     if j == len(tPlot)-1:
         pos1 = axs[0,j].get_position()
-        cbax1 = fig.add_axes([.92, pos1.ymin, 0.01, pos1.height])
+        cbax1 = fig.add_axes([.91, pos1.ymin, 0.006, pos1.height])
         cb1 = fig.colorbar(sc1, cax=cbax1)
-        cb1.ax.set_ylabel(r"Total water path fluctuations [kg/m$^2$]", rotation=270, labelpad=15)
+        cb1.ax.set_ylabel(r"$\langle q_t'\rangle$ [g/kg]", rotation=270, labelpad=15)
         
         pos2 = axs[1,j].get_position()
-        cbax2 = fig.add_axes([.92, pos2.ymin, 0.01, pos2.height])
+        cbax2 = fig.add_axes([.91, pos2.ymin, 0.006, pos2.height])
         cb2 = fig.colorbar(sc2, cax=cbax2)
         cb2.ax.set_ylabel(r"Cloud-top height [m]", rotation=270, labelpad=15)
 

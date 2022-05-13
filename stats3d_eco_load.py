@@ -1052,36 +1052,36 @@ plttime_var = np.arange(itpltmin,itpltmax,idtplt)
 # 1D fields
 rhobfi = rhobf[0,izmin:izmax] # Won't really change much through time, so ok to take 0 value
 
-qtpfi_moist = vint(qtpf_moist_time,rhobfi,zflim,plttime_var)
-qtpfi_dry = vint(qtpf_dry_time,rhobfi,zflim,plttime_var)
+qtpfi_moist = vint(qtpf_moist_time,rhobfi,zflim,plttime_var,norm=True)
+qtpfi_dry = vint(qtpf_dry_time,rhobfi,zflim,plttime_var,norm=True)
 
 # Tendency
-qtpfi_tend_moist = vint(qtpf_tend_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_tend_dry = vint(qtpf_tend_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_tend_moist = vint(qtpf_tend_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_tend_dry = vint(qtpf_tend_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
 # Moistening gradient production per simplified WTG budget
-qtpfi_prod_moist = vint(qtpf_prod_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_prod_dry = vint(qtpf_prod_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_prod_moist = vint(qtpf_prod_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_prod_dry = vint(qtpf_prod_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
-qtpfi_prod_wex_moist = vint(qtpf_prod_moist_wex_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_prod_wex_dry = vint(qtpf_prod_dry_wex_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_prod_wex_moist = vint(qtpf_prod_moist_wex_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_prod_wex_dry = vint(qtpf_prod_dry_wex_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
 # Moistening through anomalous vertical small-scale fluxes
 # FIXME offset zf in integration by 1 from field
-qtpfi_vdiv_moist = vint(qtpf_vdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_vdiv_dry = vint(qtpf_vdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_vdiv_moist = vint(qtpf_vdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_vdiv_dry = vint(qtpf_vdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
 # Moistening through horizontal advection
-qtpfi_hdiv_moist = vint(qtpf_hdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_hdiv_dry = vint(qtpf_hdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_hdiv_moist = vint(qtpf_hdiv_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_hdiv_dry = vint(qtpf_hdiv_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
 # Moistening through subsidence
-qtpfi_subs_moist = vint(qtpf_subs_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
-qtpfi_subs_dry = vint(qtpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var)
+qtpfi_subs_moist = vint(qtpf_subs_moist_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
+qtpfi_subs_dry = vint(qtpf_subs_dry_time,rhobfi[1:-1],zflim[1:-1],plttime_var,norm=True)
 
 # Moistening through SFS diffusion
-qtpfi_diff_moist = vint(qtpf_diff_moist_time,rhobfi[2:-2],zflim[2:-2],plttime_var)
-qtpfi_diff_dry = vint(qtpf_diff_dry_time,rhobfi[2:-2],zflim[2:-2],plttime_var)
+qtpfi_diff_moist = vint(qtpf_diff_moist_time,rhobfi[2:-2],zflim[2:-2],plttime_var,norm=True)
+qtpfi_diff_dry = vint(qtpf_diff_dry_time,rhobfi[2:-2],zflim[2:-2],plttime_var,norm=True)
 
 # Estimate residual
 qtpfi_resid_moist = qtpfi_tend_moist + qtpfi_prod_wex_moist + qtpfi_vdiv_moist + qtpfi_hdiv_moist + qtpfi_subs_moist #- qtpfi_diff_moist
@@ -1142,7 +1142,7 @@ axs[1].plot(time[plttime_var],fq*qtpfi_tend_dry_mod,c=colors[0],label=terms[-1],
 axs[1].set_xlabel('Time [hr]')
 axs[1].set_title('Dry')
 
-axs[0].set_ylabel('Mesoscale moistening rate [g/m$^2$/hr]')
+axs[0].set_ylabel('Moistening rate [g/kg/hr]')
 axs[1].legend(loc='best',bbox_to_anchor=(1,1))
 plt.savefig(sp+'/qtpf_budget_int.pdf',bbox_inches='tight')
 
@@ -1826,10 +1826,17 @@ alpha=0.5
 fq = 1e3
 
 # arrow settings
-dx_arr = fq*4e-8
-hlwq = fq*5e-9
+dx_t = 4
+hlt = 0.5
 
-hlq = 1e-6
+dx_wt = 2e-5
+hlwt = 2e-6
+
+dx_qt = fq*5e-3
+hlq = 5e-1
+
+dx_wq = fq*4e-8
+hlwq = fq*5e-9
 
 hw = 50
 
@@ -1903,7 +1910,10 @@ for i in range(len(plttime_var)):
         ish = np.argmin(np.abs(zflim - 1000))
         ishlab = r"Shallowest cloud-tops"
         
-        axs[0,0].fill_betweenx(zflim[1:-1], thlv_av.min(), thlv_av.max(),
+        axs[0,0].arrow(thlv_av[icb],zflim[icb],  dx_t, 0., head_width=hw, head_length=hlt, fc='k', ec='k')
+        axs[0,0].arrow(thlv_av[itr],zflim[itr], -dx_t, 0., head_width=hw, head_length=hlt, fc='k', ec='k')
+        axs[0,0].arrow(thlv_av[ish],zflim[ish],  dx_t, 0., head_width=hw, head_length=hlt, fc='k', ec='k')
+        axs[0,0].fill_betweenx(zflim[1:-1], thlv_av.min()-dx_t, thlv_av.max(),
                                where=(gamrat_z>0),
                                facecolor='none',
                                edgecolor='silver',
@@ -1911,7 +1921,10 @@ for i in range(len(plttime_var)):
                                linewidth=0.0)
         axs[0,0].annotate('a)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
         
-        axs[0,1].fill_betweenx(zflim[2:-2], -ddz_wthlv_av.min(), -ddz_wthlv_av.max(),
+        axs[0,1].arrow(-ddz_wthlv_av[icb],zflim[icb],  dx_wt, 0., head_width=hw, head_length=hlwt, fc='k', ec='k')
+        axs[0,1].arrow(-ddz_wthlv_av[itr],zflim[itr], -dx_wt, 0., head_width=hw, head_length=hlwt, fc='k', ec='k')
+        axs[0,1].arrow(-ddz_wthlv_av[ish],zflim[ish],  dx_wt, 0., head_width=hw, head_length=hlwt, fc='k', ec='k')
+        axs[0,1].fill_betweenx(zflim[2:-2], -ddz_wthlv_av.min()+dx_wt, -ddz_wthlv_av.max(),
                                where=(wthlvzzz<-1e-9),
                                facecolor='none',
                                edgecolor='silver',
@@ -1919,10 +1932,10 @@ for i in range(len(plttime_var)):
                                linewidth=0.0)
         axs[0,1].annotate('b)', (0.1,0.92), xycoords='axes fraction', fontsize=14)
 
-        axs[0,2].arrow(qt_av[icb],zflim[icb], -dx_arr, 0., head_width=hw, head_length=hlq*fq, fc='k', ec='k')
-        axs[0,2].arrow(qt_av[itr],zflim[itr],  dx_arr, 0., head_width=hw, head_length=hlq*fq, fc='k', ec='k')
-        axs[0,2].arrow(qt_av[ish],zflim[ish], -dx_arr, 0., head_width=hw, head_length=hlq*fq, fc='k', ec='k')
-        axs[0,2].fill_betweenx(zflim[1:-1], qt_av.min(), qt_av.max(),
+        axs[0,2].arrow(qt_av[icb],zflim[icb], -dx_qt, 0., head_width=hw, head_length=hlq, fc='k', ec='k')
+        axs[0,2].arrow(qt_av[itr],zflim[itr],  dx_qt, 0., head_width=hw, head_length=hlq, fc='k', ec='k')
+        axs[0,2].arrow(qt_av[ish],zflim[ish], -dx_qt, 0., head_width=hw, head_length=hlq, fc='k', ec='k')
+        axs[0,2].fill_betweenx(zflim[1:-1], qt_av.min(), qt_av.max()+dx_qt,
                                where=(gamrat_z>0),
                                facecolor='none',
                                edgecolor='silver',
@@ -1930,10 +1943,10 @@ for i in range(len(plttime_var)):
                                linewidth=0.0)
         axs[0,2].annotate('c)', (0.8,0.92), xycoords='axes fraction', fontsize=14)
 
-        axs[0,3].arrow(-ddz_wqt_av[icb],zflim[icb], -dx_arr, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
-        axs[0,3].arrow(-ddz_wqt_av[itr],zflim[itr],  dx_arr, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
-        axs[0,3].arrow(-ddz_wqt_av[ish],zflim[ish], -dx_arr, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
-        axs[0,3].fill_betweenx(zflim[2:-2], -ddz_wqt_av.min(), -ddz_wqt_av.max(),
+        axs[0,3].arrow(-ddz_wqt_av[icb],zflim[icb], -dx_wq, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
+        axs[0,3].arrow(-ddz_wqt_av[itr],zflim[itr],  dx_wq, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
+        axs[0,3].arrow(-ddz_wqt_av[ish],zflim[ish], -dx_wq, 0., head_width=hw, head_length=hlwq, fc='k', ec='k')
+        axs[0,3].fill_betweenx(zflim[2:-2], -ddz_wqt_av.min(), -ddz_wqt_av.max()-dx_wq,
                                where=(wqtzzz<-2e-10),
                                facecolor='none',
                                edgecolor='silver',
@@ -1944,7 +1957,7 @@ for i in range(len(plttime_var)):
         axs[0,4] = sns.histplot(y=cth[cth>0],bins=np.arange(500,2500,40),
                                 element="poly", fill=False,stat='density',
                                 color='k',ax=axs[0,4])
-        axs[0,4].set_xlabel('Pensity of cloud-top height')
+        axs[0,4].set_xlabel('Density of cloud-top height')
         axs[0,4].annotate('e)', (0.8,0.92), xycoords='axes fraction', fontsize=14)
         
 
