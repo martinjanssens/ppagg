@@ -197,15 +197,15 @@ varlab = [r"Gradient production",
           r"Vertical transport",
           r"Horizontal transport"]
 
-# pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
-# varlab = [r"Gradient production", 
-#           r"Vertical transport",
-#           r"Horizontal transport"]
+pltvars = ['thlvpf_prod','thlvpf_vdiv', 'thlvpf_hdiv']
+varlab = [r"Gradient production", 
+          r"Vertical transport",
+          r"Horizontal transport"]
 
-tpltmin = 6
-tpltmax = 24
-dit = 6.0 # Rounds to closest multiple of dt in time
-tav = 4.0 # Averaging time centred around current time
+tpltmin = 13
+tpltmax = 19
+dit = 2.0 # Rounds to closest multiple of dt in time
+tav = 1.0 # Averaging time centred around current time
 
 plot_comparison(ld,pltvars,varlab,tpltmin,tpltmax,dit,tav,lines)
 plt.savefig(sp+'/comparison_qtpf.pdf',bbox_inches='tight')

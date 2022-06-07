@@ -15,7 +15,7 @@ from ppagg_io import load_ppagg
 from functions import getRad, lowPass, vint, mean_mask
 from dataloader import DataLoaderDALES, DataLoaderMicroHH
 
-lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
+lps = ['/scratch-shared/janssens/bomex200_e12/ppagg_meansub',
        '/scratch-shared/janssens/bomex200a5',
        '/scratch-shared/janssens/bomex200_fiso_from100_12hr/ppagg_merged',
        '/scratch-shared/janssens/bomex100_e12/ppagg',
@@ -48,10 +48,10 @@ mods = [
         ]
 
 src = ['ppagg',
-       'cape',
+       'cape', # orig cape
        'ppagg',
        'ppagg',
-       'cape',
+       'cape', # orig cape
        'ppagg',
        'ppagg',
        'ppagg',
@@ -67,7 +67,16 @@ ls = ['-',
        ':'
       ]
 
-tmin = 6.
+tmin = [6.,
+        6.,
+        6.,
+        6.,
+        20.,
+        6.,
+        6.,
+        6.
+        ]
+
 tmax = [
         18.,
         36.,
@@ -97,7 +106,7 @@ for i in range(len(lps)):
         ds = nc.Dataset(lp+'/cape2d.001.nc')
         time  = np.ma.getdata(ds.variables['time'][:]) / 3600
 
-        itpltmin = np.where(time>=tmin)[0][0]
+        itpltmin = np.where(time>=tmin[i])[0][0]
         itpltmax = np.where(time<tmax[i])[0][-1]+1
         plttime_var = np.arange(itpltmin,itpltmax,1)
 
@@ -123,9 +132,11 @@ for i in range(len(lps)):
         [exp_moist,fac_moist], cov = curve_fit(lambda x, a, b: b * np.exp(x*a), 
                                                time[plttime_var]*3600, 
                                                twppf_moist,
-                                               p0=[1e-5,0])
-        tau = 1/exp_moist
-        
+                                               absolute_sigma=True,
+                                               p0=[5e-5,0])
+        tau = 1./exp_moist
+        covtau = 1./np.sqrt(cov[0,0])
+
     elif src[i] == 'ppagg':
         if mods[i] == 'dales':
             dl = DataLoaderDALES(lp+'/..')
@@ -134,7 +145,7 @@ for i in range(len(lps)):
         ld = load_ppagg(dl, lp)
         time = ld['time']
 
-        itpltmin = np.where(time>=tmin)[0][0]
+        itpltmin = np.where(time>=tmin[i])[0][0]
         itpltmax = np.where(time<tmax[i])[0][-1]+1
         plttime_var = np.arange(itpltmin,itpltmax,1)
 
@@ -157,9 +168,15 @@ for i in range(len(lps)):
         wthlvpf_anomi_moist = -vint(wthlvpf_moist_anom[:,izmin:-1]*Gamratz[:,izmin-2:],rhobfi[izmin:-1], zflim[izmin:-1], plttime=plttime_var)
         wthlvpf_anomi_dry   = -vint(wthlvpf_dry_anom  [:,izmin:-1]*Gamratz[:,izmin-2:],rhobfi[izmin:-1], zflim[izmin:-1], plttime=plttime_var)
 
-        coef = np.polyfit(np.concatenate((twppf_dry, twppf_moist)),
-                          np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)), 1)
+        if i == 6: # For the 100 m MicroHH simulation, which need different fitting range due to failing routines
+            itpltmax = np.where(time[plttime_var]<28.)[0][-1]+1
+            coef,cov = np.polyfit(np.concatenate((twppf_dry[:itpltmax], twppf_moist[:itpltmax])),
+                    np.concatenate((wthlvpf_anomi_dry[:itpltmax], wthlvpf_anomi_moist[:itpltmax])), 1,cov='unscaled')
+        else:
+            coef,cov = np.polyfit(np.concatenate((twppf_dry, twppf_moist)),
+                                  np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)), 1,cov='unscaled')
         tau = 1./coef[0]
+        covtau = 1./np.sqrt(cov[0,0])
 
         # Plot for debugging
         # qtpfi_mod = np.linspace(twppf_dry.min(),twppf_moist.max(),10)
@@ -167,7 +184,7 @@ for i in range(len(lps)):
         # fs=14
         # fig = plt.figure(); ax = plt.gca()
         # ax.scatter(np.concatenate((twppf_dry, twppf_moist)),
-        #            np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)),c='k',s=0.5)
+        #             np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)),c='k',s=0.5)
         # ax.plot(qtpfi_mod,wthlvpf_anomi_mod,'k')
         # ax.set_ylabel(r"$-\left\langle F_{{\theta_{lv}}_m'} \frac{\partial}{\partial z}\left(\frac{\Gamma_{q_t}}{\Gamma_{\theta_{lv}}}\right) \right\rangle$ [kg/$m^2$/s]", fontsize=fs)
         # ax.set_xlabel(r"$\left\langle q_{t_m}'\right\rangle$ [kg/m$^2$]", fontsize=fs)
@@ -184,7 +201,7 @@ for i in range(len(lps)):
     axs1.plot(time[plttime_var],twppf_dry,c=col_dry,linestyle=ls[i],lw=lw,alpha=alpha)
     labs[i]=labs[i]+r", $\tau_{q_{t_m}'} =$ %.1f hr"%(tau/3600)
 axs1.set_xlabel('Time [hr]')
-axs1.set_ylabel(r"$TWP_m'$ [kg/m$^2$]")
+axs1.set_ylabel(r"$\langle q_{t_m}'\rangle$ [kg/m$^2$]")
 lines = axs1.get_lines()
 dalind = [i for i in range(len(mods)) if mods[i] == 'dales']
 mhhind = [i for i in range(len(mods)) if mods[i] == 'microhh']
