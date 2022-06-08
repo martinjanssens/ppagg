@@ -23,6 +23,7 @@ izmin = 0
 izmax = 80
 klp = 4
 ix = 372
+iz = 37
 iz0 = 15
 iz1 = 37
 fq = 1000 # kg/kg => g/kg
@@ -133,14 +134,17 @@ if generate_slice:
     div_wqlf = lowPass(div_wql, circ_mask)
 
     # Store necesasry fields to make figures
-    qtplt = qt[:62,ix,100:350]
-    qlplt = ql[:62,ix,100:350]
-    qtpfplt = qtpf[:62,ix,100:350]
-    upfplt = upf[:62,ix,:]
-    wffplt = wff[:62,ix,:]
-    # zflim
-    qsplt = qs[10:62,ix,150:275]
-    wqlfplt = wqlf[10:61,ix,150:275]
+    qtplt = qt[:,ix,:]
+    qlplt = ql[:,ix,:]
+    qtpfplt = qtpf[:,ix,:]
+    upfplt = upf[:,ix,:]
+    wffplt = wff[:,ix,:]
+    qsplt = qs[:,ix,:]
+    wqlfplt = wqlf[:,ix,:]
+    wthlvpplt = wthlvp[iz,ix,:]-np.mean(wthlvp[iz,:,:])
+    wthlvpfplt = wthlvpf[iz,ix,:]-np.mean(wthlvp[iz,:,:])
+    wqlpplt = 7*thl_av[iz]*(wqlp[iz,ix,:]-np.mean(wqlp[iz,:,:]))
+    wqlpfplt = 7*thl_av[iz]*(wqlpf[iz,ix,:]-np.mean(wqlp[iz,:,:]))
     
     np.save(lp+'/fig_data/qtplf.npy',qtplt)
     np.save(lp+'/fig_data/qlplt.npy',qlplt)
@@ -148,8 +152,14 @@ if generate_slice:
     np.save(lp+'/fig_data/upfplt.npy',upfplt)
     np.save(lp+'/fig_data/wffplt.npy',wffplt)
     np.save(lp+'/fig_data/zflim.npy',zflim)
+    np.save(lp+'/fig_data/xf.npy',xf)
     np.save(lp+'/fig_data/qsplt.npy',qsplt)
     np.save(lp+'/fig_data/wqlfplt.npy',wqlfplt)
+    np.save(lp+'/fig_data/wthlvpplt.npy',wthlvpplt)
+    np.save(lp+'/fig_data/wthlvpfplt.npy',wthlvpfplt)
+    np.save(lp+'/fig_data/wqlpplt.npy',wqlpplt)
+    np.save(lp+'/fig_data/wqlpfplt.npy',wqlpfplt)
+    
 
 if not generate_slice:
     qtplt = np.load(lp+'/fig_data/qtplf.npy')
@@ -158,14 +168,19 @@ if not generate_slice:
     upfplt = np.load(lp+'/fig_data/upfplt.npy')
     wffplt = np.load(lp+'/fig_data/wffplt.npy')
     zflim = np.load(lp+'/fig_data/zflim.npy')
+    xf = np.load(lp+'/fig_data/xf.npy')
     qsplt = np.load(lp+'/fig_data/qsplt.npy')
     wqlfplt = np.load(lp+'/fig_data/wqlfplt.npy')
-    
+    wthlvpplt = np.load(lp+'/fig_data/wthlvpplt.npy')
+    wthlvpfplt = np.load(lp+'/fig_data/wthlvpfplt.npy')
+    wqlpplt = np.load(lp+'/fig_data/wqlpplt.npy')
+    wqlpfplt = np.load(lp+'/fig_data/wqlpfplt.npy')
+
 
 #%% First inset
 extent=[20,70,20,2500]
 fig = plt.figure(figsize=(5,4)); axs = plt.gca()
-sc0 = axs.imshow(np.flipud(qtplt)*fq,
+sc0 = axs.imshow(np.flipud(qtplt[:62,100:350])*fq,
                         extent=extent,
                         aspect='auto',cmap='RdYlBu',
                         vmin=0.01*fq,vmax=0.018*fq)
@@ -174,14 +189,14 @@ cbax0=fig.add_axes([.92, pos.ymin, 0.01, pos.height])
 cb0 = fig.colorbar(sc0, cax=cbax0)
 cb0.ax.set_ylabel(r"Total moisture [g/kg]", rotation=270, labelpad=15)
 
-axs.contour(qlplt,levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+axs.contour(qlplt[:62,100:350],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
 
-axs.contour(qtpfplt,levels=[0.0004],extent=extent,origin='lower',linewidths=1,colors='black')# ,linestyles='dashed')
+axs.contour(qtpfplt[:62,100:350],levels=[0.0004],extent=extent,origin='lower',linewidths=1,colors='black')# ,linestyles='dashed')
 xfstr = np.linspace(20,102300,512)/1000
 [X,Y] = np.meshgrid(xfstr,np.arange(20,2500,40))
-speed = np.sqrt((upfplt/1000)**2+wffplt**2)
+speed = np.sqrt((upfplt[:62,:]/1000)**2+wffplt[:62,:]**2)
 lws = np.maximum(.75,3.*speed/np.max(speed))
-st = axs.streamplot(X,Y,upfplt/1000,wffplt,linewidth=lws, density=1,color='grey')
+st = axs.streamplot(X,Y,upfplt[:62,:]/1000,wffplt[:62,:],linewidth=lws, density=1,color='grey')
 axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
 axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
 
@@ -194,7 +209,7 @@ plt.show()
 #%% Second inset
 extent=[30,50,zflim[10],2500]
 fig = plt.figure(figsize=(5,4)); axs = plt.gca()
-sc0 = axs.imshow(np.flipud(qtplt[10:,50:175]/qsplt),
+sc0 = axs.imshow(np.flipud(qtplt[10:62,150:275]/qsplt[10:62,150:275]),
                         extent=extent,
                         aspect='auto',cmap='YlGnBu',
                         vmin=0.8,vmax=1.1)
@@ -204,7 +219,7 @@ cb0 = fig.colorbar(sc0, cax=cbax0)
 cb0.ax.set_ylabel(r"Relative humidity [g/kg]", rotation=270, labelpad=15,fontsize=16)
 cb0.ax.tick_params(labelsize=14)
 
-sc1 = axs.contour(wqlfplt*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.00005*fwql,0.0002*fwql,8))
+sc1 = axs.contour(wqlfplt[10:62,150:275]*fwql,extent=extent,origin='lower',linewidths=1.5,cmap='Purples',levels=np.linspace(0.00005*fwql,0.0002*fwql,8))
 cbax1=fig.add_axes([1.09, pos.ymin, 0.01, pos.height])
 norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
 sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
@@ -214,7 +229,7 @@ cb1.ax.set_ylabel(r"Liquid water flux [Km/s]", rotation=270, labelpad=15, fontsi
 cb1.ax.tick_params(labelsize=14)
 cb1.locator = ticker.MaxNLocator(nbins=6)
 cb1.update_ticks()
-axs.contour(qlplt[10:,50:175],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
+axs.contour(qlplt[10:62,150:275],levels=[1e-7],extent=extent,origin='lower',linewidths=1,colors='black')
 
 axs.axhline(zflim[iz0],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
 axs.axhline(zflim[iz1],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
@@ -225,5 +240,42 @@ axs.tick_params(axis='both', labelsize=14)
 
 axs.set_xlim(extent[0:2])
 plt.savefig(sp+'/concept_2.svg',bbox_inches='tight',dpi=300)
+plt.show()
+
+#%% Flux origins
+extent=[xf[0]/1000,xf[-1]/1000,zflim[0],zflim[-1]-1]
+fig,axs = plt.subplots(figsize=(10,4),nrows=2,sharex=True,gridspec_kw={'height_ratios':[1,3]})
+sc0 = axs[1].imshow(np.flipud(qtplt[:-1,:]-qsplt),
+                        extent=extent,
+                        aspect='auto',cmap='YlGnBu',
+                        vmin=-0.01,vmax=0.003)
+pos = axs[1].get_position()
+cbax0=fig.add_axes([.92, pos.ymin, 0.007, pos.height])
+cb0 = fig.colorbar(sc0, cax=cbax0)
+cb0.ax.set_ylabel(r"$q_t- q_s$ [kg/kg]", rotation=270, labelpad=15)
+
+sc1 = axs[1].contour(qtpfplt[:-1,:],extent=extent,origin='lower',linewidths=0.75,cmap='Blues',levels=np.linspace(0.0002,0.003,6))
+cbax1=fig.add_axes([1.02, pos.ymin, 0.007, pos.height])
+norm = colors.Normalize(vmin=sc1.cvalues.min(), vmax=sc1.cvalues.max())
+sm = plt.cm.ScalarMappable(norm=norm, cmap=sc1.cmap)
+sm.set_array([])
+cb1 = fig.colorbar(sm, cax=cbax1)
+cb1.ax.set_ylabel(r"$q_{t_m}'$ [kg/kg]", rotation=270, labelpad=15)
+cb1.locator = ticker.MaxNLocator(nbins=6)
+cb1.update_ticks()
+axs[1].contour(qlplt[:-1,:],levels=[1e-7],extent=extent,origin='lower',linewidths=0.5,colors='black')
+axs[1].axhline(zflim[iz],linestyle='--',color='k',alpha=0.8,linewidth=0.5)
+axs[1].set_xlabel('x [km]')
+axs[1].set_ylabel('z [m]')
+
+axs[0].plot(xf/1000,wthlvpplt,c='maroon',label=r"$F_{\theta_{lv}'}$")
+axs[0].plot(xf/1000,wthlvpfplt,c='maroon',linestyle='dashed',label=r"$F_{{\theta_{lv}'}_m}$")
+axs[0].plot(xf/1000,-wqlpplt,c='seagreen',label=r"$-7\overline{\theta_l}F_{q_l'}$")
+axs[0].plot(xf/1000,-wqlpfplt,c='seagreen',linestyle='dashed',label=r"$-7\overline{\theta_l}F_{{q_l'}_m}$")
+axs[0].set_ylim((-1,0))
+axs[0].set_ylabel(r"$F_{\theta_{lv}}$, [Km/s]")
+axs[0].legend(bbox_to_anchor=(1,1),loc='upper left',ncol=2)
+
+plt.savefig(sp+'/structure.pdf',bbox_inches='tight',dpi=300)
 plt.show()
 
