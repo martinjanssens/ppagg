@@ -4,10 +4,10 @@
 import numpy as np
 import os
 
-lps = ['/scratch-shared/janssens/bomex100_e12/ppagg',
-       '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg']
+lps = ['/scratch-shared/janssens/bomex-james/bomex100_e12/ppagg',
+       '/scratch-shared/janssens/bomex-james/bomex100_ldelta_from100_12hr/ppagg']
 ranges = [[0,48], [0,48]]
-savePath = '/scratch-shared/janssens/bomex200_f200_from100_12hr/ppagg_merged'
+savePath = '/scratch-shared/janssens/bomex-james/bomex100_ldelta_from100_12hr/ppagg_merged'
 
 def find_files(path):
     '''
@@ -43,7 +43,11 @@ def process(lps,savePath,ranges):
                 else:
                     np.save(savePath+'/'+fname, arr[ranges[i][0]:ranges[i][1],:])
             else:
-                arr_stem = np.load(savePath+'/'+fname)
+                try:
+                    arr_stem = np.load(savePath+'/'+fname)
+                except:
+                    print('Could not load', savePath+'/'+fname, 'continuing...')
+                    continue
                 if len(arr.shape) < 2 and 'time' in fname:
                     arr_concat = np.concatenate([arr_stem, arr[ranges[i][0]:ranges[i][1]]])
                 elif len(arr.shape) >= 2:
