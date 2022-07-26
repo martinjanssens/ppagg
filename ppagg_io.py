@@ -20,8 +20,8 @@ def load_ppagg(dl, lp):
     ld['plttime'] = np.load(lp+'/plttime.npy')
     ld['zflim'] = np.load(lp+'/zf.npy')
 
-    ld['izmin'] = np.where(ld['zflim'][0] == ld['zf'])[0][0]
-    ld['izmax'] = np.where(ld['zflim'][-1] == ld['zf'])[0][0]+1
+    ld['izmin'] = np.where(np.abs(ld['zflim'][0] - ld['zf']) < 1e-3)[0][0]
+    ld['izmax'] = np.where(np.abs(ld['zflim'][-1] - ld['zf']) < 1e-3)[0][0]+1
 
     ld['qtpf_moist_time'] = np.load(lp+'/qtpf_moist_time.npy')
     ld['qtpf_dry_time'] = np.load(lp+'/qtpf_dry_time.npy')
@@ -35,7 +35,9 @@ def load_ppagg(dl, lp):
     ld['qtpf_hdiv_dry_time'] = np.load(lp+'/qtpf_hdiv_dry_time.npy')
     ld['qtpf_subs_moist_time'] = np.load(lp+'/qtpf_subs_moist_time.npy')
     ld['qtpf_subs_dry_time'] = np.load(lp+'/qtpf_subs_dry_time.npy')
-
+    ld['qtpf_micr_moist_time'] = np.load(lp+'/qtpf_micr_moist_time.npy')
+    ld['qtpf_micr_dry_time'] = np.load(lp+'/qtpf_micr_dry_time.npy')
+    
     ld['thlvpf_moist_time'] = np.load(lp+'/thlvpf_moist_time.npy')
     ld['thlvpf_dry_time'] = np.load(lp+'/thlvpf_dry_time.npy')
     ld['thlvpf_prod_moist_time'] = np.load(lp+'/thlvpf_prod_moist_time.npy')
@@ -46,7 +48,11 @@ def load_ppagg(dl, lp):
     ld['thlvpf_hdiv_dry_time'] = np.load(lp+'/thlvpf_hdiv_dry_time.npy')
     ld['thlvpf_subs_moist_time'] = np.load(lp+'/thlvpf_subs_moist_time.npy')
     ld['thlvpf_subs_dry_time'] = np.load(lp+'/thlvpf_subs_dry_time.npy')
-
+    ld['thlvpf_micr_moist_time'] = np.load(lp+'/thlvpf_micr_moist_time.npy')
+    ld['thlvpf_micr_dry_time'] = np.load(lp+'/thlvpf_micr_dry_time.npy')
+    ld['thlvpf_radi_moist_time'] = np.load(lp+'/thlvpf_radi_moist_time.npy')
+    ld['thlvpf_radi_dry_time'] = np.load(lp+'/thlvpf_radi_dry_time.npy')
+        
     ld['thlvpp_moist_time'] = np.load(lp+'/thlvpp_moist_time.npy')
     ld['thlvpp_dry_time'] = np.load(lp+'/thlvpp_dry_time.npy')
     ld['thlvpp_prod_moist_time'] = np.load(lp+'/thlvpp_prod_moist_time.npy')
@@ -118,6 +124,23 @@ def load_ppagg(dl, lp):
     ld['Gamma_thlv_av_time'] = zderivef(ld['thlv_av_time'],dzh)
     ld['Gamrat_av_time'] = ld['Gamma_qt_av_time']/ld['Gamma_thlv_av_time']
     ld['Gamrat_av_time'][np.abs(ld['Gamrat_av_time'])>0.03] = np.nan
+    
+    
+    # Tendencies of variables of interest
+    def tderive(var,time):
+        return ((var[1:,1:-1] - var[:-1,1:-1])
+               /(time[1:,np.newaxis] - time[:-1,np.newaxis])/3600)
+
+    ld['qtpf_tend_moist_time'] = np.zeros(ld['qtpf_prod_moist_time'].shape)
+    ld['qtpf_tend_dry_time'] = np.zeros(ld['qtpf_prod_moist_time'].shape)
+    ld['qtpf_tend_moist_time'][1:,:] = tderive(ld['qtpf_moist_time'], ld['time'])
+    ld['qtpf_tend_dry_time'][1:,:] = tderive(ld['qtpf_dry_time'], ld['time'])
+
+    ld['thlvpf_tend_moist_time'] = np.zeros(ld['thlvpf_prod_moist_time'].shape)
+    ld['thlvpf_tend_dry_time'] = np.zeros(ld['thlvpf_prod_moist_time'].shape)
+    ld['thlvpf_tend_moist_time'][1:,:] = tderive(ld['thlvpf_moist_time'], ld['time'])
+    ld['thlvpf_tend_dry_time'][1:,:] = tderive(ld['thlvpf_dry_time'], ld['time'])
+
     
     ## Reconstruct slab-mean budget terms
     ## FIXME Not working yet, would need support for time1d vs time and handling different time dimension sizes in restart and original
