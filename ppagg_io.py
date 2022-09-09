@@ -78,7 +78,10 @@ def load_ppagg(dl, lp):
     ld['wthlvpf_subs_dry_time'] = np.load(lp+'/wthlvpf_subs_dry_time.npy')
     ld['wthlvpf_diff_moist_time'] = np.load(lp+'/wthlvpf_diff_moist_time.npy')
     ld['wthlvpf_diff_dry_time'] = np.load(lp+'/wthlvpf_diff_dry_time.npy')
-
+    
+    ld['qlpf_vdiv_moist_time'] = np.load(lp+'/qlpf_vdiv_moist_time.npy')
+    ld['qlpf_vdiv_dry_time'] = np.load(lp+'/qlpf_vdiv_dry_time.npy')
+    
     ld['thl_av_time'] = np.load(lp+'/thl_av_time.npy')
     ld['thlv_av_time'] = np.load(lp+'/thlv_av_time.npy')
     ld['qt_av_time'] = np.load(lp+'/qt_av_time.npy')
@@ -105,6 +108,16 @@ def load_ppagg(dl, lp):
 
     ld['wqlpf_moist_time'] = np.load(lp+'/wqlpf_moist_time.npy')
     ld['wqlpf_dry_time'] = np.load(lp+'/wqlpf_dry_time.npy')
+    ld['wqlp_av_time'] = np.load(lp+'/wqlp_av_time.npy')
+    ld['wqlpf_moist_time'] = np.load(lp+'/wqlpf_moist_time.npy')
+    ld['wqlpf_dry_time'] = np.load(lp+'/wqlpf_dry_time.npy')
+    ld['wqlpf_l_moist_time'] = np.load(lp+'/wqlpf_l_moist_time.npy')
+    ld['wqlpf_l_dry_time'] = np.load(lp+'/wqlpf_l_dry_time.npy')
+    ld['wqlpf_c_moist_time'] = np.load(lp+'/wqlpf_c_moist_time.npy')
+    ld['wqlpf_c_dry_time'] = np.load(lp+'/wqlpf_c_dry_time.npy')
+    ld['wqlpf_r_moist_time'] = np.load(lp+'/wqlpf_r_moist_time.npy')
+    ld['wqlpf_r_dry_time'] = np.load(lp+'/wqlpf_r_dry_time.npy')
+    
     ld['wthlvp_av_time'] = np.load(lp+'/wthlvp_av_time.npy')
     ld['wthlvpf_moist_time'] = np.load(lp+'/wthlvpf_moist_time.npy')
     ld['wthlvpf_dry_time'] = np.load(lp+'/wthlvpf_dry_time.npy')
