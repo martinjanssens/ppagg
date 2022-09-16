@@ -22,7 +22,7 @@ lps = ['/scratch-shared/janssens/bomex200_e12/ppagg',
        '/scratch-shared/janssens/bomex50',
        '/scratch-shared/janssens/tmp.bomex/bomex_200m/ppagg',
        '/scratch-shared/janssens/tmp.bomex/bomex_100m/ppagg',
-       # '/scratch-shared/janssens/tmp.bomex/bomex_50m/ppagg',
+       '/scratch-shared/janssens/tmp.bomex/bomex_50m/ppagg',
        ]
 sp = '/scratch-shared/janssens/bomex_comparisons'
 
@@ -34,7 +34,7 @@ labs = [
         r'D5: $\Delta x = 50m$',
         r'M1: $\Delta x = 200m$',
         r'M2: $\Delta x = 100m$',
-        #r'M3 - $\Delta x = 50m$',
+        r'M3: $\Delta x = 50m$',
         ]
 mods = [
         'dales',
@@ -44,7 +44,7 @@ mods = [
         'dales',
         'microhh',
         'microhh',
-        # 'microhh',
+        'microhh',
         ]
 
 src = ['ppagg',
@@ -54,7 +54,7 @@ src = ['ppagg',
        'cape',
        'ppagg',
        'ppagg',
-       # 'ppagg',
+       'ppagg',
        ]
 
 ls = ['-',
@@ -64,7 +64,7 @@ ls = ['-',
       ':',
       '-',
       '--',
-      # ':'
+       ':'
       ]
 
 tmin = 6.
@@ -76,7 +76,7 @@ tmax = [
         36.,
         12.,
         36.,
-        # 36.
+        36.
         ]
 
 klp = 4
@@ -151,9 +151,11 @@ for i in range(len(lps)):
         twppf_dry = vint(qtpfdi,rhobfi,zflim,plttime_var)
         
         # Time scale estimate
+        zmin = 500.
+        izmin = np.argmin(np.abs(zflim-zmin))
         Gamratz = (Gamrat[:,1:] - Gamrat[:,:-1])/(zflim[1] - zflim[0])
-        wthlvpf_anomi_moist = -vint(wthlvpf_moist_anom[:,2:-1]*Gamratz,rhobfi[2:-1], zflim[2:-1], plttime=plttime_var)
-        wthlvpf_anomi_dry = -vint(wthlvpf_dry_anom[:,2:-1]*Gamratz,rhobfi[2:-1], zflim[2:-1], plttime=plttime_var)
+        wthlvpf_anomi_moist = -vint(wthlvpf_moist_anom[:,izmin:-1]*Gamratz[:,izmin-2:],rhobfi[izmin:-1], zflim[izmin:-1], plttime=plttime_var)
+        wthlvpf_anomi_dry   = -vint(wthlvpf_dry_anom  [:,izmin:-1]*Gamratz[:,izmin-2:],rhobfi[izmin:-1], zflim[izmin:-1], plttime=plttime_var)
 
         coef = np.polyfit(np.concatenate((twppf_dry, twppf_moist)),
                           np.concatenate((wthlvpf_anomi_dry, wthlvpf_anomi_moist)), 1)

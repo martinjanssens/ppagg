@@ -16,7 +16,7 @@ from functions import *
 from dataloader import DataLoaderDALES, DataLoaderDALESSeparate, DataLoaderMicroHH
 import argparse
 
-parseFlag = True
+parseFlag = True 
 
 if parseFlag:
     parser = argparse.ArgumentParser(description="Post-process 3D and 1D output from LES simulations of length-scale growth")
@@ -52,15 +52,15 @@ if parseFlag:
 else:
     mod = 'dales'
     # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
-    lp = '/scratch-shared/janssens/eurec4a_test'
-    itmin = 49
-    itmax = 50
+    lp = '/scratch-shared/janssens/eurec4a_mean'
+    itmin = 63
+    itmax = 64
     di    = 1
     izmin = 0
     izmax = 75
-    store = True
+    store = False
     pflag = False
-    eflag = False
+    eflag = True
     mcrflag = True
     radflag = True
     klp = 4
@@ -156,8 +156,20 @@ thlvpp_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 thlvpp_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
 thlvpp_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
 
+qlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
+qlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
+qlpf_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
 qlpf_vdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 qlpf_vdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_hdiv_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_hdiv_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_subs_moist_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_subs_dry_time = np.zeros((plttime.size,izmax-izmin-2))
+qlpf_diff_moist_time = np.zeros((plttime.size,izmax-izmin-4))
+qlpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-4))
+qlpf_micr_moist_time = np.zeros((plttime.size,izmax-izmin))
+qlpf_micr_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 wthlvpf_prod_moist_time = np.zeros((plttime.size,izmax-izmin-2))
 wthlvpf_prod_dry_time = np.zeros((plttime.size,izmax-izmin-2))
@@ -182,8 +194,6 @@ thlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 thlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 wff_moist_time = np.zeros((plttime.size,izmax-izmin))
 wff_dry_time = np.zeros((plttime.size,izmax-izmin))
-qlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
-qlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 qtpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 qtpp_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -224,7 +234,7 @@ wthlvpf_r_dry_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wthlvpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
-# Mask for low-[ass filtering FIXME also hardcoded for now
+# Mask for low-pass filtering
 circ_mask = np.zeros((xf.size,xf.size))
 rad = getRad(circ_mask)
 circ_mask[rad<=klp] = 1
@@ -467,12 +477,12 @@ for i in range(len(plttime)):
     # Mean gradients
     Gamma_thl = (thl_av[1:] - thl_av[:-1])/(zflim[1:] - zflim[:-1])
     Gamma_qt = (qt_av[1:] - qt_av[:-1])/(zflim[1:] - zflim[:-1])
-    # Gamma_ql = (ql_av[1:] - ql_av[:-1])/(zflim[1:] - zflim[:-1])
+    Gamma_ql = (ql_av[1:] - ql_av[:-1])/(zflim[1:] - zflim[:-1])
     Gamma_thlv = (thlv_av[1:] - thlv_av[:-1])/(zflim[1:] - zflim[:-1])
     
     Gamma_thl_f = (Gamma_thl[1:] + Gamma_thl[:-1])*0.5
     Gamma_qt_f = (Gamma_qt[1:] + Gamma_qt[:-1])*0.5
-    # Gamma_ql_f = (Gamma_ql[1:] + Gamma_ql[:-1])*0.5
+    Gamma_ql_f = (Gamma_ql[1:] + Gamma_ql[:-1])*0.5
     Gamma_thlv_f = (Gamma_thlv[1:] + Gamma_thlv[:-1])*0.5
     
     # Large-scale thlv production
@@ -489,12 +499,19 @@ for i in range(len(plttime)):
     thlvpp_prod_moist_time[i,:] = thlvpp_prod_moist
     thlvpp_prod_dry_time[i,:] = thlvpp_prod_dry
     
-    # Moisture production term with actual w'
+    # Total water production term with actual w'
     qtpf_prod_wex_moist = wf_moist[1:-1]*Gamma_qt_f
     qtpf_prod_wex_dry = wf_dry[1:-1]*Gamma_qt_f
 
     qtpf_prod_moist_wex_time[i,:] = qtpf_prod_wex_moist
     qtpf_prod_dry_wex_time[i,:] = qtpf_prod_wex_dry
+    
+    # Liquid water production term
+    qlpf_prod_moist = wf_moist[1:-1]*Gamma_ql_f
+    qlpf_prod_dry = wf_dry[1:-1]*Gamma_ql_f
+
+    qlpf_prod_moist_time[i,:] = qlpf_prod_moist
+    qlpf_prod_dry_time[i,:] = qlpf_prod_dry
     
     # wthlv:
     # Doesn't matter if you use wfp instead of wfp+wff, neither in *_av nor *f
@@ -599,9 +616,17 @@ for i in range(len(plttime)):
     qtpf_prod_dry_time[i,:] = qtpf_prod_dry
 
     # Horizontal advection
-
+    # We will assume the budget is Lagrangian following the mean flow, i.e.
+    # we subtract <u_h>da'/dx_h  where <u_h> is the slab averaged
+    # horizontal velocity, to not have mean flow advection of the moist/dry 
+    # patches and their growth through shear obscure their evolution. 
+    # This is equivalent to computing d/dx_h(u_h'a'). 
+    
+    up = u - np.mean(u, axis=(1,2))[:,np.newaxis,np.newaxis]
+    vp = v - np.mean(v, axis=(1,2))[:,np.newaxis,np.newaxis]
+    
     # Horizontal thlv advection
-    div_uhthlvp = ddxhuha_2nd(u, v, thlvpf+thlvpp, dx, dy)
+    div_uhthlvp = ddxhuha_2nd(up, vp, thlvpf+thlvpp, dx, dy)
     div_uhthlvpf = lowPass(div_uhthlvp, circ_mask)
     
     # moist/dry and large/small scale
@@ -620,11 +645,11 @@ for i in range(len(plttime)):
     #  - lowPass(wfp*ddxhuha_2nd(u,v,thlvpp)) \approx lowPass(wfp*ddxhuha_2nd(u,v,thlvpf+thlvpp))
     #  - lowPass(thlvpp*ddxhuhw_2nd(u,v,whp)) \approx lowPass(thlvpp*ddxhuhw_2nd(u,v,whf+whp))
     
-    wdiv_uhthlvp = wfp*ddxhuha_2nd(u, v, thlvpp, dx, dy)
+    wdiv_uhthlvp = wfp*ddxhuha_2nd(up, vp, thlvpp, dx, dy)
     wdiv_uhthlvpf = lowPass(wdiv_uhthlvp, circ_mask)
     wdiv_uhthlvp_av = np.mean(wdiv_uhthlvpf, axis=(1,2))
 
-    thlvpdiv_uhwp = ddxhuhw_2nd(u, v, whp, dx, dy) # half level 1 and up
+    thlvpdiv_uhwp = ddxhuhw_2nd(up, vp, whp, dx, dy) # half level 1 and up
     thlvpdiv_uhwp = (thlvpdiv_uhwp[1:,:,:] + thlvpdiv_uhwp[:-1,:,:]) * 0.5 # Interpolated to zflim[1:-1]
     thlvpdiv_uhwp = thlvpp[1:-1,:,:]*thlvpdiv_uhwp
     thlvpdiv_uhwpf = lowPass(thlvpdiv_uhwp, circ_mask)
@@ -635,15 +660,25 @@ for i in range(len(plttime)):
     wthlvpf_hdiv_dry_time[i,:] = (mean_mask(wdiv_uhthlvpf[1:-1,:,:] + thlvpdiv_uhwpf, mask_dry) -
                                  (wdiv_uhthlvp_av[1:-1] + thlvpdiv_uhwp_av))
 
-    # Horizontal moisture advection
+    # Horizontal qt advection
     # intra-scale contribution largest, but entire term kept for now
-    div_uhqtp = lowPass(ddxhuha_2nd(u, v, qtpf+qtpp, dx, dy), circ_mask)
+    div_uhqtp = lowPass(ddxhuha_2nd(up, vp, qtpf+qtpp, dx, dy), circ_mask)
     div_uhqtp_moist = mean_mask(div_uhqtp,mask_moist)
     div_uhqtp_dry = mean_mask(div_uhqtp,mask_dry)
 
     qtpf_hdiv_moist_time[i,:] = div_uhqtp_moist[1:-1]
     qtpf_hdiv_dry_time[i,:] = div_uhqtp_dry[1:-1]
+   
+    # Horizontal ql advection
+    div_uhqlp = lowPass(ddxhuha_2nd(up, vp, qlpf+qlpp, dx, dy), circ_mask)
+    div_uhqlp_moist = mean_mask(div_uhqlp,mask_moist)
+    div_uhqlp_dry = mean_mask(div_uhqlp,mask_dry)
+
+    qlpf_hdiv_moist_time[i,:] = div_uhqlp_moist[1:-1]
+    qlpf_hdiv_dry_time[i,:] = div_uhqlp_dry[1:-1]
     
+    del up
+    del vp
     del div_uhthlvp
     del div_uhthlvpf
     del wdiv_uhthlvp
@@ -651,6 +686,7 @@ for i in range(len(plttime)):
     del thlvpdiv_uhwp
     del thlvpdiv_uhwpf
     del div_uhqtp
+    del div_uhqlp
     gc.collect()
 
     # Subsidence warming
@@ -681,7 +717,7 @@ for i in range(len(plttime)):
     wthlvpf_subs_moist_time[i,:] = wwsubdthlvppdzf_moist[1:] - wwsubdthlvppdz_av[1:]
     wthlvpf_subs_dry_time[i,:] = wwsubdthlvppdzf_dry[1:] - wwsubdthlvppdz_av[1:]
     
-    # Subsidence drying
+    # Subsidence source of qt fluctuations
     wsubdqtpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qtpf+qtpp, dzhlim),circ_mask)
     wsubdqtpdzf_moist = mean_mask(wsubdqtpdzf,mask_moist)
     wsubdqtpdzf_dry = mean_mask(wsubdqtpdzf,mask_dry)
@@ -689,11 +725,20 @@ for i in range(len(plttime)):
     qtpf_subs_moist_time[i,:] = wsubdqtpdzf_moist[1:]
     qtpf_subs_dry_time[i,:] = wsubdqtpdzf_dry[1:]
     
+    # Subsidence source of ql fluctuations
+    wsubdqlpdzf = lowPass(wsubdxdz(wfls[izmin:izmax], qlpf+qlpp, dzhlim),circ_mask)
+    wsubdqlpdzf_moist = mean_mask(wsubdqlpdzf,mask_moist)
+    wsubdqlpdzf_dry = mean_mask(wsubdqlpdzf,mask_dry)
+
+    qlpf_subs_moist_time[i,:] = wsubdqlpdzf_moist[1:]
+    qlpf_subs_dry_time[i,:] = wsubdqlpdzf_dry[1:]
+
     del wsubdthlvpdz
     del wsubdthlvpdzf
     del wwsubdthlvppdz
     del wwsubdthlvppdzf
     del wsubdqtpdzf
+    del wsubdqlpdzf
     gc.collect()
     
     # Buoyancy tendency in wthlvpf budget
@@ -708,7 +753,8 @@ for i in range(len(plttime)):
     
     # SFS diffusion
     if eflag:
-        # Heat
+        
+        # thlv
         diff_thlvp = (diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], thlvpf+thlvpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi) +
                       diffzeka(ekhp, thlv_av[:,np.newaxis,np.newaxis], dzflim, dzhlim, rhobfi, rhobhi))
         diff_thlvpf = lowPass(diff_thlvp, circ_mask)
@@ -746,7 +792,7 @@ for i in range(len(plttime)):
         wthlvpf_diff_dry_time[i,:] = (mean_mask(wdiff_thlvpf[:-1,:,:] + thlvpdiffwf, mask_dry) - 
                                       (wdiff_thlv_av[:-1] + thlvpdiffw_av))
 
-        # Moisture
+        # qt
         diff_qtpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qtpf+qtpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi)+
                             diffzeka(ekhp, qt_av[:,np.newaxis,np.newaxis], dzflim, dzhlim, rhobfi, rhobhi),
                             circ_mask)
@@ -758,12 +804,26 @@ for i in range(len(plttime)):
         qtpf_diff_moist_time[i,:] = diff_qtpf_moist - diff_qtp_av
         qtpf_diff_dry_time[i,:] = diff_qtpf_dry - diff_qtp_av
 
+
+        # ql 
+        diff_qlpf = lowPass(diffeka(ekhp+ekh_av[:,np.newaxis,np.newaxis], qlpf+qlpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi)+
+                            diffzeka(ekhp, ql_av[:,np.newaxis,np.newaxis], dzflim, dzhlim, rhobfi, rhobhi),
+                            circ_mask)
+        diff_qlp_av = np.mean(diffeka(ekhp, qlpf+qlpp, dx, dy, dzflim, dzhlim, rhobfi, rhobhi), axis=(1,2))
+        
+        diff_qlpf_moist = mean_mask(diff_qlpf,mask_moist)
+        diff_qlpf_dry = mean_mask(diff_qlpf,mask_dry)
+
+        qlpf_diff_moist_time[i,:] = diff_qlpf_moist - diff_qlp_av
+        qlpf_diff_dry_time[i,:] = diff_qlpf_dry - diff_qlp_av
+
         del diff_thlvp
         del diff_thlvpf
         del wdiff_thlvpf
         del thlvpdiffw
         del thlvpdiffwf
         del diff_qtpf
+        del diff_qlpf
         gc.collect()
     
     # Pressure fluctuation gradient (in wthlvp budget)
@@ -794,145 +854,156 @@ for i in range(len(plttime)):
         del Sthlradpf
         gc.collect()
     
-    
+    # Precipitation source in thlvpf, qtpf and qlpf budgets
     if mcrflag:
         Sqtmcr = dl.load_mcr(plttime[i], izmin, izmax)
         Sqtmcrpf = lowPass(Sqtmcr - np.mean(Sqtmcr,axis=(1,2))[:,np.newaxis,np.newaxis],
                             circ_mask)
         
-        qtpf_micr_moist = mean_mask(Sqtmcrpf, mask_moist).data # needed to unmask
-        qtpf_micr_dry = mean_mask(Sqtmcrpf, mask_dry).data
+        qtpf_micr_moist = mean_mask(Sqtmcrpf, mask_moist)
+        qtpf_micr_dry = mean_mask(Sqtmcrpf, mask_dry)
         
         qtpf_micr_moist_time[i,:] = qtpf_micr_moist
         qtpf_micr_dry_time[i,:] = qtpf_micr_dry
+        
+        qlpf_micr_moist_time[i,:] = qtpf_micr_moist # Sqt = Sql, I think
+        qlpf_micr_dry_time[i,:] = qtpf_micr_dry
         
         cmcr = 0.608*thl_av[1:-1] - Lv/cp/exnf[:-1]
         
         thlvpf_micr_moist_time[i,:] = cmcr*qtpf_micr_moist[1:-1]
         thlvpf_micr_dry_time[i,:] = cmcr*qtpf_micr_dry[1:-1]
         
+        del Sqtmcr
         del Sqtmcrpf
         gc.collect()
 
+    if store:
+        np.save(lp+'/time.npy',time[plttime])
+        np.save(lp+'/plttime.npy',plttime)
+        np.save(lp+'/zf.npy',zflim)
+        
+        np.save(lp+'/qtpf_moist_time.npy',qtpf_moist_time)
+        np.save(lp+'/qtpf_dry_time.npy',qtpf_dry_time)
+        np.save(lp+'/qtpf_prod_moist_time.npy',qtpf_prod_moist_time)
+        np.save(lp+'/qtpf_prod_dry_time.npy',qtpf_prod_dry_time)
+        np.save(lp+'/qtpf_prod_moist_wex_time.npy',qtpf_prod_moist_wex_time)
+        np.save(lp+'/qtpf_prod_dry_wex_time.npy',qtpf_prod_dry_wex_time)
+        np.save(lp+'/qtpf_vdiv_moist_time.npy',qtpf_vdiv_moist_time)
+        np.save(lp+'/qtpf_vdiv_dry_time.npy',qtpf_vdiv_dry_time)
+        np.save(lp+'/qtpf_hdiv_moist_time.npy',qtpf_hdiv_moist_time)
+        np.save(lp+'/qtpf_hdiv_dry_time.npy',qtpf_hdiv_dry_time)
+        np.save(lp+'/qtpf_subs_moist_time.npy',qtpf_subs_moist_time)
+        np.save(lp+'/qtpf_subs_dry_time.npy',qtpf_subs_dry_time)
+        np.save(lp+'/qtpf_diff_moist_time.npy',qtpf_diff_moist_time)
+        np.save(lp+'/qtpf_diff_dry_time.npy',qtpf_diff_dry_time)
+        np.save(lp+'/qtpf_micr_moist_time.npy',qtpf_micr_moist_time)
+        np.save(lp+'/qtpf_micr_dry_time.npy',qtpf_micr_dry_time)
+        
+        np.save(lp+'/thlvpf_moist_time.npy',thlvpf_moist_time)
+        np.save(lp+'/thlvpf_dry_time.npy',thlvpf_dry_time)
+        np.save(lp+'/thlvpf_prod_moist_time.npy',thlvpf_prod_moist_time)
+        np.save(lp+'/thlvpf_prod_dry_time.npy',thlvpf_prod_dry_time)
+        np.save(lp+'/thlvpf_vdiv_moist_time.npy',thlvpf_vdiv_moist_time)
+        np.save(lp+'/thlvpf_vdiv_dry_time.npy',thlvpf_vdiv_dry_time)
+        np.save(lp+'/thlvpf_hdiv_moist_time.npy',thlvpf_hdiv_moist_time)
+        np.save(lp+'/thlvpf_hdiv_dry_time.npy',thlvpf_hdiv_dry_time)
+        np.save(lp+'/thlvpf_subs_moist_time.npy',thlvpf_subs_moist_time)
+        np.save(lp+'/thlvpf_subs_dry_time.npy',thlvpf_subs_dry_time)
+        np.save(lp+'/thlvpf_diff_moist_time.npy',thlvpf_diff_moist_time)
+        np.save(lp+'/thlvpf_diff_dry_time.npy',thlvpf_diff_dry_time)
+        np.save(lp+'/thlvpf_radi_moist_time.npy',thlvpf_radi_moist_time)
+        np.save(lp+'/thlvpf_radi_dry_time.npy',thlvpf_radi_dry_time)
+        np.save(lp+'/thlvpf_micr_moist_time.npy',thlvpf_micr_moist_time)
+        np.save(lp+'/thlvpf_micr_dry_time.npy',thlvpf_micr_dry_time)
+        
+        np.save(lp+'/thlvpp_moist_time.npy',thlvpp_moist_time)
+        np.save(lp+'/thlvpp_dry_time.npy',thlvpp_dry_time)
+        np.save(lp+'/thlvpp_prod_moist_time.npy',thlvpp_prod_moist_time)
+        np.save(lp+'/thlvpp_prod_dry_time.npy',thlvpp_prod_dry_time)
+        np.save(lp+'/thlvpp_vdiv_moist_time.npy',thlvpp_vdiv_moist_time)
+        np.save(lp+'/thlvpp_vdiv_dry_time.npy',thlvpp_vdiv_dry_time)
+        np.save(lp+'/thlvpp_hdiv_moist_time.npy',thlvpp_hdiv_moist_time)
+        np.save(lp+'/thlvpp_hdiv_dry_time.npy',thlvpp_hdiv_dry_time)
+        np.save(lp+'/thlvpp_subs_moist_time.npy',thlvpp_subs_moist_time)
+        np.save(lp+'/thlvpp_subs_dry_time.npy',thlvpp_subs_dry_time)
+        np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
+        np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
+        
+        np.save(lp+'/qlpf_moist_time.npy',qlpf_moist_time) 
+        np.save(lp+'/qlpf_dry_time.npy',qlpf_dry_time)
+        np.save(lp+'/qlpf_prod_moist_time.npy',qlpf_prod_moist_time)
+        np.save(lp+'/qlpf_prod_dry_time.npy',qlpf_prod_dry_time)
+        np.save(lp+'/qlpf_vdiv_moist_time.npy',qlpf_vdiv_moist_time)
+        np.save(lp+'/qlpf_vdiv_dry_time.npy',qlpf_vdiv_dry_time)
+        np.save(lp+'/qlpf_hdiv_moist_time.npy',qlpf_hdiv_moist_time)
+        np.save(lp+'/qlpf_hdiv_dry_time.npy',qlpf_hdiv_dry_time)
+        np.save(lp+'/qlpf_subs_moist_time.npy',qlpf_subs_moist_time)
+        np.save(lp+'/qlpf_subs_dry_time.npy',qlpf_subs_dry_time)
+        np.save(lp+'/qlpf_diff_moist_time.npy',qlpf_diff_moist_time)
+        np.save(lp+'/qlpf_diff_dry_time.npy',qlpf_diff_dry_time)
+        np.save(lp+'/qlpf_micr_moist_time.npy',qlpf_micr_moist_time)
+        np.save(lp+'/qlpf_micr_dry_time.npy',qlpf_micr_dry_time)
 
-if store:
-    np.save(lp+'/time.npy',time[plttime])
-    np.save(lp+'/plttime.npy',plttime)
-    np.save(lp+'/zf.npy',zflim)
-    
-    np.save(lp+'/qtpf_moist_time.npy',qtpf_moist_time)
-    np.save(lp+'/qtpf_dry_time.npy',qtpf_dry_time)
-    np.save(lp+'/qtpf_prod_moist_time.npy',qtpf_prod_moist_time)
-    np.save(lp+'/qtpf_prod_dry_time.npy',qtpf_prod_dry_time)
-    np.save(lp+'/qtpf_prod_moist_wex_time.npy',qtpf_prod_moist_wex_time)
-    np.save(lp+'/qtpf_prod_dry_wex_time.npy',qtpf_prod_dry_wex_time)
-    np.save(lp+'/qtpf_vdiv_moist_time.npy',qtpf_vdiv_moist_time)
-    np.save(lp+'/qtpf_vdiv_dry_time.npy',qtpf_vdiv_dry_time)
-    np.save(lp+'/qtpf_hdiv_moist_time.npy',qtpf_hdiv_moist_time)
-    np.save(lp+'/qtpf_hdiv_dry_time.npy',qtpf_hdiv_dry_time)
-    np.save(lp+'/qtpf_subs_moist_time.npy',qtpf_subs_moist_time)
-    np.save(lp+'/qtpf_subs_dry_time.npy',qtpf_subs_dry_time)
-    np.save(lp+'/qtpf_diff_moist_time.npy',qtpf_diff_moist_time)
-    np.save(lp+'/qtpf_diff_dry_time.npy',qtpf_diff_dry_time)
-    np.save(lp+'/qtpf_micr_moist_time.npy',qtpf_micr_moist_time)
-    np.save(lp+'/qtpf_micr_dry_time.npy',qtpf_micr_dry_time)
-    
-    np.save(lp+'/thlvpf_moist_time.npy',thlvpf_moist_time)
-    np.save(lp+'/thlvpf_dry_time.npy',thlvpf_dry_time)
-    np.save(lp+'/thlvpf_prod_moist_time.npy',thlvpf_prod_moist_time)
-    np.save(lp+'/thlvpf_prod_dry_time.npy',thlvpf_prod_dry_time)
-    np.save(lp+'/thlvpf_vdiv_moist_time.npy',thlvpf_vdiv_moist_time)
-    np.save(lp+'/thlvpf_vdiv_dry_time.npy',thlvpf_vdiv_dry_time)
-    np.save(lp+'/thlvpf_hdiv_moist_time.npy',thlvpf_hdiv_moist_time)
-    np.save(lp+'/thlvpf_hdiv_dry_time.npy',thlvpf_hdiv_dry_time)
-    np.save(lp+'/thlvpf_subs_moist_time.npy',thlvpf_subs_moist_time)
-    np.save(lp+'/thlvpf_subs_dry_time.npy',thlvpf_subs_dry_time)
-    np.save(lp+'/thlvpf_diff_moist_time.npy',thlvpf_diff_moist_time)
-    np.save(lp+'/thlvpf_diff_dry_time.npy',thlvpf_diff_dry_time)
-    np.save(lp+'/thlvpf_radi_moist_time.npy',thlvpf_radi_moist_time)
-    np.save(lp+'/thlvpf_radi_dry_time.npy',thlvpf_radi_dry_time)
-    np.save(lp+'/thlvpf_micr_moist_time.npy',thlvpf_micr_moist_time)
-    np.save(lp+'/thlvpf_micr_dry_time.npy',thlvpf_micr_dry_time)
-    
-    np.save(lp+'/thlvpp_moist_time.npy',thlvpp_moist_time)
-    np.save(lp+'/thlvpp_dry_time.npy',thlvpp_dry_time)
-    np.save(lp+'/thlvpp_prod_moist_time.npy',thlvpp_prod_moist_time)
-    np.save(lp+'/thlvpp_prod_dry_time.npy',thlvpp_prod_dry_time)
-    np.save(lp+'/thlvpp_vdiv_moist_time.npy',thlvpp_vdiv_moist_time)
-    np.save(lp+'/thlvpp_vdiv_dry_time.npy',thlvpp_vdiv_dry_time)
-    np.save(lp+'/thlvpp_hdiv_moist_time.npy',thlvpp_hdiv_moist_time)
-    np.save(lp+'/thlvpp_hdiv_dry_time.npy',thlvpp_hdiv_dry_time)
-    np.save(lp+'/thlvpp_subs_moist_time.npy',thlvpp_subs_moist_time)
-    np.save(lp+'/thlvpp_subs_dry_time.npy',thlvpp_subs_dry_time)
-    np.save(lp+'/thlvpp_diff_moist_time.npy',thlvpp_diff_moist_time)
-    np.save(lp+'/thlvpp_diff_dry_time.npy',thlvpp_diff_dry_time)
-    
-    
-    
-    np.save(lp+'/qlpf_vdiv_moist_time.npy',qlpf_vdiv_moist_time)
-    np.save(lp+'/qlpf_vdiv_dry_time.npy',qlpf_vdiv_dry_time)
-    
-    np.save(lp+'/wthlvpf_prod_moist_time',wthlvpf_prod_moist_time)
-    np.save(lp+'/wthlvpf_prod_dry_time',wthlvpf_prod_dry_time)
-    np.save(lp+'/wthlvpf_vdiv_moist_time',wthlvpf_vdiv_moist_time)
-    np.save(lp+'/wthlvpf_vdiv_dry_time',wthlvpf_vdiv_dry_time)
-    np.save(lp+'/wthlvpf_hdiv_moist_time',wthlvpf_hdiv_moist_time)
-    np.save(lp+'/wthlvpf_hdiv_dry_time',wthlvpf_hdiv_dry_time)
-    np.save(lp+'/wthlvpf_buoy_moist_time',wthlvpf_buoy_moist_time)
-    np.save(lp+'/wthlvpf_buoy_dry_time',wthlvpf_buoy_dry_time)
-    np.save(lp+'/wthlvpf_pres_moist_time',wthlvpf_pres_moist_time)
-    np.save(lp+'/wthlvpf_pres_dry_time',wthlvpf_pres_dry_time)
-    np.save(lp+'/wthlvpf_subs_moist_time',wthlvpf_subs_moist_time)
-    np.save(lp+'/wthlvpf_subs_dry_time',wthlvpf_subs_dry_time)
-    np.save(lp+'/wthlvpf_diff_moist_time',wthlvpf_diff_moist_time)
-    np.save(lp+'/wthlvpf_diff_dry_time',wthlvpf_diff_dry_time)
+        np.save(lp+'/wthlvpf_prod_moist_time',wthlvpf_prod_moist_time)
+        np.save(lp+'/wthlvpf_prod_dry_time',wthlvpf_prod_dry_time)
+        np.save(lp+'/wthlvpf_vdiv_moist_time',wthlvpf_vdiv_moist_time)
+        np.save(lp+'/wthlvpf_vdiv_dry_time',wthlvpf_vdiv_dry_time)
+        np.save(lp+'/wthlvpf_hdiv_moist_time',wthlvpf_hdiv_moist_time)
+        np.save(lp+'/wthlvpf_hdiv_dry_time',wthlvpf_hdiv_dry_time)
+        np.save(lp+'/wthlvpf_buoy_moist_time',wthlvpf_buoy_moist_time)
+        np.save(lp+'/wthlvpf_buoy_dry_time',wthlvpf_buoy_dry_time)
+        np.save(lp+'/wthlvpf_pres_moist_time',wthlvpf_pres_moist_time)
+        np.save(lp+'/wthlvpf_pres_dry_time',wthlvpf_pres_dry_time)
+        np.save(lp+'/wthlvpf_subs_moist_time',wthlvpf_subs_moist_time)
+        np.save(lp+'/wthlvpf_subs_dry_time',wthlvpf_subs_dry_time)
+        np.save(lp+'/wthlvpf_diff_moist_time',wthlvpf_diff_moist_time)
+        np.save(lp+'/wthlvpf_diff_dry_time',wthlvpf_diff_dry_time)
 
-    np.save(lp+'/thl_av_time.npy',thl_av_time)
-    np.save(lp+'/thlv_av_time.npy',thlv_av_time)
-    np.save(lp+'/qt_av_time.npy',qt_av_time)
-    
-    np.save(lp+'/thlpf_moist_time.npy',thlpf_moist_time)
-    np.save(lp+'/thlpf_dry_time.npy',thlpf_dry_time)
-    np.save(lp+'/wff_moist_time.npy',wff_moist_time)
-    np.save(lp+'/wff_dry_time.npy',wff_dry_time)
-    np.save(lp+'/qlpf_moist_time.npy',qlpf_moist_time) 
-    np.save(lp+'/qlpf_dry_time.npy',qlpf_dry_time)
-    
-    np.save(lp+'/thlpp_moist_time.npy',thlpp_moist_time)
-    np.save(lp+'/thlpp_dry_time.npy',thlpp_dry_time)
-    np.save(lp+'/wfp_moist_time.npy',wfp_moist_time)
-    np.save(lp+'/wfp_dry_time.npy',wfp_dry_time)
-    np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
-    np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
-    
-    np.save(lp+'/wthlp_av_time.npy',wthlp_av_time)
-    np.save(lp+'/wthlpf_moist_time.npy',wthlpf_moist_time)
-    np.save(lp+'/wthlpf_dry_time.npy',wthlpf_dry_time)
-    
-    np.save(lp+'/wqtp_av_time.npy',wqtp_av_time)
-    np.save(lp+'/wqtpf_moist_time.npy',wqtpf_moist_time)
-    np.save(lp+'/wqtpf_dry_time.npy',wqtpf_dry_time)
-    
-    np.save(lp+'/wqlp_av_time.npy',wqlp_av_time)
-    np.save(lp+'/wqlpf_moist_time.npy',wqlpf_moist_time)
-    np.save(lp+'/wqlpf_dry_time.npy',wqlpf_dry_time)
-    np.save(lp+'/wqlpf_l_moist_time.npy',wqlpf_l_moist_time)
-    np.save(lp+'/wqlpf_l_dry_time.npy',wqlpf_l_dry_time)
-    np.save(lp+'/wqlpf_c_moist_time.npy',wqlpf_c_moist_time)
-    np.save(lp+'/wqlpf_c_dry_time.npy',wqlpf_c_dry_time)
-    np.save(lp+'/wqlpf_r_moist_time.npy',wqlpf_r_moist_time)
-    np.save(lp+'/wqlpf_r_dry_time.npy',wqlpf_r_dry_time)
-    
-    np.save(lp+'/wthlvp_av_time.npy',wthlvp_av_time)
-    np.save(lp+'/wthlvpf_moist_time.npy',wthlvpf_moist_time)
-    np.save(lp+'/wthlvpf_dry_time.npy',wthlvpf_dry_time)
-    np.save(lp+'/wthlvpf_l_moist_time.npy',wthlvpf_l_moist_time)
-    np.save(lp+'/wthlvpf_l_dry_time.npy',wthlvpf_l_dry_time)
-    np.save(lp+'/wthlvpf_c_moist_time.npy',wthlvpf_c_moist_time)
-    np.save(lp+'/wthlvpf_c_dry_time.npy',wthlvpf_c_dry_time)
-    np.save(lp+'/wthlvpf_r_moist_time.npy',wthlvpf_r_moist_time)
-    np.save(lp+'/wthlvpf_r_dry_time.npy',wthlvpf_r_dry_time)
-    np.save(lp+'/wthlvpp_moist_time.npy',wthlvpp_moist_time)
-    np.save(lp+'/wthlvpp_dry_time.npy',wthlvpp_dry_time)
+        np.save(lp+'/thl_av_time.npy',thl_av_time)
+        np.save(lp+'/thlv_av_time.npy',thlv_av_time)
+        np.save(lp+'/qt_av_time.npy',qt_av_time)
+        
+        np.save(lp+'/thlpf_moist_time.npy',thlpf_moist_time)
+        np.save(lp+'/thlpf_dry_time.npy',thlpf_dry_time)
+        np.save(lp+'/wff_moist_time.npy',wff_moist_time)
+        np.save(lp+'/wff_dry_time.npy',wff_dry_time)
+        
+        np.save(lp+'/thlpp_moist_time.npy',thlpp_moist_time)
+        np.save(lp+'/thlpp_dry_time.npy',thlpp_dry_time)
+        np.save(lp+'/wfp_moist_time.npy',wfp_moist_time)
+        np.save(lp+'/wfp_dry_time.npy',wfp_dry_time)
+        np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
+        np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
+        
+        np.save(lp+'/wthlp_av_time.npy',wthlp_av_time)
+        np.save(lp+'/wthlpf_moist_time.npy',wthlpf_moist_time)
+        np.save(lp+'/wthlpf_dry_time.npy',wthlpf_dry_time)
+        
+        np.save(lp+'/wqtp_av_time.npy',wqtp_av_time)
+        np.save(lp+'/wqtpf_moist_time.npy',wqtpf_moist_time)
+        np.save(lp+'/wqtpf_dry_time.npy',wqtpf_dry_time)
+        
+        np.save(lp+'/wqlp_av_time.npy',wqlp_av_time)
+        np.save(lp+'/wqlpf_moist_time.npy',wqlpf_moist_time)
+        np.save(lp+'/wqlpf_dry_time.npy',wqlpf_dry_time)
+        np.save(lp+'/wqlpf_l_moist_time.npy',wqlpf_l_moist_time)
+        np.save(lp+'/wqlpf_l_dry_time.npy',wqlpf_l_dry_time)
+        np.save(lp+'/wqlpf_c_moist_time.npy',wqlpf_c_moist_time)
+        np.save(lp+'/wqlpf_c_dry_time.npy',wqlpf_c_dry_time)
+        np.save(lp+'/wqlpf_r_moist_time.npy',wqlpf_r_moist_time)
+        np.save(lp+'/wqlpf_r_dry_time.npy',wqlpf_r_dry_time)
+        
+        np.save(lp+'/wthlvp_av_time.npy',wthlvp_av_time)
+        np.save(lp+'/wthlvpf_moist_time.npy',wthlvpf_moist_time)
+        np.save(lp+'/wthlvpf_dry_time.npy',wthlvpf_dry_time)
+        np.save(lp+'/wthlvpf_l_moist_time.npy',wthlvpf_l_moist_time)
+        np.save(lp+'/wthlvpf_l_dry_time.npy',wthlvpf_l_dry_time)
+        np.save(lp+'/wthlvpf_c_moist_time.npy',wthlvpf_c_moist_time)
+        np.save(lp+'/wthlvpf_c_dry_time.npy',wthlvpf_c_dry_time)
+        np.save(lp+'/wthlvpf_r_moist_time.npy',wthlvpf_r_moist_time)
+        np.save(lp+'/wthlvpf_r_dry_time.npy',wthlvpf_r_dry_time)
+        np.save(lp+'/wthlvpp_moist_time.npy',wthlvpp_moist_time)
+        np.save(lp+'/wthlvpp_dry_time.npy',wthlvpp_dry_time)
     
 

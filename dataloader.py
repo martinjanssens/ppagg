@@ -91,6 +91,12 @@ class DataLoaderDALES:
     def load_wthlav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['wthlt'][:,izmin:izmax])
 
+    def load_wthvav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthvt'][:,izmin:izmax])
+
+    def load_wqlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqlt'][:,izmin:izmax])
+
     def load_wqtrav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['wqtr'][:,izmin:izmax])
 
@@ -201,6 +207,12 @@ class DataLoaderDALESSeparate:
 
     def load_wthlav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['wthlt'][:,izmin:izmax])
+
+    def load_wthvav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wthvt'][:,izmin:izmax])
+
+    def load_wqlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['wqlt'][:,izmin:izmax])
 
     def load_wqtrav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['wqtr'][:,izmin:izmax])
@@ -314,6 +326,12 @@ class DataLoaderMicroHH:
     def load_wthlav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['thl_flux'][:,izmin:izmax])
 
+    def load_wthvav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['thv_flux'][:,izmin:izmax])
+
+    def load_wqlav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1['thermo']['ql_flux'][:,izmin:izmax])
+
     def load_wqtrav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['qt_w'][:,izmin:izmax])
 
@@ -328,7 +346,7 @@ class DataLoaderMicroHH:
         return np.ma.getdata(self.ds1['thermo']['thv_w'][:,izmin:izmax])
 
     def load_w2tav(self, izmin, izmax):
-        return np.ma.getdata(self.ds1['thermo']['w_2'][:,izmin:izmax])
+        return np.ma.getdata(self.ds1['default']['w_2'][:,izmin:izmax])
 
     def load_dissav(self, izmin, izmax):
         return np.ma.getdata(self.ds1['budget']['tke_diff'][:,izmin:izmax])
