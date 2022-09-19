@@ -527,7 +527,7 @@ for i in range(len(plttime)):
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
     # thlv
-    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wthlv_r = ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzflim, dzhlim, rhobf=rhobfi)
     div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
     div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous p-scale flux
@@ -564,7 +564,7 @@ for i in range(len(plttime)):
                                (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
     
     # qt
-    div_wqt_r = ddzwx_2nd(whp, qtpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wqt_r = ddzwx_2nd(whf+whp, qtpf+qtpp, dzflim, dzhlim, rhobf=rhobfi)
     div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wqt_rf = lowPass(div_wqt_r, circ_mask)
     
