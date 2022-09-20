@@ -27,6 +27,7 @@ if parseFlag:
     parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
     parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
     parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
+    parser.add_argument("--moist_dry", metavar="N", type=int, default=0, help="Mean (0) or median (1) mode for defining moist/dry areas")
     parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
     parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
     parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
@@ -44,6 +45,7 @@ if parseFlag:
     izmin = args.izmin
     izmax = args.izmax
     klp = args.klp
+    moist_dry = args.moist_dry
     store = args.store
     pflag = args.pres
     eflag = args.e12
@@ -64,7 +66,7 @@ else:
     mcrflag = True
     radflag = True
     klp = 4
-
+    moist_dry = 0
 #%% Dry/moist regions
 
 if mod == 'dales':
@@ -343,9 +345,14 @@ for i in range(len(plttime)):
     # Moist/dry averaging, over the large/small scales
     twp = lowPass(twp, circ_mask)
     mask_moist = np.zeros(twp.shape)
-    mask_moist[twp - np.mean(twp) > 0] = 1
-    mask_dry = 1 - mask_moist
-    
+   
+    if moist_dry == 0:
+        mask_moist[twp - np.mean(twp) > 0] = 1
+        mask_dry = 1 - mask_moist
+    elif moist_dry == 1:
+        mask_moist[twp - np.median(twp) > 0] = 1
+        mask_dry = 1 - mask_moist
+
     # Moist, large
     thlpf_moist = mean_mask(thlpf,mask_moist)
     qtpf_moist = mean_mask(qtpf,mask_moist)
@@ -527,7 +534,7 @@ for i in range(len(plttime)):
     # Reynolds vertical flux divergence anomaly (with second order scheme)
     
     # thlv
-    div_wthlv_r = ddzwx_2nd(whp, thlvpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wthlv_r = ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzflim, dzhlim, rhobf=rhobfi)
     div_wthlv_av = np.mean(ddzwx_2nd(whf+whp, thlvpf+thlvpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wthlv_rf = lowPass(div_wthlv_r, circ_mask)
     div_wthlv_rp = div_wthlv_r - div_wthlv_rf # Since div_wthlv_rf still includes the mean flux, this is already the anomalous p-scale flux
@@ -564,7 +571,7 @@ for i in range(len(plttime)):
                                (wdiv_wthlv_av[:-1]+thlvpdiv_ww_av))
     
     # qt
-    div_wqt_r = ddzwx_2nd(whp, qtpp, dzflim, dzhlim, rhobf=rhobfi)
+    div_wqt_r = ddzwx_2nd(whf+whp, qtpf+qtpp, dzflim, dzhlim, rhobf=rhobfi)
     div_wqt_av = np.mean(ddzwx_2nd(whf+whp, qtpf+qtpp, dzflim, dzhlim, rhobf=rhobfi),axis=(1,2))
     div_wqt_rf = lowPass(div_wqt_r, circ_mask)
     
