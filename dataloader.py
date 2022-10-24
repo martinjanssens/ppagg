@@ -65,6 +65,9 @@ class DataLoaderDALES:
     def load_p(self, it, izmin, izmax):
         return np.ma.getdata(self.ds.variables['p'][it,izmin:izmax,:,:])
 
+    def load_qr(self, it, izmin, izmax):
+        return np.ma.getdata(self.ds.variables['sv002'][it,izmin:izmax,:,:])
+
     def load_mcr(self, it, izmin, izmax):
         # mcr_masked = self.ds.variables['qtpmcr'][it,izmin:izmax,:,:]
         # np.ma.set_fill_value(mcr_masked, 0.) # Assuming undefined points are just zero in non-cloudy regions

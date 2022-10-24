@@ -18,5 +18,6 @@ IZMIN=1
 IZMAX=80
 KLP=4
 STORE=TRUE
+MOIST_DRY=1
 
-python -u $STATS3D --mod $MOD --dir $DIR --itmin $ITMIN --itmax $ITMAX --izmin $IZMIN --izmax $IZMAX --klp $KLP --store --e12 --pres --mcr --rad
+python -u $STATS3D --mod $MOD --dir $DIR --itmin $ITMIN --itmax $ITMAX --izmin $IZMIN --izmax $IZMAX --klp $KLP --moist_dry $MOIST_DRY --store --e12 --pres --mcr --rad

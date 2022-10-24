@@ -32,6 +32,7 @@ if parseFlag:
     parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
     parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
     parser.add_argument("--e12", action="store_true", default=False, help="3D e12 data is available")
+    parser.add_argument("--qr", action="store_true", default=False, help="3D qr data is available")
     parser.add_argument("--mcr", action="store_true", default=False, help="3D microphysical qt tendency data is available")
     parser.add_argument("--rad", action="store_true", default=False, help="3D radiative heating rate data is available")
 
@@ -49,12 +50,13 @@ if parseFlag:
     store = args.store
     pflag = args.pres
     eflag = args.e12
+    qrflag = args.qr
     mcrflag = args.mcr
     radflag = args.rad
 else:
     mod = 'dales'
     # lp = '/home/hp200321/data/botany-6-768/runs/Run_40'
-    lp = '/scratch-shared/janssens/eurec4a_mean'
+    lp = '/scratch-shared/janssens/eurec4a_mean_dales4.4'
     itmin = 63
     itmax = 64
     di    = 1
@@ -62,9 +64,10 @@ else:
     izmax = 75
     store = False
     pflag = False
-    eflag = True
-    mcrflag = True
-    radflag = True
+    eflag = False
+    qrflag = True
+    mcrflag = False
+    radflag = False
     klp = 4
     moist_dry = 0
 #%% Dry/moist regions
@@ -191,11 +194,14 @@ wthlvpf_diff_dry_time = np.zeros((plttime.size,izmax-izmin-5))
 thl_av_time = np.zeros((plttime.size,izmax-izmin))
 qt_av_time = np.zeros((plttime.size,izmax-izmin))
 thlv_av_time = np.zeros((plttime.size,izmax-izmin))
+qr_av_time = np.zeros((plttime.size,izmax-izmin))
 
 thlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
 thlpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 wff_moist_time = np.zeros((plttime.size,izmax-izmin))
 wff_dry_time = np.zeros((plttime.size,izmax-izmin))
+qrpf_moist_time = np.zeros((plttime.size,izmax-izmin))
+qrpf_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 qtpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 qtpp_dry_time = np.zeros((plttime.size,izmax-izmin))
@@ -205,6 +211,8 @@ wfp_moist_time = np.zeros((plttime.size,izmax-izmin))
 wfp_dry_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_moist_time = np.zeros((plttime.size,izmax-izmin))
 qlpp_dry_time = np.zeros((plttime.size,izmax-izmin))
+qrpp_moist_time = np.zeros((plttime.size,izmax-izmin))
+qrpp_dry_time = np.zeros((plttime.size,izmax-izmin))
 
 wthlp_av_time = np.zeros((plttime.size,izmax-izmin))
 wthlpf_moist_time = np.zeros((plttime.size,izmax-izmin))
@@ -261,7 +269,9 @@ for i in range(len(plttime)):
         e12 = dl.load_e12(plttime[i], izmin, izmax)
     if pflag:
         pp = dl.load_p(plttime[i], izmin, izmax)
-
+    if qrflag:
+        qrp = dl.load_qr(plttime[i], izmin, izmax)
+        
     # Slab averaging
     thl_av = np.mean(thlp,axis=(1,2))
     qt_av = np.mean(qt,axis=(1,2))   
@@ -295,6 +305,10 @@ for i in range(len(plttime)):
     # Define thlv
     thlvp = thlp + 0.608*thl_av[:,np.newaxis,np.newaxis]*qt
     
+    if qrflag:
+        qr_av = np.mean(qrp,axis=(1,2))
+        qr_av_time[i,:] = qr_av
+    
     # Perturbations
     qtp = qt - qt_av[:,np.newaxis,np.newaxis]
     twp = np.trapz(rhobfi[:,np.newaxis,np.newaxis]*qt[:,:,:],zflim,axis=0)
@@ -309,6 +323,9 @@ for i in range(len(plttime)):
     thlvp = thlvp - thlv_av[:,np.newaxis,np.newaxis]
     qlp = qlp - ql_av[:,np.newaxis,np.newaxis]
     
+    if qrflag:
+        qrp = qrp - qr_av[:,np.newaxis,np.newaxis]
+
     # Slab average resolved fluxes
     wqt_av = np.mean(wf*qtp,axis=(1,2))
     wthl_av = np.mean(wf*thlp,axis=(1,2))
@@ -339,6 +356,11 @@ for i in range(len(plttime)):
     qlpp = qlp - qlpf
     del qlp
 
+    if qrflag:
+        qrpf = lowPass(qrp, circ_mask)
+        qrpp = qrp - qrpf
+        del qrp
+    
     gc.collect()
     
 
@@ -404,6 +426,21 @@ for i in range(len(plttime)):
     qlpf_dry_time[i,:] = qlpf_dry
     qlpp_moist_time[i,:] = qlpp_moist
     qlpp_dry_time[i,:] = qlpp_dry
+    
+    if qrflag:
+        qrpf_moist = mean_mask(qrpf,mask_moist)
+        qrpf_dry = mean_mask(qrpf,mask_dry)
+        qrpf_moist_time[i,:] = qrpf_moist
+        qrpf_dry_time[i,:] = qrpf_dry
+
+        qrpp_moist = mean_mask(qrpp,mask_moist)
+        qrpp_dry = mean_mask(qrpp,mask_dry)
+        qrpp_moist_time[i,:] = qrpp_moist
+        qrpp_dry_time[i,:] = qrpp_dry
+        
+        del qrpf
+        del qrpp
+        gc.collect()
     
     ## Fluxes 
     # FIXME no sgs here yet!!
@@ -970,11 +1007,14 @@ for i in range(len(plttime)):
         np.save(lp+'/thl_av_time.npy',thl_av_time)
         np.save(lp+'/thlv_av_time.npy',thlv_av_time)
         np.save(lp+'/qt_av_time.npy',qt_av_time)
+        np.save(lp+'/qr_av_time.npy',qr_av_time)
         
         np.save(lp+'/thlpf_moist_time.npy',thlpf_moist_time)
         np.save(lp+'/thlpf_dry_time.npy',thlpf_dry_time)
         np.save(lp+'/wff_moist_time.npy',wff_moist_time)
         np.save(lp+'/wff_dry_time.npy',wff_dry_time)
+        np.save(lp+'/qrpf_moist_time.npy',qrpf_moist_time)
+        np.save(lp+'/qrpf_dry_time.npy',qrpf_dry_time)
         
         np.save(lp+'/thlpp_moist_time.npy',thlpp_moist_time)
         np.save(lp+'/thlpp_dry_time.npy',thlpp_dry_time)
@@ -982,6 +1022,8 @@ for i in range(len(plttime)):
         np.save(lp+'/wfp_dry_time.npy',wfp_dry_time)
         np.save(lp+'/qlpp_moist_time.npy',qlpp_moist_time) 
         np.save(lp+'/qlpp_dry_time.npy',qlpp_dry_time)
+        np.save(lp+'/qrpp_moist_time.npy',qrpp_moist_time) 
+        np.save(lp+'/qrpp_dry_time.npy',qrpp_dry_time)
         
         np.save(lp+'/wthlp_av_time.npy',wthlp_av_time)
         np.save(lp+'/wthlpf_moist_time.npy',wthlpf_moist_time)
