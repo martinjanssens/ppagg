@@ -187,6 +187,9 @@ class DataLoaderDALESSeparate:
     def load_v(self, it, izmin, izmax):
         return np.ma.getdata(self.dsv.variables['v'][it,izmin:izmax,:,:])
 
+    def load_qr(self, it, izmin, izmax):
+        return np.ma.getdata(self.dsqr.variables['sv002'][it,izmin:izmax,:,:])
+    
     def load_e12(self, it, izmin, izmax):
         raise NotImplementedError('These runs does not these runs do not return e12')
 

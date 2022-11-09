@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH -t 12:00:00
+#SBATCH -n 1  #total number of tasks, number of nodes calculated automatically
+
+source ~/.bashrc
+conda activate ppaggenv
+
+MOVIE=~/scripts/pp3d/movie.py
+
+
+python -u $MOVIE
