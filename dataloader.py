@@ -79,6 +79,12 @@ class DataLoaderDALES:
     def load_presh(self, it, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['presh'][it,izmin:izmax])
 
+    def load_uav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['u'][:,izmin:izmax])
+    
+    def load_vav(self, izmin, izmax):
+        return np.ma.getdata(self.ds1.variables['v'][:,izmin:izmax])
+    
     def load_qtav(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['qt'][:,izmin:izmax])
 
@@ -130,7 +136,22 @@ class DataLoaderDALES:
     
     def load_thv2av(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['thv2r'][:,izmin:izmax])
-
+    
+    def load_prec(self, izmin, izmax):
+        if 'qtptot' in self.ds1.variables.keys():
+            return np.ma.getdata(self.ds1.variables['qtptot'][:,izmin:izmax])
+        else:
+            print('No precipitation tendency stored, returning zeros')
+            return np.zeros((time1d.size, izmax-izmin))
+    
+    def load_radi(self, izmin, izmax):
+        if 'thltend' in self.ds1.variables.keys():
+            return np.ma.getdata(self.ds1.variables['thltend'][:,izmin:izmax]) - np.ma.getdata(self.ds1.variables['thlradls'][:,izmin:izmax])
+        else:
+            print('No radiation tendency stored, returning zeros')
+            return np.zeros((time1d.size, izmax-izmin))
+    
+    
 class DataLoaderDALESSeparate:
 
     def __init__(self, load_path):
@@ -251,6 +272,19 @@ class DataLoaderDALESSeparate:
     def load_thv2av(self, izmin, izmax):
         return np.ma.getdata(self.ds1.variables['thv2r'][:,izmin:izmax])
     
+    def load_prec(self, izmin, izmax):
+        if 'qtptot' in self.ds1.variables.keys():
+            return np.ma.getdata(self.ds1.variables['qtptot'][:,izmin:izmax])
+        else:
+            print('No precipitation tendency stored, returning zeros')
+            return np.zeros((time1d.size, izmax-izmin))
+    
+    def load_radi(self, izmin, izmax):
+        if 'thltend' in self.ds1.variables.keys():
+            return np.ma.getdata(self.ds1.variables['thltend'][:,izmin:izmax])
+        else:
+            print('No radiation tendency stored, returning zeros')
+            return np.zeros((time1d.size, izmax-izmin))
 
 class DataLoaderMicroHH:
 
@@ -369,3 +403,10 @@ class DataLoaderMicroHH:
     def load_thv2av(self, izmin, izmax):
         return np.ma.getdata(self.ds1['thermo']['thv_2'][:,izmin:izmax])
     
+    def load_prec(self, izmin, izmax):
+        print('Warning: You have not implemented output precipitation tendencies. Returning zeros...')
+        return np.zeros((time1d.size, izmax-izmin))
+    
+    def load_radi(self, izmin, izmax):
+        print('Warning: You have not implemented output precipitation tendencies. Returning zeros...')
+        return np.zeros((time1d.size, izmax-izmin))
