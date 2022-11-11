@@ -36,6 +36,8 @@ class DataLoaderDALES:
 
         self.ilp = np.loadtxt(self.lp+'/lscale.inp.001')
         self.zf_inp = self.ilp[:,0]
+        self.ug = self.ilp[:,1]
+        self.vg = self.ilp[:,2]
         self.wfls = self.ilp[:,3]
         self.dqdt_ls = self.ilp[:,6]
         self.dthldt_ls = self.ilp[:,7]
