@@ -28,7 +28,7 @@ if parseFlag:
     parser.add_argument("--dt", metavar="N", type=int, default=1, help="Time sampling interval")
     parser.add_argument("--izmin", metavar="N", type=int, default=0, help="First height index")
     parser.add_argument("--izmax", metavar="N", type=int, default=80, help="Last height index")
-    parser.add_argument("--moist_dry", metavar="N", type=int, default=0, help="Mean (0) or median (1) mode for defining moist/dry areas")
+    parser.add_argument("--moist_dry", metavar="N", type=int, default=0, help="Mean (0) or median (1) mode for defining moist/dry areas. Or 2 for cloud base (600m) wm")
     parser.add_argument("--klp", metavar="N", type=int, default=4, help="Cutoff wavenumber for lw-pass filter")
     parser.add_argument("--store", action="store_true", default=False, help="Saves the output if given")
     parser.add_argument("--pres", action="store_true", default=False, help="3D pressure data is available")
@@ -376,6 +376,16 @@ for i in range(len(plttime)):
         mask_dry = 1 - mask_moist
     elif moist_dry == 1:
         mask_moist[twp - np.median(twp) > 0] = 1
+        mask_dry = 1 - mask_moist
+    elif moist_dry == 2:
+        # By conv/div quartiles
+        z_cb = 600.
+        izcb = np.argmin(np.abs(z_cb - zflim))
+        wcb = wff[izcb,:,:]
+       # mask_moist[wcb > np.percentile(wcb, 0.75)] = 1
+       # mask_dry = np.zeros(twp.shape)
+       # mask_dry[wcb < np.percentile(wcb, 0.25)] = 1
+        mask_moist[wcb - np.median(wcb) > 0] = 1
         mask_dry = 1 - mask_moist
 
     # Moist, large
